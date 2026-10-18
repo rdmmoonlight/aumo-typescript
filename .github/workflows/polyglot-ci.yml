@@ -1,0 +1,63 @@
+name: Polyglot CI Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-all:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 1. Setup & Validate Node.js / TypeScript
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - name: Install JS Dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Test TS Contracts
+        run: pnpm run test
+
+      # 2. Setup & Validate Rust
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Cargo Check & Test
+        run: |
+          cargo check --workspace
+          cargo test --workspace
+
+      # 3. Setup & Validate .NET (Roslyn Strict)
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore & Build .NET
+        run: |
+          dotnet restore dotnet/App.sln
+          dotnet build dotnet/App.sln --no-restore -c Release /p:TreatWarningsAsErrors=true
+
+      # 4. Setup & Validate Android Kotlin
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      - name: Validate Kotlin Codebase
+        run: |
+          cd android
+          chmod +x ./gradlew || true
+          ./gradlew testDebugUnitTest --no-daemon
+          
