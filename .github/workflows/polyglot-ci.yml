@@ -60,3 +60,17 @@ jobs:
         run: |
           cd android
           gradle testDebugUnitTest --no-daemon
+
+      # 5. Setup & Validate Go Auth Service
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: services/auth/go.sum
+
+      - name: Build & Test Go Auth Service
+        run: |
+          cd services/auth
+          go mod tidy
+          go test -v ./...
+          go build -o /dev/null ./cmd/server
+          
