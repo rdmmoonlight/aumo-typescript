@@ -6,7 +6,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "build": "nx run-many -t build",
-    "generate": "plop"
+    "generate": "plop",
+    "auth:dev": "go run ./services/auth/cmd/server/main.go",
+    "auth:test": "go test -v ./services/auth/..."
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
