@@ -1,0 +1,13 @@
+{
+  "name": "@app/cli",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "app-cli": "./src/cli.js"
+  },
+  "dependencies": {
+    "commander": "^12.0.0",
+    "prompts": "^2.4.2"
+  }
+}
