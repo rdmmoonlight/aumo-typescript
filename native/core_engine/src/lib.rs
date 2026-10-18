@@ -21,5 +21,4 @@ mod tests {
         let result = validate_user(json_data).unwrap();
         assert_eq!(result.name, "Ghofur");
     }
-  }
-                   
+}

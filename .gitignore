@@ -22,3 +22,13 @@ lerna-debug.log*
 # temp directory
 .temp
 .tmp
+
+# Monorepo / build artifacts
+node_modules/
+.nx/
+target/
+bin/
+obj/
+.gradle/
+android/**/build/
+local.properties

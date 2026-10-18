@@ -29,5 +29,4 @@ export class ApiClient {
       body: JSON.stringify(input)
     });
   }
-                                    }
-  
+}
