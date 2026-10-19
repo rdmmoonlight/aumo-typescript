@@ -63,22 +63,22 @@
 - [x] `vitest.config.ts` root: `exclude` ditambah `apps/nest/**`.
 - [x] `eslint.config.mjs` root: `ignores` ditambah `apps/nest/**`.
 - [x] Skrip root `lint`, `typecheck`, `test` → `nx run-many -t <target>`; tambah target `lint`, `typecheck`, `test` di `apps/api` dan `libs/*` agar tetap tercakup.
-- [ ] **Keluaran:** CI hijau di Node 24. **Selesai bila:** 3 workflow lolos tanpa perubahan fungsional.
+- [x] **Keluaran:** CI hijau di Node 24. **Selesai bila:** 3 workflow lolos tanpa perubahan fungsional.
 
 ### Fase 3 — Salin Kode ke `apps/nest`
 
-- [ ] Salin `src/`, `drizzle/`, `drizzle.config.ts`, `nest-cli.json`, `tsconfig*.json`, `vitest.config.ts`, `eslint.config.js`, `.prettierrc`, `.env.example`.
-- [ ] **Jangan** salin `pnpm-lock.yaml` dan `pnpm-workspace.yaml` milik Nest.
-- [ ] `package.json`: nama `aumone` → `@app/nest`, tambah `"private": true` dan `"files": ["dist"]`.
-- [ ] Ganti skrip `prebuild`/`prestart` yang memanggil `pnpm run clean` bila bentrok dengan Nx; pertahankan `clean`.
-- [ ] `pnpm install` di root → `pnpm-lock.yaml` baru, lalu `pnpm install --frozen-lockfile` harus lolos.
-- [ ] **Keluaran:** `apps/nest` ada di workspace. **Selesai bila:** `pnpm --filter @app/nest build` berhasil lokal.
+- [x] Salin `src/`, `drizzle/`, `drizzle.config.ts`, `nest-cli.json`, `tsconfig*.json`, `vitest.config.ts`, `eslint.config.js`, `.prettierrc`, `.env.example`.
+- [x] **Jangan** salin `pnpm-lock.yaml` dan `pnpm-workspace.yaml` milik Nest.
+- [x] `package.json`: nama `aumone` → `@app/nest`, tambah `"private": true` dan `"files": ["dist"]`.
+- [x] Ganti skrip `prebuild`/`prestart` yang memanggil `pnpm run clean` bila bentrok dengan Nx; pertahankan `clean`.
+- [x] `pnpm install` di root → `pnpm-lock.yaml` baru, lalu `pnpm install --frozen-lockfile` harus lolos.
+- [x] **Keluaran:** `apps/nest` ada di workspace. **Selesai bila:** `pnpm --filter @app/nest build` berhasil lokal.
 
 ### Fase 4 — Gerbang Mutu Nest di CI
 
-- [ ] Target Nx `lint`, `typecheck`, `test`, `build` untuk `@app/nest` berjalan di `ci.yml`.
-- [ ] Tes memakai `src/test/setup.ts` (mock Redis dan Better Auth), jadi tidak butuh database atau secret di CI.
-- [ ] Ganti nama file tes menjadi `*.test.ts` secara bertahap, atau pertahankan pola `src/test/**` (keputusan di sini, tidak keduanya).
+- [x] Target Nx `lint`, `typecheck`, `test`, `build` untuk `@app/nest` berjalan di `ci.yml`.
+- [x] Tes memakai `src/test/setup.ts` (mock Redis dan Better Auth), jadi tidak butuh database atau secret di CI.
+- [x] Ganti nama file tes menjadi `*.test.ts` secara bertahap, atau pertahankan pola `src/test/**` (keputusan di sini, tidak keduanya).
 - [ ] **Keluaran:** `ci.yml` memvalidasi Nest. **Selesai bila:** 4 target hijau di GitHub Actions.
 
 ### Fase 5 — Env & Secrets
