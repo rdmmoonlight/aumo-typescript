@@ -19,7 +19,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags="-w -s" \
     -o /app/auth-server \
-    ./cmd/server/main.go
+    ./cmd/server
 
 # ==========================================
 # STAGE 2: Minimal Production Image (Scratch / Distroless-like)

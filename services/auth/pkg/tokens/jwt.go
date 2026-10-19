@@ -7,6 +7,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+const Issuer = "aumo-auth"
+
 type Claims struct {
 	UserID string `json:"user_id"`
 	Email  string `json:"email"`
@@ -26,12 +28,15 @@ func NewJWTManager(secretKey string, duration time.Duration) *JWTManager {
 }
 
 func (m *JWTManager) GenerateToken(userID, email string) (string, error) {
+	now := time.Now()
 	claims := Claims{
 		UserID: userID,
 		Email:  email,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(m.tokenDuration)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    Issuer,
+			Subject:   userID,
+			ExpiresAt: jwt.NewNumericDate(now.Add(m.tokenDuration)),
+			IssuedAt:  jwt.NewNumericDate(now),
 		},
 	}
 
@@ -44,19 +49,18 @@ func (m *JWTManager) ValidateToken(tokenStr string) (*Claims, error) {
 		tokenStr,
 		&Claims{},
 		func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, errors.New("unexpected signing method")
-			}
 			return m.secretKey, nil
 		},
+		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
+		jwt.WithIssuer(Issuer),
+		jwt.WithExpirationRequired(),
 	)
-
 	if err != nil {
 		return nil, err
 	}
 
 	claims, ok := token.Claims.(*Claims)
-	if !ok || !token.Valid {
+	if !ok || !token.Valid || claims.UserID == "" {
 		return nil, errors.New("invalid token claims")
 	}
 
