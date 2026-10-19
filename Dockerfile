@@ -1,37 +1,45 @@
 # ==========================================
-# Stage 1: Build Stage
+# STAGE 1: Build Go App
 # ==========================================
-FROM node:24 AS builder
+FROM golang:1.22-alpine AS builder-go
+WORKDIR /build
+COPY services/auth/go.mod services/auth/go.sum ./
+RUN go mod download
+COPY services/auth/ ./
+RUN CGO_ENABLED=0 GOOS=linux go build -o go-auth-app ./cmd/server/main.go
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# ==========================================
+# STAGE 2: Build NestJS App
+# ==========================================
+FROM node:20-alpine AS builder-nest
+WORKDIR /build/nest
+COPY nest/package*.json ./
+RUN npm ci
+COPY nest/ ./
+RUN npm run build
+
+# ==========================================
+# STAGE 3: Final Production Image
+# ==========================================
+FROM node:20-alpine AS runner
+
+# Install Nginx & Supervisord
+RUN apk add --no-cache nginx supervisor
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
+# Copy binary Go
+COPY --from=builder-go /build/go-auth-app /app/go-auth-app
 
-RUN pnpm install --frozen-lockfile || pnpm install
+# Copy artifact NestJS & dependencies
+COPY --from=builder-nest /build/nest/dist /app/nest/dist
+COPY --from=builder-nest /build/nest/node_modules /app/nest/node_modules
+COPY --from=builder-nest /build/nest/package.json /app/nest/package.json
 
-COPY . .
+# Copy configurations
+COPY nginx.conf /etc/nginx/http.d/default.conf
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-RUN pnpm build
+EXPOSE 80
 
-# ==========================================
-# Stage 2: Production Stage (Node.js Runtime)
-# ==========================================
-FROM node:24 AS runner
-
-WORKDIR /app
-
-ENV NODE_ENV=production
-
-# Menjalankan sebagai non-root user demi keamanan
-USER node
-
-# Copy hasil build dan manifest
-COPY --chown=node:node --from=builder /app/dist ./dist
-COPY --chown=node:node --from=builder /app/node_modules ./node_modules
-COPY --chown=node:node --from=builder /app/package.json ./package.json
-
-EXPOSE 3000
-
-CMD ["node", "dist/main.js"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
