@@ -32,3 +32,6 @@ obj/
 .gradle/
 android/**/build/
 local.properties
+
+# Hasil build
+dist/
