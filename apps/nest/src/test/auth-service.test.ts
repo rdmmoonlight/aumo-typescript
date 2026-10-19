@@ -141,7 +141,7 @@ describe('AuthService', () => {
 
       const result = await service.listSessions(headers);
 
-      expect(result.map((s: any) => [s.id, s.isCurrent])).toEqual([
+      expect(result.map((s) => [s.id, s.isCurrent])).toEqual([
         ['s1', true],
         ['s2', false],
       ]);

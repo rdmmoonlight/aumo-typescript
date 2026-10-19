@@ -8,9 +8,12 @@ import { logger } from './logger.js';
 let auth;
 const crossSiteCookies = env.NODE_ENV === 'production' || !!env.BETTER_AUTH_URL?.startsWith('https://');
 try {
+    if (!db) {
+        throw new Error('Database connection is not initialized');
+    }
     const adapter = drizzleAdapter(db, {
         provider: 'pg',
-        schema: schema,
+        schema,
     });
     auth = betterAuth({
         database: adapter,

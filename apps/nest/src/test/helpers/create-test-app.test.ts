@@ -9,7 +9,8 @@ export type AuthServiceMock = Record<keyof AuthService, ReturnType<typeof import
 /** Membuat aplikasi Nest utuh (pipeline + filter + guard) dengan AuthService opsional di-mock. */
 export async function createTestApp(authServiceMock?: Partial<AuthServiceMock>) {
   if (authServiceMock) {
-    (globalThis as any).__AUTH_SERVICE_MOCK__ = authServiceMock;
+    (globalThis as typeof globalThis & { __AUTH_SERVICE_MOCK__?: unknown }).__AUTH_SERVICE_MOCK__ =
+      authServiceMock;
   }
   let builder = Test.createTestingModule({ imports: [AppModule] });
   if (authServiceMock) {

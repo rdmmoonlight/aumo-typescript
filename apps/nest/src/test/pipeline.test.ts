@@ -121,8 +121,8 @@ describe('Middleware pipeline', () => {
       await http().post('/auth/login').send({ email: 'a@b.com', password: 'x' });
 
       const incr = vi.mocked(vi.mocked(redis.pipeline)().incr);
-      const keys = incr.mock.calls.map((c: any) => String(c[0]));
-      expect(keys.some((k: any) => k.startsWith('ratelimit:auth:'))).toBe(true);
+      const keys = incr.mock.calls.map((c) => String(c[0]));
+      expect(keys.some((k) => k.startsWith('ratelimit:auth:'))).toBe(true);
     });
   });
 

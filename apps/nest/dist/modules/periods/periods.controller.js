@@ -10,7 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Post, Body, Param, UseGuards, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../../common/guards/auth.guard.js';
 import { PeriodsService } from './periods.service.js';
 let PeriodsController = class PeriodsController {
@@ -20,29 +20,29 @@ let PeriodsController = class PeriodsController {
     }
     async getPeriods(req) {
         const userId = req.user?.id || req.authSession?.user?.id;
-        return await this.periodsService.getPeriods(userId);
+        return await this.periodsService.getPeriods(String(userId));
     }
     async getOpenPeriodInfo(req) {
         const userId = req.user?.id || req.authSession?.user?.id;
-        return await this.periodsService.getOpenPeriodInfo(userId);
+        return await this.periodsService.getOpenPeriodInfo(String(userId));
     }
     async createPeriod(req, body) {
         const userId = req.user?.id || req.authSession?.user?.id;
-        return await this.periodsService.createPeriod(userId, body);
+        return await this.periodsService.createPeriod(String(userId), body);
     }
     async selectPeriod(req, id) {
         const userId = req.user?.id || req.authSession?.user?.id;
         const periodId = parseInt(id, 10);
-        return await this.periodsService.selectPeriod(userId, periodId);
+        return await this.periodsService.selectPeriod(String(userId), periodId);
     }
     async clearSelection(req) {
         const userId = req.user?.id || req.authSession?.user?.id;
-        return await this.periodsService.clearSelection(userId);
+        return await this.periodsService.clearSelection(String(userId));
     }
     async closePeriod(req, id) {
         const userId = req.user?.id || req.authSession?.user?.id;
         const periodId = parseInt(id, 10);
-        return await this.periodsService.closePeriod(userId, periodId);
+        return await this.periodsService.closePeriod(String(userId), periodId);
     }
 };
 __decorate([

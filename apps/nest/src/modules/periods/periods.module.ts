@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module.js';
+import { ChartOfAccountsService } from '../chart-of-accounts/chart-of-accounts.service.js';
+import { OpeningBalanceService } from './opening-balance.service.js';
 import { PeriodsController } from './periods.controller.js';
 import { PeriodsService } from './periods.service.js';
 
@@ -7,7 +9,7 @@ import { PeriodsService } from './periods.service.js';
   // AuthGuard (dipakai @UseGuards di controller) membutuhkan AuthService dari AuthModule
   imports: [AuthModule],
   controllers: [PeriodsController],
-  providers: [PeriodsService],
+  providers: [PeriodsService, ChartOfAccountsService, OpeningBalanceService],
   exports: [PeriodsService],
 })
 export class PeriodsModule {}

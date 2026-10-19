@@ -1,6 +1,6 @@
 import { integer, numeric, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
 export const generalJournal = pgTable('general-journal', {
-    id: integer().primaryKey().notNull(),
+    id: integer().primaryKey().generatedByDefaultAsIdentity(),
     entryId: integer('entry_id'),
     journalType: varchar('journal_type', { length: 50 }).notNull(),
     entryDate: timestamp('entry_date', { withTimezone: true, mode: 'string' }).notNull(),

@@ -40,7 +40,7 @@ let GlobalRateLimitGuard = class GlobalRateLimitGuard {
             const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('redis timeout')), TIMEOUT_MS));
             let results;
             try {
-                results = await Promise.race([execPromise, timeoutPromise]);
+                results = (await Promise.race([execPromise, timeoutPromise]));
             }
             catch (e) {
                 logger.warn({ err: e, key }, 'Rate limit redis timeout, fail-open');
@@ -49,11 +49,12 @@ let GlobalRateLimitGuard = class GlobalRateLimitGuard {
             const count = Number(results?.[0]?.[1] ?? 1);
             if (count === 1) {
                 try {
-                    if (typeof redis.pexpire === 'function') {
-                        await redis.pexpire(key, windowMs);
+                    const redisWithExpiry = redis;
+                    if (typeof redisWithExpiry.pexpire === 'function') {
+                        await redisWithExpiry.pexpire(key, windowMs);
                     }
                     else {
-                        await redis.expire(key, windowSec);
+                        await redisWithExpiry.expire?.(key, windowSec);
                     }
                 }
                 catch { }

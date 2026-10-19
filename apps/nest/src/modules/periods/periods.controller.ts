@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../../common/guards/auth.guard.js';
-import { CreatePeriodRequest, PeriodsService } from './periods.service.js';
+import { PeriodsService } from './periods.service.js';
+import type { CreatePeriodRequest } from './periods.types.js';
 
 @Controller('periods')
 @UseGuards(AuthGuard)

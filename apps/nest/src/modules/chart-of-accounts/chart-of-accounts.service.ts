@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import * as accountSchema from '../../db/schema/chart-of-accounts.js';
-import { PERMANENT_TYPES } from './periods.constants.js';
-import type { AccountSimpleDto, DrizzleDb, OpenPeriodInfoResponse, Tx } from './periods.types.js';
+import { PERMANENT_TYPES } from '../periods/periods.constants.js';
+import type { AccountSimpleDto, DrizzleDb, OpenPeriodInfoResponse, Tx } from '../periods/periods.types.js';
 
 @Injectable()
 export class ChartOfAccountsService {

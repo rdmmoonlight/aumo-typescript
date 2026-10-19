@@ -19,6 +19,9 @@ import type {
 
 const fail = (message: string): CreatePeriodResult => ({ success: false, message });
 
+/** Kegagalan bisnis saat membuka periode: melempar agar transaksi di-rollback, pesannya tetap utuh. */
+class PeriodSetupError extends Error {}
+
 @Injectable()
 export class PeriodsService {
   private db: DrizzleDb;
@@ -131,8 +134,7 @@ export class PeriodsService {
             retainedAcc
           );
           if (opening.error !== null) {
-            tx.rollback();
-            return fail(opening.error);
+            throw new PeriodSetupError(opening.error);
           }
 
           const carryInfo =
@@ -239,6 +241,7 @@ export class PeriodsService {
         }
       });
     } catch (e: unknown) {
+      if (e instanceof PeriodSetupError) return fail(e.message);
       const err = e as { cause?: { message?: string }; message?: string };
       return {
         success: false,
@@ -267,7 +270,7 @@ export class PeriodsService {
 
     await this.db
       .insert(periodSchema.selectedPeriods)
-      .values({ userId, periodId: entity.id, updatedAt: new Date().toISOString() })
+      .values({ userId, periodId: entity.id, updatedAt: new Date() })
       .onConflictDoUpdate({
         target: periodSchema.selectedPeriods.userId,
         set: { periodId: entity.id, updatedAt: new Date() },

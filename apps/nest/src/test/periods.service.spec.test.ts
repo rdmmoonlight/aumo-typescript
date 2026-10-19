@@ -1,10 +1,33 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ChartOfAccountsService } from '../modules/chart-of-accounts/chart-of-accounts.service.js';
+import { OpeningBalanceService } from '../modules/periods/opening-balance.service.js';
 import { PeriodsService } from '../modules/periods/periods.service.js';
+import type { DrizzleDb } from '../modules/periods/periods.types.js';
+
+type MockFn = ReturnType<typeof vi.fn>;
+type QueryBuilderMock = Record<
+  | 'select'
+  | 'from'
+  | 'where'
+  | 'orderBy'
+  | 'groupBy'
+  | 'update'
+  | 'set'
+  | 'delete'
+  | 'insert'
+  | 'values'
+  | 'returning'
+  | 'onConflictDoUpdate',
+  MockFn
+>;
+type MockDb = QueryBuilderMock & {
+  query: { periods: { findFirst: MockFn }; chartOfAccounts: { findFirst: MockFn } };
+  transaction: MockFn;
+};
 
 // Helper untuk membuat Mock Query Builder Drizzle yang method-chaining
 const createQueryBuilderMock = () => {
-  const qb: any = {
+  const qb: QueryBuilderMock = {
     select: vi.fn().mockReturnThis(),
     from: vi.fn().mockReturnThis(),
     where: vi.fn().mockReturnThis(),
@@ -23,7 +46,7 @@ const createQueryBuilderMock = () => {
 
 describe('PeriodsService', () => {
   let service: PeriodsService;
-  let mockDb: any;
+  let mockDb: MockDb;
 
   beforeEach(async () => {
     const qbMock = createQueryBuilderMock();
@@ -44,13 +67,10 @@ describe('PeriodsService', () => {
       }),
     };
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [PeriodsService],
-    }).compile();
-
-    service = module.get<PeriodsService>(PeriodsService);
+    // vitest (esbuild) tidak menghasilkan metadata dekorator, jadi dependensi disuntik eksplisit
+    service = new PeriodsService(new ChartOfAccountsService(), new OpeningBalanceService());
     // Menginject mock database ke dalam service instance
-    service.setDb(mockDb as any);
+    service.setDb(mockDb as unknown as DrizzleDb);
   });
 
   it('should be defined', () => {
