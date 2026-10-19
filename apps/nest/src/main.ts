@@ -3,6 +3,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { apiReference } from '@scalar/nestjs-api-reference';
 import { AppModule } from './app.module.js';
+import { withAuthRoutes } from './lib/auth-openapi.js';
 import { configureApp } from './app.setup.js';
 import { env } from './lib/env.js';
 import { closeQueue, initQueueWorkers } from './lib/queue.js';
@@ -41,7 +42,7 @@ async function bootstrap() {
       .setDescription('Dokumentasi API')
       .setVersion('2.0.0')
       .build();
-    const document = SwaggerModule.createDocument(app, config);
+    const document = withAuthRoutes(SwaggerModule.createDocument(app, config));
     SwaggerModule.setup('openapi', app, document, { ui: false, jsonDocumentUrl: 'openapi.json' });
     app.use('/reference', apiReference({ spec: { content: document } }));
 
