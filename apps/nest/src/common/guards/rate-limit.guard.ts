@@ -7,8 +7,10 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { env } from '../../lib/env.js';
-import { logger } from '../../lib/logger.js';
 import { redis } from '../../lib/redis.js';
+
+const loggerModulePath: string = '../../../libs/logger/src/index.js';
+const { logger } = await import(loggerModulePath);
 
 const WINDOW_MS = () =>
   (env as unknown as Record<string, number | undefined>).RATE_LIMIT_WINDOW_MS || 60_000;

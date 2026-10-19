@@ -1,5 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
-import { logger } from '../../lib/logger.js';
+
+const loggerModulePath: string = '../../../libs/logger/src/index.js';
+const { logger } = await import(loggerModulePath);
 
 export function requestLoggerMiddleware(req: Request, res: Response, next: NextFunction): void {
   const start = performance.now();

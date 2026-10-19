@@ -1,7 +1,9 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AppError, ValidationError } from '../../lib/errors.js';
-import { logger } from '../../lib/logger.js';
+
+const loggerModulePath: string = '../../../libs/logger/src/index.js';
+const { logger } = await import(loggerModulePath);
 
 interface ErrorBody {
   success: false;

@@ -1,6 +1,8 @@
 import { Queue, Worker } from 'bullmq';
-import { logger } from './logger.js';
 import { redis } from './redis.js';
+
+const loggerModulePath: string = '../../../libs/logger/src/index.js';
+const { logger } = await import(loggerModulePath);
 
 let reportQueue: Queue | null = null;
 let reportWorker: Worker | null = null;

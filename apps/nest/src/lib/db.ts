@@ -1,7 +1,9 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from '../db/schema/index.js';
-import { logger } from './logger.js';
+
+const loggerModulePath: string = '../../../libs/logger/src/index.js';
+const { logger } = await import(loggerModulePath);
 
 const url = process.env.DATABASE_URL;
 export let db: ReturnType<typeof drizzle> | null = null;

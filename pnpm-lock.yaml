@@ -235,6 +235,9 @@ importers:
 
   apps/nest:
     dependencies:
+      '@app/logger':
+        specifier: workspace:*
+        version: link:../../libs/logger
       '@aws-sdk/client-s3':
         specifier: ^3.1147.0
         version: 3.1152.0

@@ -36,6 +36,7 @@
         "@nestjs/platform-express": "^11.0.0",
         "@nestjs/swagger": "^11.0.0",
         "@scalar/nestjs-api-reference": "^0.3.0",
+        "@app/logger": "workspace:*",
         "bcrypt": "^6.0.0",
         "bullmq": "^6.3.11",
         "dotenv": "^18.0.5",
