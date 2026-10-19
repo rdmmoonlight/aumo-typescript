@@ -22,10 +22,10 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 
 # 7. Build spesifik aplikasi Nest
-RUN pnpm --filter @apps/nest build
+RUN pnpm --filter @app/nest build
 
 # 8. Isolasi dependency produksi
-RUN pnpm --filter @apps/nest deploy --prod /app/pruned
+RUN pnpm --filter @app/nest deploy --prod /app/pruned
 
 # ==========================================
 # Stage 2: Production Stage
