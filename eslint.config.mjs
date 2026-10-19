@@ -1,18 +1,44 @@
 import js from '@eslint/js';
 import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
 export default [
-  { ignores: ['**/node_modules/**', '**/dist/**', '**/target/**', 'templates/**', 'android/**', 'dotnet/**', 'native/**', `apps/nest/**`, "build/**"] },
-  js.configs.recommended,
+  // 1. Global Ignores (HARUS berada di objek paling atas tanpa properti lain)
   {
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/target/**',
+      '**/build/**',
+      'templates/**',
+      'android/**',
+      'dotnet/**',
+      'native/**',
+      'apps/nest/**',
+    ],
+  },
+
+  // 2. Base Config JavaScript
+  js.configs.recommended,
+
+  // 3. Konfigurasi Standar TypeScript (Otomatis mengatur TS parser & recommended rules)
+  ...tseslint.configs.recommended,
+
+  // 4. Custom Override Rules & Environment Globals
+  {
+    files: ['**/*.{js,mjs,cjs,ts,jsx,tsx}'],
     languageOptions: {
-      globals: { ...globals.node }
+      globals: {
+        ...globals.node,
+      },
     },
-    files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"],
     rules: {
-      'no-unused-vars': 'error',
+      // Gunakan rule no-unused-vars milik TypeScript agar type/interface tidak dianggap error
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': 'error',
+
       'no-console': 'off',
-      'eqeqeq': ['error', 'always']
-    }
-  }
+      'eqeqeq': ['error', 'always'],
+    },
+  },
 ];
