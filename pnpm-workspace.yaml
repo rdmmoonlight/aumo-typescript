@@ -1,4 +1,10 @@
 packages:
   - 'apps/*'
   - 'libs/*'
-  
+
+allowBuilds:
+  bcrypt: true
+  esbuild: true
+  msgpackr-extract: true
+  "@scarf/scarf": true
+  nx: true

@@ -9,7 +9,7 @@
 ## 1. Ringkasan Keputusan
 
 | Pos | Keputusan |
-|---|---|
+| --- | --- |
 | Folder tujuan | `apps/nest`, nama paket `@app/nest` (cocok dengan `pnpm-workspace.yaml`: `apps/*`) |
 | `apps/api` (tes mock) | Tetap. Bukan bagian migrasi ini |
 | `services/auth` (Go) | **Titik keputusan Fase 1.** Better Auth di Nest dan layanan auth Go (ADR 0006) tumpang tindih. Tidak ada yang dihapus sebelum ADR baru |
@@ -22,7 +22,7 @@
 ## 2. Inventaris Baseline (`/nest`)
 
 | Kelompok | Isi |
-|---|---|
+| --- | --- |
 | Modul | `health`, `auth` (controller, service, schemas), `periods` (controller, service 594 baris) |
 | Lapisan umum | `common/` (guard auth, rate limit, filter exception, pipe zod, 3 middleware), `config/cors.ts`, `app.setup.ts` |
 | Infrastruktur | `lib/` (`env`, `auth` Better Auth, `db` Drizzle + `pg`, `redis`, `queue` BullMQ, `logger` pino, `errors`) |
@@ -34,7 +34,7 @@
 ## 3. Benturan Konfigurasi (Nest vs Repo Tujuan)
 
 | Aspek | `/nest` | `aumo_typescript` (sekarang) | Dampak dan penanganan |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Node | `>=24` | CI Node 20, `engines >=20` | CI dan `engines` dinaikkan ke 24 (Fase 2) |
 | pnpm build script | `allowBuilds` (sintaks pnpm 10) di `pnpm-workspace.yaml` | pnpm 9: `pnpm.onlyBuiltDependencies: []` | Pindahkan ke `onlyBuiltDependencies`: `bcrypt`, `esbuild`, `msgpackr-extract`, `@scarf/scarf`, `nx` |
 | Zod | `^4.6.5` (`z.treeifyError`) | `^3.23` di `libs/contracts` | Dua versi hidup berdampingan per paket sampai Fase 7 |
@@ -49,21 +49,24 @@
 ## 4. Fase Migrasi (9 Fase)
 
 ### Fase 1 — Baseline & Keputusan
-- [ ] Bekukan perubahan baru di `/nest` selama migrasi.
-- [ ] Putuskan nasib `services/auth` (Go): dipertahankan, atau digantikan Better Auth di Nest.
-- [ ] Catat keputusan di `docs/adr/0007-nest-masuk-monorepo.md`.
-- [ ] **Keluaran:** ADR 0007. **Selesai bila:** auth authority tunggal sudah ditetapkan tertulis.
+
+- [x] Bekukan perubahan baru di `/nest` selama migrasi.
+- [x] Putuskan nasib `services/auth` (Go): dipertahankan, atau digantikan Better Auth di Nest.
+- [x] Catat keputusan di `docs/adr/0007-nest-masuk-monorepo.md`.
+- [x] **Keluaran:** ADR 0007. **Selesai bila:** auth authority tunggal sudah ditetapkan tertulis.
 
 ### Fase 2 — Penyelarasan Toolchain Root (belum ada kode Nest)
-- [ ] `package.json`: `engines.node` → `>=24.0.0`; `pnpm.onlyBuiltDependencies` diisi (lihat bagian 3).
-- [ ] `ci.yml`, `polyglot-ci.yml`, `release.yml`, `dependency-rules.yml`: `node-version: 24`.
-- [ ] `tsconfig.json` root: `exclude` ditambah `apps/nest`.
-- [ ] `vitest.config.ts` root: `exclude` ditambah `apps/nest/**`.
-- [ ] `eslint.config.mjs` root: `ignores` ditambah `apps/nest/**`.
-- [ ] Skrip root `lint`, `typecheck`, `test` → `nx run-many -t <target>`; tambah target `lint`, `typecheck`, `test` di `apps/api` dan `libs/*` agar tetap tercakup.
+
+- [x] `package.json`: `engines.node` → `>=24.0.0`; `pnpm.onlyBuiltDependencies` diisi (lihat bagian 3).
+- [x] `ci.yml`, `polyglot-ci.yml`, `release.yml`, `dependency-rules.yml`: `node-version: 24`.
+- [x] `tsconfig.json` root: `exclude` ditambah `apps/nest`.
+- [x] `vitest.config.ts` root: `exclude` ditambah `apps/nest/**`.
+- [x] `eslint.config.mjs` root: `ignores` ditambah `apps/nest/**`.
+- [x] Skrip root `lint`, `typecheck`, `test` → `nx run-many -t <target>`; tambah target `lint`, `typecheck`, `test` di `apps/api` dan `libs/*` agar tetap tercakup.
 - [ ] **Keluaran:** CI hijau di Node 24. **Selesai bila:** 3 workflow lolos tanpa perubahan fungsional.
 
 ### Fase 3 — Salin Kode ke `apps/nest`
+
 - [ ] Salin `src/`, `drizzle/`, `drizzle.config.ts`, `nest-cli.json`, `tsconfig*.json`, `vitest.config.ts`, `eslint.config.js`, `.prettierrc`, `.env.example`.
 - [ ] **Jangan** salin `pnpm-lock.yaml` dan `pnpm-workspace.yaml` milik Nest.
 - [ ] `package.json`: nama `aumone` → `@app/nest`, tambah `"private": true` dan `"files": ["dist"]`.
@@ -72,24 +75,28 @@
 - [ ] **Keluaran:** `apps/nest` ada di workspace. **Selesai bila:** `pnpm --filter @app/nest build` berhasil lokal.
 
 ### Fase 4 — Gerbang Mutu Nest di CI
+
 - [ ] Target Nx `lint`, `typecheck`, `test`, `build` untuk `@app/nest` berjalan di `ci.yml`.
 - [ ] Tes memakai `src/test/setup.ts` (mock Redis dan Better Auth), jadi tidak butuh database atau secret di CI.
 - [ ] Ganti nama file tes menjadi `*.test.ts` secara bertahap, atau pertahankan pola `src/test/**` (keputusan di sini, tidak keduanya).
 - [ ] **Keluaran:** `ci.yml` memvalidasi Nest. **Selesai bila:** 4 target hijau di GitHub Actions.
 
 ### Fase 5 — Env & Secrets
+
 - [ ] `apps/nest/.env.example` dipertahankan (tanpa nilai). Variabel wajib: `DATABASE_URL`, `JWT_SIGNING_KEY` (≥32 karakter). Opsional: `REDIS_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `FRONTEND_URL`, `CORS_ORIGINS`.
 - [ ] Pastikan `.env*` ada di `.gitignore` root (sudah ada) dan di `.dockerignore`.
 - [ ] Catatan perilaku: tanpa `REDIS_URL`, rate limit berjalan fail-open (tidak membatasi apa pun) dan BullMQ gagal init dengan log error, bukan crash.
 - [ ] **Keluaran:** daftar env final di `docs/`. **Selesai bila:** tidak ada secret di riwayat git.
 
 ### Fase 6 — Database & Migrasi Drizzle
+
 - [ ] Migrasi tetap di `apps/nest/drizzle/`. Pilih satu sumber skema: `src/db/schema/` (dipakai `drizzle.config.ts`); `drizzle/schema.ts` dan `drizzle/relations.ts` adalah artefak `db:pull`, tandai atau hapus.
 - [ ] Migrasi ke Neon dijalankan manual (`db:migrate`), **bukan** dari CI.
 - [ ] Cocokkan nama tabel/kolom dengan skema backend yang berlaku (PascalCase vs `snake_case` dari `casing`) sebelum menyentuh data produksi.
 - [ ] **Keluaran:** panduan migrasi singkat. **Selesai bila:** `db:generate` tidak menghasilkan diff pada skema yang ada.
 
 ### Fase 7 — Selaraskan Libs Bersama
+
 - [ ] `libs/contracts` naik ke Zod 4 dalam satu langkah; `libs/sdk` hanya memakai tipe (`z.infer`), risikonya kecil. Uji ulang `apps/api`.
 - [ ] Skema `User`/auth yang dipakai Nest dipindah ke `libs/contracts` bila dibagi dengan klien.
 - [ ] Bila kontrak berubah, perbarui DTO Rust, C#, dan Kotlin (kewajiban ADR 0004).
@@ -97,6 +104,7 @@
 - [ ] **Keluaran:** satu versi Zod dan satu logger. **Selesai bila:** `pnpm ls zod pino` menunjukkan satu versi mayor.
 
 ### Fase 8 — Docker & Render
+
 - [ ] `apps/nest/Dockerfile` dengan **build context = root repo** (lihat bagian 5).
 - [ ] `apps/nest/Dockerfile.dockerignore` (BuildKit membacanya) atau `.dockerignore` di root.
 - [ ] `render.yaml` di root: 1 service per aplikasi, `dockerfilePath` dan `dockerContext` eksplisit, `buildFilter` per service.
@@ -104,6 +112,7 @@
 - [ ] **Keluaran:** image Nest terbangun dan `/health` merespons 200. **Selesai bila:** deploy Render pertama sukses.
 
 ### Fase 9 — Cutover & Pembersihan
+
 - [ ] Uji asap: `/health`, register, login, `me`, periods.
 - [ ] Frontend diarahkan ke URL Nest baru (`CORS_ORIGINS`/`FRONTEND_URL` sudah mencakup origin-nya).
 - [ ] Hapus `/nest` dari repo aumo-finance hanya setelah persetujuan tertulis.
@@ -115,6 +124,7 @@
 Render tetap mendukung Dockerfile untuk beberapa service dalam satu repo. Setiap service memiliki `dockerfilePath` dan `dockerContext` sendiri.
 
 **Aturan penting:**
+
 - Jangan set *Root Directory* untuk service Docker yang butuh `libs/*`. File di luar root directory tidak tersedia saat build.
 - Biarkan Root Directory kosong, set *Dockerfile Path* dan *Docker Build Context Directory* ke root repo (`.`).
 - Gunakan `buildFilter` agar perubahan di satu aplikasi tidak memicu deploy semua service. Path build filter selalu relatif terhadap root repo.
@@ -193,7 +203,7 @@ services:
 ## 6. Risiko
 
 | Risiko | Penanganan |
-|---|---|
+| --- | --- |
 | Naik Node 24 mengubah perilaku workflow lain (Rust, .NET, Android) | Fase 2 berdiri sendiri; uji sebelum kode Nest masuk |
 | `bcrypt` (native) tidak terbangun di image | Daftar di `onlyBuiltDependencies`; pakai `node:24-slim` (glibc) |
 | Dua versi Zod/pino hidup bersamaan | Terbatas per paket sampai Fase 7; jangan impor lintas paket dulu |
