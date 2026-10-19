@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 
-const loggerModulePath: string = '../../../libs/logger/src/index.js';
+const loggerModulePath: string = '@app/logger';
 const { logger } = await import(loggerModulePath);
 
 export function requestLoggerMiddleware(req: Request, res: Response, next: NextFunction): void {

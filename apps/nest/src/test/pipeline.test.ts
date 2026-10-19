@@ -3,7 +3,6 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { redis } from '../lib/redis.js';
-// Jika file export default, sesuaikan dengan `import createTestApp from ...`
 import { createTestApp } from './helpers/create-test-app.test.js';
 
 describe('Middleware pipeline', () => {

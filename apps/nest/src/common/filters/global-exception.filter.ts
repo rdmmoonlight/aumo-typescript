@@ -2,7 +2,7 @@ import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from
 import type { Request, Response } from 'express';
 import { AppError, ValidationError } from '../../lib/errors.js';
 
-const loggerModulePath: string = '../../../libs/logger/src/index.js';
+const loggerModulePath: string = '@app/logger';
 const { logger } = await import(loggerModulePath);
 
 interface ErrorBody {

@@ -8,7 +8,7 @@ import { env } from './lib/env.js';
 import { closeQueue, initQueueWorkers } from './lib/queue.js';
 import { redis } from './lib/redis.js';
 
-const loggerModulePath: string = '../../../libs/logger/src/index.js';
+const loggerModulePath: string = '@app/logger';
 const { logger } = await import(loggerModulePath);
 
 process.on('uncaughtException', (err: unknown) => {

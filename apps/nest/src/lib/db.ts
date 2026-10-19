@@ -2,7 +2,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from '../db/schema/index.js';
 
-const loggerModulePath: string = '../../../libs/logger/src/index.js';
+const loggerModulePath: string = '@app/logger';
 const { logger } = await import(loggerModulePath);
 
 const url = process.env.DATABASE_URL;
