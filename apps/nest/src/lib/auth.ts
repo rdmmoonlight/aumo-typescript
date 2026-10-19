@@ -14,9 +14,13 @@ const crossSiteCookies =
   env.NODE_ENV === 'production' || !!env.BETTER_AUTH_URL?.startsWith('https://');
 
 try {
-  const adapter = drizzleAdapter(db as any, {
+  if (!db) {
+    throw new Error('Database connection is not initialized');
+  }
+
+  const adapter = drizzleAdapter(db, {
     provider: 'pg',
-    schema: schema as any,
+    schema,
   });
 
   auth = betterAuth({
@@ -34,9 +38,10 @@ try {
       },
     },
   } as BetterAuthOptions);
-} catch (e: any) {
+} catch (e: unknown) {
   logger.error({ err: e }, 'Failed to initialize Better Auth');
   throw e;
 }
 
 export { auth };
+

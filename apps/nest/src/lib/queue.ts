@@ -24,7 +24,7 @@ export function initQueueWorkers() {
     reportWorker.on('failed', (job, err) => {
       logger.error({ jobId: job?.id, err }, 'Worker failed processing job');
     });
-  } catch (e: any) {
+  } catch (e: unknown) {
     logger.error({ err: e }, 'Queue initialization failed');
   }
 }
@@ -34,9 +34,10 @@ export async function closeQueue() {
     if (reportWorker) await reportWorker.close();
     if (reportQueue) await reportQueue.close();
     logger.info('Queue connections closed');
-  } catch (e: any) {
+  } catch (e: unknown) {
     logger.error({ err: e }, 'Failed to close queue connections');
   }
 }
 
 export { reportQueue };
+

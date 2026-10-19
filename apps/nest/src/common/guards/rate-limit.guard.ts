@@ -10,9 +10,12 @@ import { env } from '../../lib/env.js';
 import { logger } from '../../lib/logger.js';
 import { redis } from '../../lib/redis.js';
 
-const WINDOW_MS = () => (env as any).RATE_LIMIT_WINDOW_MS || 60_000;
-const MAX_GLOBAL = () => (env as any).RATE_LIMIT_MAX || 100;
-const MAX_AUTH = () => (env as any).AUTH_RATE_LIMIT_MAX || 10;
+const WINDOW_MS = () =>
+  (env as unknown as Record<string, number | undefined>).RATE_LIMIT_WINDOW_MS || 60_000;
+const MAX_GLOBAL = () =>
+  (env as unknown as Record<string, number | undefined>).RATE_LIMIT_MAX || 100;
+const MAX_AUTH = () =>
+  (env as unknown as Record<string, number | undefined>).AUTH_RATE_LIMIT_MAX || 10;
 const TIMEOUT_MS = 1000;
 
 @Injectable()
@@ -20,8 +23,16 @@ export class GlobalRateLimitGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const req: any = context.switchToHttp().getRequest();
-    const res: any = context.switchToHttp().getResponse();
+    const req = context.switchToHttp().getRequest<{
+      originalUrl?: string;
+      url?: string;
+      path?: string;
+      ip?: string;
+      headers: Record<string, string | string[] | undefined>;
+    }>();
+    const res = context.switchToHttp().getResponse<{
+      setHeader(name: string, value: string): void;
+    }>();
 
     const path = req.originalUrl || req.url || req.path || '';
     const isAuth = path.startsWith('/auth') || path.includes('/auth/');
@@ -34,7 +45,12 @@ export class GlobalRateLimitGuard implements CanActivate {
     const windowSec = Math.ceil(windowMs / 1000);
 
     try {
-      const pipeline = (redis as any).pipeline();
+      const pipeline = (redis as unknown as {
+        pipeline(): {
+          incr(key: string): unknown;
+          exec(): Promise<Array<[Error | null, unknown]> | null>;
+        };
+      }).pipeline();
       pipeline.incr(key);
 
       const execPromise = pipeline.exec();
@@ -42,9 +58,11 @@ export class GlobalRateLimitGuard implements CanActivate {
         setTimeout(() => reject(new Error('redis timeout')), TIMEOUT_MS)
       );
 
-      let results: any;
+      let results: Array<[Error | null, unknown]> | null;
       try {
-        results = await Promise.race([execPromise, timeoutPromise]);
+        results = (await Promise.race([execPromise, timeoutPromise])) as
+          | Array<[Error | null, unknown]>
+          | null;
       } catch (e) {
         logger.warn({ err: e, key }, 'Rate limit redis timeout, fail-open');
         return true;
@@ -56,11 +74,15 @@ export class GlobalRateLimitGuard implements CanActivate {
       // Jadi pakai pexpire untuk memenuhi test: pexpire key 60000
       if (count === 1) {
         try {
+          const redisWithExpiry = redis as unknown as {
+            pexpire?: (key: string, milliseconds: number) => Promise<unknown>;
+            expire?: (key: string, seconds: number) => Promise<unknown>;
+          };
           // pexpire dengan ms sesuai test expectation
-          if (typeof (redis as any).pexpire === 'function') {
-            await (redis as any).pexpire(key, windowMs);
+          if (typeof redisWithExpiry.pexpire === 'function') {
+            await redisWithExpiry.pexpire(key, windowMs);
           } else {
-            await (redis as any).expire(key, windowSec);
+            await redisWithExpiry.expire?.(key, windowSec);
           }
         } catch {}
       }
@@ -88,7 +110,7 @@ export class GlobalRateLimitGuard implements CanActivate {
       }
 
       return true;
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof HttpException) throw err;
       logger.warn({ err, key }, 'Rate limit redis error, fail-open');
       return true;

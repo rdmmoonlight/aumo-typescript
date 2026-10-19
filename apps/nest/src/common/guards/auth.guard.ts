@@ -6,12 +6,14 @@ export class AuthGuard implements CanActivate {
   constructor(private readonly authService?: AuthService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const req: any = context.switchToHttp().getRequest();
+    const req = context.switchToHttp().getRequest();
     try {
       // Coba dari injection, kalau undefined (karena @UseGuards new instance tanpa DI), ambil dari global mock
-      let authService: any = this.authService;
+      let authService: Partial<Pick<AuthService, 'getSession'>> | undefined = this.authService;
       if (!authService) {
-        authService = (globalThis as any).__AUTH_SERVICE_MOCK__;
+        authService = (globalThis as typeof globalThis & {
+          __AUTH_SERVICE_MOCK__?: Partial<Pick<AuthService, 'getSession'>>;
+        }).__AUTH_SERVICE_MOCK__;
       }
 
       if (!authService || typeof authService.getSession !== 'function') {
@@ -29,9 +31,9 @@ export class AuthGuard implements CanActivate {
       req.authSession = session;
       req.user = session.user;
       req.session = session.session;
-      (req as any).currentSession = session;
+      req.currentSession = session;
       return true;
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof UnauthorizedException) throw err;
       throw new UnauthorizedException({ success: false, message: 'Unauthorized' });
     }

@@ -22,7 +22,7 @@ export const databaseProvider = {
       });
 
       return drizzle(pool, { schema });
-    } catch (e: any) {
+    } catch (e: unknown) {
       logger.error({ err: e }, 'Database provider initialization failed');
       throw e;
     }

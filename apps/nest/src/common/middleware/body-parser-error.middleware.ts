@@ -1,7 +1,7 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 
 export function bodyParserErrorMiddleware(
-  err: any,
+  err: Error & { type?: string; status?: number; statusCode?: number },
   _req: Request,
   res: Response,
   next: NextFunction

@@ -1,74 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { and, asc, desc, eq, gte, inArray, lt, lte, ne, sql } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as accountSchema from '../../db/schema/chart-of-accounts.js';
 import * as generalJournalSchema from '../../db/schema/general-journal.js';
 import * as periodSchema from '../../db/schema/periods.js';
 import { db as drizzleDb } from '../../lib/db.js';
-
-const PermanentTypes = ['Assets', 'Liabilities', 'Equity'] as const;
-const TemporaryTypes = [
-  'OperatingIncome',
-  'OtherIncome',
-  'OperatingExpenses',
-  'OtherExpenses',
-] as const;
-
-type DrizzleDb = NodePgDatabase<
-  typeof periodSchema & typeof accountSchema & typeof generalJournalSchema
->;
-type Tx = Parameters<Parameters<DrizzleDb['transaction']>[0]>[0];
-
-export type BaseServiceResult = {
-  success: boolean;
-  message: string;
-};
-
-export type SelectPeriodResult = {
-  success: true;
-  selectedPeriodId: number;
-  message: string;
-};
-
-export type CreatePeriodResult =
-  | { success: true; message: string; periodId: number }
-  | { success: false; message: string; isServerError?: boolean };
-
-export type CreatePeriodRequest =
-  | {
-      year: number;
-      month: number;
-      setupMode: 'CreateNew';
-      cashAccountCode?: string;
-      cashAccountName?: string;
-      bankAccountCode?: string;
-      bankAccountName?: string;
-      retainedEarningsAccountCode?: string;
-      retainedEarningsAccountName?: string;
-      cashBalance?: number;
-      bankBalance?: number;
-    }
-  | {
-      year: number;
-      month: number;
-      setupMode: 'LoadExisting';
-      cashAccountId?: number;
-      bankAccountId?: number;
-      retainedEarningsAccountId?: number;
-    };
-
-type AccountSimpleDto = Pick<
-  typeof accountSchema.chartOfAccounts.$inferSelect,
-  'id' | 'referenceNumber' | 'accountName' | 'type'
-> & { displayLabel: string };
-
-type OpenPeriodInfoResponse = {
-  success: true;
-  hasExistingPermanentAccounts: boolean;
-  availableCashAndBankAccounts: AccountSimpleDto[];
-  availableRetainedEarningsAccounts: AccountSimpleDto[];
-  permanentAccounts: AccountSimpleDto[];
-};
+import { PERMANENT_TYPES, TEMPORARY_TYPES } from './periods.constants.js';
+import type {
+  AccountSelect,
+  AccountSimpleDto,
+  BaseServiceResult,
+  CreatePeriodRequest,
+  CreatePeriodResult,
+  DrizzleDb,
+  GeneralJournalInsert,
+  OpenPeriodInfoResponse,
+  SelectPeriodResult,
+  Tx,
+} from './periods.types.js';
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const fail = (message: string): CreatePeriodResult => ({ success: false, message });
@@ -78,11 +26,9 @@ export class PeriodsService {
   private db: DrizzleDb;
 
   constructor() {
-    // Use global drizzle db - in Nest we can inject, but for now use imported db
     this.db = drizzleDb as unknown as DrizzleDb;
   }
 
-  // For testing / DI override
   setDb(db: DrizzleDb) {
     this.db = db;
   }
@@ -101,9 +47,9 @@ export class PeriodsService {
       .where(eq(periodSchema.periods.userId, userId))
       .orderBy(desc(periodSchema.periods.startDate));
 
-    const selectedPeriodId = periodsData.find((p: any) => p.isSelected)?.id ?? null;
+    const selectedPeriodId = periodsData.find((p) => p.isSelected)?.id ?? null;
 
-    const periods = periodsData.map((p: any) => ({
+    const periods = periodsData.map((p) => ({
       ...p,
       isSelected: selectedPeriodId ? p.id === selectedPeriodId : p.isSelected,
     }));
@@ -132,13 +78,13 @@ export class PeriodsService {
     });
 
     const permanentAccounts = accounts
-      .filter((a: any) => (PermanentTypes as readonly string[]).includes(a.type))
+      .filter((a) => (PERMANENT_TYPES as readonly string[]).includes(a.type))
       .map(toDto);
     const availableCashAndBank = accounts
-      .filter((a: any) => a.role === 'CashAndEquivalents')
+      .filter((a) => a.role === 'CashAndEquivalents')
       .map(toDto);
     const availableRetainedEarnings = accounts
-      .filter((a: any) => a.role === 'RetainedEarnings')
+      .filter((a) => a.role === 'RetainedEarnings')
       .map(toDto);
 
     return {
@@ -210,19 +156,18 @@ export class PeriodsService {
               endDate: endDate.toISOString(),
               isClosed: false,
               isSelected: false,
-            } as any)
+            })
             .returning();
 
           const opening = await this.addOpeningBalanceJournal(
             tx,
             userId,
             startDate,
-            retainedAcc as any
+            retainedAcc
           );
           const openingError = opening.error;
           if (openingError !== null) {
             tx.rollback();
-            return fail(openingError!);
           }
 
           const carryInfo =
@@ -272,7 +217,7 @@ export class PeriodsService {
               type: 'Assets',
               role: 'CashAndEquivalents',
               isActive: true,
-            } as any)
+            })
             .returning();
 
           const [bankAccount] = await tx
@@ -284,7 +229,7 @@ export class PeriodsService {
               type: 'Assets',
               role: 'CashAndEquivalents',
               isActive: true,
-            } as any)
+            })
             .returning();
 
           const [retainedAccount] = await tx
@@ -296,7 +241,7 @@ export class PeriodsService {
               type: 'Equity',
               role: 'RetainedEarnings',
               isActive: true,
-            } as any)
+            })
             .returning();
 
           const [newPeriod] = await tx
@@ -308,7 +253,7 @@ export class PeriodsService {
               endDate: endDate.toISOString(),
               isClosed: false,
               isSelected: false,
-            } as any)
+            })
             .returning();
 
           const cashBalance = req.cashBalance ?? 0;
@@ -320,7 +265,7 @@ export class PeriodsService {
             const entryId = Date.now();
             const nowString = new Date().toISOString();
             const entryDateString = startDate.toISOString();
-            const lines: any[] = [];
+            const lines: GeneralJournalInsert[] = [];
 
             if (cashBalance !== 0) {
               lines.push({
@@ -371,7 +316,7 @@ export class PeriodsService {
               createdAt: nowString,
             });
 
-            await tx.insert(generalJournalSchema.generalJournal).values(lines as any);
+            await tx.insert(generalJournalSchema.generalJournal).values(lines);
           }
 
           return {
@@ -381,20 +326,21 @@ export class PeriodsService {
           };
         }
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const err = e as { cause?: { message?: string }; message?: string };
       return {
         success: false,
         isServerError: true,
-        message: `Failed to open period: ${e?.cause?.message ?? e?.message ?? e}`,
+        message: `Failed to open period: ${err?.cause?.message ?? err?.message ?? String(e)}`,
       };
     }
   }
 
   private async addOpeningBalanceJournal(
-    tx: any,
+    tx: Tx,
     userId: string,
     startDate: Date,
-    retainedAccount: typeof accountSchema.chartOfAccounts.$inferSelect
+    retainedAccount: AccountSelect
   ) {
     const previous = await tx.query.periods.findFirst({
       where: and(
@@ -410,7 +356,7 @@ export class PeriodsService {
     const prevEnd = new Date(previous.endDate);
     prevEnd.setUTCHours(23, 59, 59, 999);
 
-    if (!(PermanentTypes as readonly string[]).includes((retainedAccount as any).type)) {
+    if (!(PERMANENT_TYPES as readonly string[]).includes(retainedAccount.type)) {
       return {
         accountCount: 0,
         error: 'The selected Retained Earnings account must be an Equity account.',
@@ -426,7 +372,7 @@ export class PeriodsService {
           eq(accountSchema.chartOfAccounts.isActive, true)
         )
       );
-    const allAccounts = accounts.some((a: any) => a.id === retainedAccount.id)
+    const allAccounts = accounts.some((a) => a.id === retainedAccount.id)
       ? accounts
       : [...accounts, retainedAccount];
 
@@ -451,25 +397,25 @@ export class PeriodsService {
       )
       .groupBy(generalJournalSchema.generalJournal.accountId);
 
-    const totals = new Map(
+    const totals = new Map<number, { debit: number; credit: number }>(
       totalsRows
-        .filter((r: any): r is typeof r & { accountId: number } => r.accountId !== null)
-        .map((r: any) => [r.accountId, { debit: r.debit ?? 0, credit: r.credit ?? 0 }])
+        .filter((r): r is typeof r & { accountId: number } => r.accountId !== null)
+        .map((r) => [r.accountId, { debit: r.debit ?? 0, credit: r.credit ?? 0 }])
     );
 
     const signed = (accountId: number) => {
-      const t = totals.get(accountId) as { debit: number; credit: number } | undefined;
+      const t = totals.get(accountId);
       return t ? t.debit - t.credit : 0;
     };
 
     const netIncome = allAccounts
-      .filter((a: any) => (TemporaryTypes as readonly string[]).includes(a.type))
-      .reduce((sum: number, a: any) => sum + -signed(a.id), 0);
+      .filter((a) => (TEMPORARY_TYPES as readonly string[]).includes(a.type))
+      .reduce((sum: number, a) => sum + -signed(a.id), 0);
 
-    const balances: { account: (typeof allAccounts)[number]; signed: number }[] = [];
+    const balances: { account: AccountSelect; signed: number }[] = [];
     for (const acc of allAccounts
-      .filter((a: any) => (PermanentTypes as readonly string[]).includes(a.type))
-      .sort((a: any, b: any) => a.referenceNumber - b.referenceNumber)) {
+      .filter((a) => (PERMANENT_TYPES as readonly string[]).includes(a.type))
+      .sort((a, b) => a.referenceNumber - b.referenceNumber)) {
       let bal = signed(acc.id);
       if (acc.id === retainedAccount.id) bal -= netIncome;
       bal = round2(bal);
@@ -478,9 +424,9 @@ export class PeriodsService {
 
     if (balances.length === 0) return { accountCount: 0, error: null };
 
-    const totalDebit = balances.filter((b: any) => b.signed > 0).reduce((s, b) => s + b.signed, 0);
+    const totalDebit = balances.filter((b) => b.signed > 0).reduce((s, b) => s + b.signed, 0);
     const totalCredit = balances
-      .filter((b: any) => b.signed < 0)
+      .filter((b) => b.signed < 0)
       .reduce((s, b) => s + Math.abs(b.signed), 0);
 
     if (round2(totalDebit - totalCredit) !== 0) {
@@ -495,7 +441,7 @@ export class PeriodsService {
     const nowString = new Date().toISOString();
     const entryDateString = startDate.toISOString();
 
-    const journalRows = balances.map((b: any) => ({
+    const journalRows: GeneralJournalInsert[] = balances.map((b) => ({
       entryId,
       userId,
       transactionNumber: trxNumber,
@@ -510,7 +456,7 @@ export class PeriodsService {
       createdAt: nowString,
     }));
 
-    await tx.insert(generalJournalSchema.generalJournal).values(journalRows as any);
+    await tx.insert(generalJournalSchema.generalJournal).values(journalRows);
 
     return { accountCount: balances.length, error: null };
   }
@@ -534,7 +480,7 @@ export class PeriodsService {
 
     await this.db
       .insert(periodSchema.selectedPeriods)
-      .values({ userId, periodId: entity.id, updatedAt: new Date().toISOString() } as any)
+      .values({ userId, periodId: entity.id, updatedAt: new Date().toISOString() })
       .onConflictDoUpdate({
         target: periodSchema.selectedPeriods.userId,
         set: { periodId: entity.id, updatedAt: new Date() },
