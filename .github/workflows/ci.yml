@@ -31,8 +31,8 @@ jobs:
 
       - name: Run Autofix (Format & Lint)
         run: |
-          pnpm run format --if-present || true
-          pnpm run lint --fix --if-present || true
+          pnpm run format || true
+          pnpm run lint --fix || true
 
       - name: Commit & Push Changes
         uses: stefanzweifel/git-auto-commit-action@v5
