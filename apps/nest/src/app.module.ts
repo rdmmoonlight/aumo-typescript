@@ -4,7 +4,6 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
 import { GlobalRateLimitGuard } from './common/guards/rate-limit.guard.js';
 import { databaseProvider } from './db/database.provider.js';
-import { AuthModule } from './modules/auth/auth.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { PeriodsModule } from './modules/periods/periods.module.js';
 
@@ -14,7 +13,6 @@ import { PeriodsModule } from './modules/periods/periods.module.js';
       isGlobal: true, // Membuat ConfigService tersedia di seluruh modul tanpa perlu re-import
     }),
     HealthModule,
-    AuthModule,
     PeriodsModule,
   ],
   providers: [
@@ -23,4 +21,4 @@ import { PeriodsModule } from './modules/periods/periods.module.js';
     { provide: APP_GUARD, useClass: GlobalRateLimitGuard },
   ],
 })
-export class AppModule {}
+export class AppModule { }

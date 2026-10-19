@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: nest-api
+    env: docker
+    dockerfilePath: apps/nest/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    buildFilter:
+      paths:
+        - apps/nest/**
+        - packages/**
+        - package.json
+        - pnpm-lock.yaml
+        - pnpm-workspace.yaml

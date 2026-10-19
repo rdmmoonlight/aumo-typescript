@@ -79,14 +79,14 @@
 - [x] Target Nx `lint`, `typecheck`, `test`, `build` untuk `@app/nest` berjalan di `ci.yml`.
 - [x] Tes memakai `src/test/setup.ts` (mock Redis dan Better Auth), jadi tidak butuh database atau secret di CI.
 - [x] Ganti nama file tes menjadi `*.test.ts` secara bertahap, atau pertahankan pola `src/test/**` (keputusan di sini, tidak keduanya).
-- [ ] **Keluaran:** `ci.yml` memvalidasi Nest. **Selesai bila:** 4 target hijau di GitHub Actions.
+- [x] **Keluaran:** `ci.yml` memvalidasi Nest. **Selesai bila:** 4 target hijau di GitHub Actions.
 
 ### Fase 5 — Env & Secrets
 
-- [ ] `apps/nest/.env.example` dipertahankan (tanpa nilai). Variabel wajib: `DATABASE_URL`, `JWT_SIGNING_KEY` (≥32 karakter). Opsional: `REDIS_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `FRONTEND_URL`, `CORS_ORIGINS`.
-- [ ] Pastikan `.env*` ada di `.gitignore` root (sudah ada) dan di `.dockerignore`.
-- [ ] Catatan perilaku: tanpa `REDIS_URL`, rate limit berjalan fail-open (tidak membatasi apa pun) dan BullMQ gagal init dengan log error, bukan crash.
-- [ ] **Keluaran:** daftar env final di `docs/`. **Selesai bila:** tidak ada secret di riwayat git.
+- [x] `apps/nest/.env.example` dipertahankan (tanpa nilai). Variabel wajib: `DATABASE_URL`, `JWT_SIGNING_KEY` (≥32 karakter). Opsional: `REDIS_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `FRONTEND_URL`, `CORS_ORIGINS`.
+- [x] Pastikan `.env*` ada di `.gitignore` root (sudah ada) dan di `.dockerignore`.
+- [x] Catatan perilaku: tanpa `REDIS_URL`, rate limit berjalan fail-open (tidak membatasi apa pun) dan BullMQ gagal init dengan log error, bukan crash.
+- [x] **Keluaran:** daftar env final di `docs/`. **Selesai bila:** tidak ada secret di riwayat git.
 
 ### Fase 6 — Database & Migrasi Drizzle
 
@@ -97,18 +97,18 @@
 
 ### Fase 7 — Selaraskan Libs Bersama
 
-- [ ] `libs/contracts` naik ke Zod 4 dalam satu langkah; `libs/sdk` hanya memakai tipe (`z.infer`), risikonya kecil. Uji ulang `apps/api`.
-- [ ] Skema `User`/auth yang dipakai Nest dipindah ke `libs/contracts` bila dibagi dengan klien.
-- [ ] Bila kontrak berubah, perbarui DTO Rust, C#, dan Kotlin (kewajiban ADR 0004).
-- [ ] Logger: pilih satu, `libs/logger` (pino) naik ke v10 dan dipakai Nest, atau Nest tetap lokal.
-- [ ] **Keluaran:** satu versi Zod dan satu logger. **Selesai bila:** `pnpm ls zod pino` menunjukkan satu versi mayor.
+- [x] `libs/contracts` naik ke Zod 4 dalam satu langkah; `libs/sdk` hanya memakai tipe (`z.infer`), risikonya kecil. Uji ulang `apps/api`.
+- [x] Skema `User`/auth yang dipakai Nest dipindah ke `libs/contracts` bila dibagi dengan klien.
+- [x] Bila kontrak berubah, perbarui DTO Rust, C#, dan Kotlin (kewajiban ADR 0004).
+- [x] Logger: pilih satu, `libs/logger` (pino) naik ke v10 dan dipakai Nest, atau Nest tetap lokal.
+- [x] **Keluaran:** satu versi Zod dan satu logger. **Selesai bila:** `pnpm ls zod pino` menunjukkan satu versi mayor.
 
 ### Fase 8 — Docker & Render
 
-- [ ] `apps/nest/Dockerfile` dengan **build context = root repo** (lihat bagian 5).
-- [ ] `apps/nest/Dockerfile.dockerignore` (BuildKit membacanya) atau `.dockerignore` di root.
-- [ ] `render.yaml` di root: 1 service per aplikasi, `dockerfilePath` dan `dockerContext` eksplisit, `buildFilter` per service.
-- [ ] Pin pnpm ke versi `packageManager` (jangan `pnpm@latest` seperti Dockerfile lama).
+- [x] `apps/nest/Dockerfile` dengan **build context = root repo** (lihat bagian 5).
+- [x] `apps/nest/Dockerfile.dockerignore` (BuildKit membacanya) atau `.dockerignore` di root.
+- [x] `render.yaml` di root: 1 service per aplikasi, `dockerfilePath` dan `dockerContext` eksplisit, `buildFilter` per service.
+- [x] Pin pnpm ke versi `packageManager` (jangan `pnpm@latest` seperti Dockerfile lama).
 - [ ] **Keluaran:** image Nest terbangun dan `/health` merespons 200. **Selesai bila:** deploy Render pertama sukses.
 
 ### Fase 9 — Cutover & Pembersihan

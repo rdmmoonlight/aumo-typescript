@@ -1,11 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import { logger } from '../../lib/logger.js';
 
-/**
- * Logger request/response berbasis Pino.
- * Hanya mencatat path (tanpa query string) agar token OAuth tidak bocor ke log,
- * dan tidak pernah mencatat header sensitif seperti Authorization atau Cookie.
- */
 export function requestLoggerMiddleware(req: Request, res: Response, next: NextFunction): void {
   const start = performance.now();
   const method = req.method;

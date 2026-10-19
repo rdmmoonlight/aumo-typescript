@@ -5,9 +5,11 @@ import { apiReference } from '@scalar/nestjs-api-reference';
 import { AppModule } from './app.module.js';
 import { configureApp } from './app.setup.js';
 import { env } from './lib/env.js';
-import { logger } from './lib/logger.js';
 import { closeQueue, initQueueWorkers } from './lib/queue.js';
 import { redis } from './lib/redis.js';
+
+const loggerModulePath: string = '../../../libs/logger/src/index.js';
+const { logger } = await import(loggerModulePath);
 
 process.on('uncaughtException', (err: unknown) => {
   try {

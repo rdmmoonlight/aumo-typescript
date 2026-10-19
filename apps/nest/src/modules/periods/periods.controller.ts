@@ -1,57 +1,50 @@
-import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '../../common/guards/auth.guard.js';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { PeriodsService } from './periods.service.js';
 import type { CreatePeriodRequest } from './periods.types.js';
 
 @Controller('periods')
-@UseGuards(AuthGuard)
 export class PeriodsController {
   constructor(private readonly periodsService: PeriodsService) { }
 
   @Get()
-  async getPeriods(@Req() req: { user?: { id?: number }; authSession?: { user?: { id?: number } } }) {
-    const userId = req.user?.id || req.authSession?.user?.id;
-    return await this.periodsService.getPeriods(String(userId));
+  async getPeriods(@CurrentUser('id') userId: string) {
+    return await this.periodsService.getPeriods(userId);
   }
 
   @Get('open-info')
-  async getOpenPeriodInfo(@Req() req: { user?: { id?: number }; authSession?: { user?: { id?: number } } }) {
-    const userId = req.user?.id || req.authSession?.user?.id;
-    return await this.periodsService.getOpenPeriodInfo(String(userId));
+  async getOpenPeriodInfo(@CurrentUser('id') userId: string) {
+    return await this.periodsService.getOpenPeriodInfo(userId);
   }
 
   @Post()
   async createPeriod(
-    @Req() req: { user?: { id?: number }; authSession?: { user?: { id?: number } } },
+    @CurrentUser('id') userId: string,
     @Body() body: CreatePeriodRequest,
   ) {
-    const userId = req.user?.id || req.authSession?.user?.id;
-    return await this.periodsService.createPeriod(String(userId), body);
+    return await this.periodsService.createPeriod(userId, body);
   }
 
   @Post(':id/select')
   async selectPeriod(
-    @Req() req: { user?: { id?: number }; authSession?: { user?: { id?: number } } },
+    @CurrentUser('id') userId: string,
     @Param('id') id: string,
   ) {
-    const userId = req.user?.id || req.authSession?.user?.id;
     const periodId = parseInt(id, 10);
-    return await this.periodsService.selectPeriod(String(userId), periodId);
+    return await this.periodsService.selectPeriod(userId, periodId);
   }
 
   @Post('clear-selection')
-  async clearSelection(@Req() req: { user?: { id?: number }; authSession?: { user?: { id?: number } } }) {
-    const userId = req.user?.id || req.authSession?.user?.id;
-    return await this.periodsService.clearSelection(String(userId));
+  async clearSelection(@CurrentUser('id') userId: string) {
+    return await this.periodsService.clearSelection(userId);
   }
 
   @Post(':id/close')
   async closePeriod(
-    @Req() req: { user?: { id?: number }; authSession?: { user?: { id?: number } } },
+    @CurrentUser('id') userId: string,
     @Param('id') id: string,
   ) {
-    const userId = req.user?.id || req.authSession?.user?.id;
     const periodId = parseInt(id, 10);
-    return await this.periodsService.closePeriod(String(userId), periodId);
+    return await this.periodsService.closePeriod(userId, periodId);
   }
 }

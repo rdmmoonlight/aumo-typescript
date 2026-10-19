@@ -1,4 +1,9 @@
 {
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022"
+  },
   "extends": "../../tsconfig.json",
   "include": [
     "src/**/*"
