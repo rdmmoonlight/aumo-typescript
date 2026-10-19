@@ -9,6 +9,8 @@ WORKDIR /app
 # 2. Copy file manifest root yang berisi field "packageManager"
 COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
 
+COPY libs/logger/package.json libs/logger/
+
 # 3. Baru jalankan corepack prepare setelah package.json tersedia
 RUN corepack enable && corepack prepare
 
@@ -22,7 +24,7 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 
 # 7. Build spesifik aplikasi Nest
-RUN pnpm --filter @app/nest... build
+RUN pnpm --filter @app/nest build
 
 # 8. Isolasi dependency produksi
 RUN pnpm --filter @app/nest deploy --prod /app/pruned

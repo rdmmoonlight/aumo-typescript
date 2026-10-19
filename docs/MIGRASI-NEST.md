@@ -113,11 +113,11 @@
 
 ### Fase 9 — Cutover & Pembersihan
 
-- [ ] Uji asap: `/health`, register, login, `me`, periods.
-- [ ] Frontend diarahkan ke URL Nest baru (`CORS_ORIGINS`/`FRONTEND_URL` sudah mencakup origin-nya).
-- [ ] Hapus `/nest` dari repo aumo-finance hanya setelah persetujuan tertulis.
-- [ ] Tambah changeset dan perbarui ADR 0007 menjadi *Accepted*.
-- [ ] **Keluaran:** satu sumber kebenaran untuk Nest. **Selesai bila:** repo lama bebas dari `/nest`.
+- [x] Uji asap: `/health`, register, login, `me`, periods.
+- [x] Frontend diarahkan ke URL Nest baru (`CORS_ORIGINS`/`FRONTEND_URL` sudah mencakup origin-nya).
+- [x] Hapus `/nest` dari repo aumo-finance hanya setelah persetujuan tertulis.
+- [x] Tambah changeset dan perbarui ADR 0007 menjadi *Accepted*.
+- [x] **Keluaran:** satu sumber kebenaran untuk Nest. **Selesai bila:** repo lama bebas dari `/nest`.
 
 ## 5. Docker di Render pada Monorepo
 
