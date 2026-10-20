@@ -90,25 +90,25 @@ Dicek langsung ke `services/auth/pkg/handlers/handler.go` dan `apps/nest/src/mod
 - [x] `vitest.config.ts` root: `exclude` + `apps/analog/**`.
 - [x] `eslint.config.mjs` root: `ignores` + `apps/analog/**`.
 - [x] `nx.json`: tambah `outputs` target `build` (`{projectRoot}/dist`) agar cache Nx menyimpan hasil build.
-- [ ] **Keluaran:** CI hijau tanpa perubahan fungsional. **Selesai bila:** 3 workflow lolos.
+- [x] **Keluaran:** CI hijau tanpa perubahan fungsional. **Selesai bila:** 3 workflow lolos.
 
 ### Fase 3 — Salin Kode ke `apps/analog`
 
-- [ ] Salin: `src/`, `public/`, `scripts/`, `index.html`, `vite.config.ts`, `angular.json`, `tsconfig*.json`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`.
-- [ ] **Jangan** salin: `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `Dockerfile`, `nginx.conf`, `.dockerignore`.
-- [ ] `package.json`: nama `aumoan` → `@app/analog`, versi `0.0.0`, `private: true`; buang 8 dependensi tidak terpakai (bagian 3).
-- [ ] Hapus `src/server/middleware/auth.ts` (K13) dan `public/vite.svg`, `public/analog.svg` (sisa templat).
-- [ ] `tsconfig.app.json`: hapus `src/main.server.ts` dari `files`; hapus `include` ke `src/server/**`.
-- [ ] `.claude/skills` dan kunci `skills`/`permissions`: dipindah atau dibuang (keputusan tertulis di ADR 0008).
-- [ ] `pnpm install` di root, lalu `pnpm install --frozen-lockfile` harus lolos.
-- [ ] **Keluaran:** `apps/analog` ada di workspace. **Selesai bila:** `pnpm --filter @app/analog build` berhasil lokal dan menghasilkan `dist/client`.
+- [x] Salin: `src/`, `public/`, `scripts/`, `index.html`, `vite.config.ts`, `angular.json`, `tsconfig*.json`, `AGENTS.md`, `CLAUDE.md`, `.gitignore`.
+- [x] **Jangan** salin: `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `Dockerfile`, `nginx.conf`, `.dockerignore`.
+- [x] `package.json`: nama `aumoan` → `@app/analog`, versi `0.0.0`, `private: true`; buang 8 dependensi tidak terpakai (bagian 3).
+- [x] Hapus `src/server/middleware/auth.ts` (K13) dan `public/vite.svg`, `public/analog.svg` (sisa templat).
+- [x] `tsconfig.app.json`: hapus `src/main.server.ts` dari `files`; hapus `include` ke `src/server/**`.
+- [x] `.claude/skills` dan kunci `skills`/`permissions`: dipindah atau dibuang (keputusan tertulis di ADR 0008).
+- [x] `pnpm install` di root, lalu `pnpm install --frozen-lockfile` harus lolos.
+- [x] **Keluaran:** `apps/analog` ada di workspace. **Selesai bila:** `pnpm --filter @app/analog build` berhasil lokal dan menghasilkan `dist/client`.
 
 ### Fase 4 — Gerbang Mutu Analog di CI
 
-- [ ] Skrip `typecheck` (`tsc --noEmit`), `lint`, `test`, `build` ada di `apps/analog/package.json` sehingga `nx run-many` mencakupnya.
-- [ ] `lint`: buat `eslint.config.js` (typescript-eslint, globals browser).
-- [ ] `test`: tambah `jsdom` dan `@analogjs/vitest-angular`; skrip `vitest run`. `app.spec.ts` yang ada harus lolos.
-- [ ] `build` tidak lagi memanggil `clean` yang menghapus `node_modules/.cache` milik Nx (periksa `prebuild`).
+- [x] Skrip `typecheck` (`tsc --noEmit`), `lint`, `test`, `build` ada di `apps/analog/package.json` sehingga `nx run-many` mencakupnya.
+- [x] `lint`: buat `eslint.config.js` (typescript-eslint, globals browser).
+- [x] `test`: tambah `jsdom` dan `@analogjs/vitest-angular`; skrip `vitest run`. `app.spec.ts` yang ada harus lolos.
+- [x] `build` tidak lagi memanggil `clean` yang menghapus `node_modules/.cache` milik Nx (periksa `prebuild`).
 - [ ] **Keluaran:** `ci.yml` memvalidasi Analog. **Selesai bila:** 4 target hijau di GitHub Actions.
 
 ### Fase 5 — Kontrak ke `libs/contracts`
