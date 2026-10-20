@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { Injectable, inject, signal } from "@angular/core";
 import { Router } from "@angular/router";
-import { Observable, catchError, map, of, tap } from "rxjs";
+import { Observable, catchError, map, of, switchMap, tap } from "rxjs";
 
 import {
   AuthResponse,
@@ -12,6 +12,8 @@ import {
 } from "@app/contracts";
 import { API_URL } from "../core/config";
 
+const USER_NAME_KEY = "aumo_user_fullname";
+
 @Injectable({ providedIn: "root" })
 export class AuthService {
   private readonly http = inject(HttpClient);
@@ -19,6 +21,7 @@ export class AuthService {
 
   readonly user = signal<AuthUser | null>(null);
 
+  /** K1 & K2: Login dengan client: "web" dan pembacaan res.data */
   login(payload: Omit<LoginPayload, "client">): Observable<AuthResponse> {
     return this.http
       .post<AuthResponse>(`${API_URL}/auth/login`, {
@@ -29,11 +32,15 @@ export class AuthService {
         tap((res) => {
           if (res.data) {
             this.user.set(res.data);
+            if (res.data.fullName) {
+              localStorage.setItem(USER_NAME_KEY, res.data.fullName);
+            }
           }
-        }),
+        })
       );
   }
 
+  /** K4: Register otomatis memanggil login untuk mendapatkan cookie sesi */
   register(payload: Omit<RegisterPayload, "client">): Observable<AuthResponse> {
     return this.http
       .post<AuthResponse>(`${API_URL}/auth/register`, {
@@ -41,38 +48,39 @@ export class AuthService {
         client: "web",
       })
       .pipe(
-        tap((res) => {
-          if (res.data) {
-            this.user.set(res.data);
-          }
-        }),
+        switchMap(() =>
+          this.login({
+            email: payload.email,
+            password: payload.password,
+          })
+        )
       );
   }
 
-  /** Cek sesi aktif ke backend (cookie). true = sudah login. */
+  /** K3: Petakan klaim JWT dari /auth/me ke model AuthUser & ambil nama dari storage */
   loadSession(): Observable<boolean> {
     return this.http.get<MeResponse>(`${API_URL}/auth/me`).pipe(
       map((res) => {
         if (res.data) {
-          const currentName = this.user()?.name ?? "";
+          const savedName = localStorage.getItem(USER_NAME_KEY) ?? "";
           this.user.set({
             id: res.data.user_id,
             email: res.data.email,
-            name: currentName,
+            fullName: savedName,
           });
         }
         return !!res.data;
       }),
       catchError(() => {
-        this.user.set(null);
+        this.clearSession();
         return of(false);
-      }),
+      })
     );
   }
 
   logout(): void {
     const done = () => {
-      this.user.set(null);
+      this.clearSession();
       void this.router.navigateByUrl("/login");
     };
     this.http
@@ -82,10 +90,11 @@ export class AuthService {
 
   clearSession(): void {
     this.user.set(null);
+    localStorage.removeItem(USER_NAME_KEY);
   }
 }
 
-/** Ambil pesan error dari format { success:false, message, errors } milik backend. */
+/** Ambil pesan error dari format { success: false, message, errors } milik backend. */
 export function extractError(err: unknown): string {
   if (err instanceof HttpErrorResponse) {
     if (err.status === 0)
