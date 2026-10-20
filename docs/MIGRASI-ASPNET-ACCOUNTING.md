@@ -106,9 +106,9 @@ Dua implementasi periode hidup berdampingan selama pola duplikasi. Penanganannya
 
 ### 2.5 Tidak ikut disalin
 
-`AuthController`, `Services/Auth`, `Services/Identity`, Identity/JWT/Google di `ServiceCollectionExtensions`, Hangfire, Redis cache, Cloudinary, AWS S3, ClosedXML, ExcelDataReader, FFI Rust (`../axum`), `Migrations/`, serta controller non-akuntansi (`JournalEntry`, `Dashboard`, `Tools`, `Notifications`, `Settings`, `Core`, `Home`, `Avatars`, `Health`).
+`AuthController`, `Services/Auth`, `Services/Identity`, Identity/JWT/Google di `ServiceCollectionExtensions`, Hangfire, Redis cache, Cloudinary, AWS S3, ClosedXML, ExcelDataReader, FFI Rust (`../axum`), `Migrations/`, serta controller non-akuntansi (`JournalEntry`, `Dashboard`, `Tools`, `Notifications`, `Settings`, `Core`, `Home`, `Avatars`, `Health`). Controller tersebut diduplikasi ke `apps/nest`, lihat [`MIGRASI-ASPNET-NEST.md`](./MIGRASI-ASPNET-NEST.md).
 
-> Catatan: `JournalEntry` (input jurnal) di luar ruang lingkup dokumen ini. Laporan membaca tabel `GeneralJournal` yang diisi oleh modul tersebut. Bila nanti ikut dipindahkan, dokumen ini diperluas dengan fase tambahan.
+> Catatan: `JournalEntry` (input jurnal) di luar ruang lingkup dokumen ini; dipetakan ke `apps/nest` di `MIGRASI-ASPNET-NEST.md`. Laporan membaca tabel `GeneralJournal` yang diisi oleh modul tersebut. Bila nanti ikut dipindahkan, dokumen ini diperluas dengan fase tambahan.
 
 ## 3. Benturan Konfigurasi (Sumber vs Repo Tujuan)
 
