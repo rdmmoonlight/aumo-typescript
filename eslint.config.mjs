@@ -33,6 +33,10 @@ export default [
       globals: {
         ...globals.node,
       },
+      parserOptions: {
+        project: true,
+        tsconfigRootDir: __dirname, // Mengunci root dir ke posisi eslint.config.js
+      },
     },
     rules: {
       // Gunakan rule no-unused-vars milik TypeScript agar type/interface tidak dianggap error

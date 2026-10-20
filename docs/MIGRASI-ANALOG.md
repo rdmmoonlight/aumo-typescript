@@ -113,11 +113,11 @@ Dicek langsung ke `services/auth/pkg/handlers/handler.go` dan `apps/nest/src/mod
 
 ### Fase 5 — Kontrak ke `libs/contracts`
 
-- [ ] Buat `libs/contracts/src/auth.ts`: `LoginRequest`, `RegisterRequest`, `AuthUser`, `AuthResponse`, `MeResponse` (sesuai K1 sampai K5).
-- [ ] Buat `libs/contracts/src/periods.ts`: `Period`, `GetPeriodsResponse`, `OpenPeriodInfo`, `CreatePeriodRequest` (sesuai K6 sampai K9).
-- [ ] Analog memakai `import type` saja dari `@app/contracts`, agar Zod tidak masuk bundle browser.
-- [ ] Hapus `models/auth.models.ts`, `core/api/v1.d.ts`, `scripts/gen-api.mjs`, dan skrip `gen:api` (K11).
-- [ ] Bila kontrak berubah, perbarui DTO Rust, C#, dan Kotlin (kewajiban ADR 0004); jalankan `scripts/validate-contracts.ts`.
+- [x] Buat `libs/contracts/src/auth.ts`: `LoginRequest`, `RegisterRequest`, `AuthUser`, `AuthResponse`, `MeResponse` (sesuai K1 sampai K5).
+- [x] Buat `libs/contracts/src/periods.ts`: `Period`, `GetPeriodsResponse`, `OpenPeriodInfo`, `CreatePeriodRequest` (sesuai K6 sampai K9).
+- [x] Analog memakai `import type` saja dari `@app/contracts`, agar Zod tidak masuk bundle browser.
+- [x] Hapus `models/auth.models.ts`, `core/api/v1.d.ts`, `scripts/gen-api.mjs`, dan skrip `gen:api` (K11).
+- [x] Bila kontrak berubah, perbarui DTO Rust, C#, dan Kotlin (kewajiban ADR 0004); jalankan `scripts/validate-contracts.ts`.
 - [ ] **Keluaran:** satu sumber tipe untuk web. **Selesai bila:** `pnpm run typecheck` hijau dan Analog tidak punya tipe API lokal.
 
 ### Fase 6 — Env & Server Dev

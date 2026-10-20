@@ -1,13 +1,10 @@
-import { z } from 'zod';
+// libs/contracts/src/user.ts
 
-export const UserSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string().min(2),
-  email: z.string().email(),
-  createdAt: z.string().datetime()
-});
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: string;
+};
 
-export const CreateUserSchema = UserSchema.omit({ id: true, createdAt: true });
-
-export type User = z.infer<typeof UserSchema>;
-export type CreateUserInput = z.infer<typeof CreateUserSchema>;
+export type CreateUserInput = Omit<User, 'id' | 'createdAt'>;

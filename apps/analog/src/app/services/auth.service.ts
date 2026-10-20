@@ -3,14 +3,14 @@ import { Injectable, inject, signal } from "@angular/core";
 import { Router } from "@angular/router";
 import { Observable, catchError, map, of, tap } from "rxjs";
 
-import { API_URL } from "../core/config";
 import {
   AuthResponse,
   AuthUser,
   LoginPayload,
   MeResponse,
   RegisterPayload,
-} from "../models/auth.models";
+} from "@app/contracts";
+import { API_URL } from "../core/config";
 
 @Injectable({ providedIn: "root" })
 export class AuthService {
@@ -19,30 +19,36 @@ export class AuthService {
 
   readonly user = signal<AuthUser | null>(null);
 
-  login(payload: LoginPayload): Observable<AuthResponse> {
+  login(payload: Omit<LoginPayload, "client">): Observable<AuthResponse> {
     return this.http
       .post<AuthResponse>(`${API_URL}/auth/login`, {
         ...payload,
-        clientType: "web",
+        client: "web",
       })
-      .pipe(tap((res) => this.user.set(res.user)));
+      .pipe(tap((res) => this.user.set(res.data)));
   }
 
-  register(payload: RegisterPayload): Observable<AuthResponse> {
+  register(payload: Omit<RegisterPayload, "client">): Observable<AuthResponse> {
     return this.http
       .post<AuthResponse>(`${API_URL}/auth/register`, {
         ...payload,
-        clientType: "web",
+        client: "web",
       })
-      .pipe(tap((res) => this.user.set(res.user)));
+      .pipe(tap((res) => this.user.set(res.data)));
   }
 
   /** Cek sesi aktif ke backend (cookie). true = sudah login. */
   loadSession(): Observable<boolean> {
     return this.http.get<MeResponse>(`${API_URL}/auth/me`).pipe(
       map((res) => {
-        this.user.set(res.data?.user ?? null);
-        return !!res.data?.user;
+        if (res.data) {
+          this.user.set({
+            id: res.data.user_id,
+            email: res.data.email,
+            name: "", // Sesuaikan jika ada field name dari claims/session
+          });
+        }
+        return !!res.data;
       }),
       catchError(() => {
         this.user.set(null);
