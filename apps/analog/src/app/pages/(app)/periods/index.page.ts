@@ -126,13 +126,13 @@ export const routeMeta: RouteMeta = {
                 @for (period of periods(); track period.id) {
                   <tr
                     class="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/50"
-                    [class.bg-brand-50]="period.id === selectedPeriodId()"
+                    [class.bg-brand-50]="String(period.id) === String(selectedPeriodId())"
                   >
                     <td
                       class="px-6 py-4 font-semibold text-slate-900 dark:text-slate-100"
                     >
                       Bulan {{ period.month }} - {{ period.year }}
-                      @if (period.id === selectedPeriodId()) {
+                      @if (String(period.id) === String(selectedPeriodId())) {
                         <span
                           class="ml-2 text-xs font-normal text-brand-700 dark:text-brand-400"
                         >
@@ -164,7 +164,7 @@ export const routeMeta: RouteMeta = {
                     <td class="space-x-2 px-6 py-4 text-right">
                       <button
                         (click)="selectPeriod(period.id)"
-                        [disabled]="period.id === selectedPeriodId()"
+                        [disabled]="String(period.id) === String(selectedPeriodId())"
                         class="font-medium text-brand-700 hover:text-brand-900 hover:underline disabled:text-slate-400 dark:text-brand-400"
                       >
                         Pilih
@@ -310,8 +310,11 @@ export default class PeriodsPage implements OnInit {
   private readonly periodsService = inject(PeriodsService);
   private readonly fb = inject(FormBuilder);
 
+  // Expose String global ke template HTML
+  readonly String = String;
+
   readonly periods = signal<Period[]>([]);
-  readonly selectedPeriodId = signal<string | null>(null);
+  readonly selectedPeriodId = signal<string | number | null>(null);
   readonly isLoading = signal<boolean>(false);
   readonly isSubmitting = signal<boolean>(false);
   readonly openModal = signal<boolean>(false);
@@ -339,9 +342,8 @@ export default class PeriodsPage implements OnInit {
     this.isLoading.set(true);
     this.periodsService.getPeriods().subscribe({
       next: (res) => {
-        // K6: Membaca res.periods dan res.selectedPeriodId
         this.periods.set(res.periods || []);
-        this.selectedPeriodId.set(res.selectedPeriodId || null);
+        this.selectedPeriodId.set(res.selectedPeriodId != null ? String(res.selectedPeriodId) : null);
         this.isLoading.set(false);
       },
       error: () => this.isLoading.set(false),
@@ -350,7 +352,6 @@ export default class PeriodsPage implements OnInit {
 
   handleOpenModal(): void {
     this.openModal.set(true);
-    // K7: Panggil open-info lebih dulu untuk rekomendasi nilai form
     this.periodsService.getOpenInfo().subscribe({
       next: (res) => {
         if (res.success && res.data) {
@@ -370,21 +371,20 @@ export default class PeriodsPage implements OnInit {
     this.isSubmitting.set(true);
     const dto = this.form.getRawValue() as CreatePeriodDto;
 
-    // K7: Mengirim DTO sesuai CreatePeriodRequest
     this.periodsService.createPeriod(dto).subscribe({
       next: (res) => {
         this.isSubmitting.set(false);
         this.openModal.set(false);
-        this.serverMessage.set(res.message); // K9: Menampilkan pesan server
+        this.serverMessage.set(res.message);
         this.fetchPeriods();
       },
       error: () => this.isSubmitting.set(false),
     });
   }
 
-  selectPeriod(id: string): void {
-    // K9: Membaca pesan dari respons server
-    this.periodsService.selectPeriod(id).subscribe({
+  selectPeriod(id: string | number): void {
+    const idStr = id != null ? String(id) : '';
+    this.periodsService.selectPeriod(idStr).subscribe({
       next: (res) => {
         this.serverMessage.set(res.message);
         this.fetchPeriods();
@@ -393,7 +393,6 @@ export default class PeriodsPage implements OnInit {
   }
 
   clearSelection(): void {
-    // K9: Membaca pesan dari respons server
     this.periodsService.clearSelection().subscribe({
       next: (res) => {
         this.serverMessage.set(res.message);
@@ -402,11 +401,11 @@ export default class PeriodsPage implements OnInit {
     });
   }
 
-  closePeriod(id: string): void {
+  closePeriod(id: string | number): void {
     if (!confirm("Apakah Anda yakin ingin menutup periode ini?")) return;
 
-    // K9: Membaca pesan dari respons server
-    this.periodsService.closePeriod(id).subscribe({
+    const idStr = id != null ? String(id) : '';
+    this.periodsService.closePeriod(idStr).subscribe({
       next: (res) => {
         this.serverMessage.set(res.message);
         this.fetchPeriods();
