@@ -48,11 +48,11 @@ type Config struct {
 
 type Handler struct {
 	jwt   *tokens.JWTManager
-	users *store.Store
+	users store.Store
 	cfg   Config
 }
 
-func New(jwtMgr *tokens.JWTManager, users *store.Store, cfg Config) *Handler {
+func New(jwtMgr *tokens.JWTManager, users store.Store, cfg Config) *Handler {
 	if cfg.GoogleAuthURL == "" {
 		cfg.GoogleAuthURL = "https://accounts.google.com/o/oauth2/v2/auth"
 	}
@@ -272,13 +272,14 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "Gagal memproses kata sandi")
 		return
 	}
-	user, err := h.users.Create(req.Name, req.Email, hash)
+	user, err := h.users.Create(r.Context(), req.Name, req.Email, hash)
 	if errors.Is(err, store.ErrEmailTaken) {
 		writeError(w, http.StatusConflict, "Email sudah terdaftar")
 		return
 	}
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "Gagal mendaftarkan pengguna")
+		log.Printf("register: gagal menulis database: %v", err)
+		writeError(w, http.StatusServiceUnavailable, "Layanan database tidak tersedia")
 		return
 	}
 	writeJSON(w, http.StatusCreated, AuthResponse{Message: "Registration successful", Data: user})
@@ -295,9 +296,14 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	const invalid = "Email atau kata sandi salah"
-	user, err := h.users.FindByEmail(req.Email)
-	if err != nil || user.PasswordHash == "" {
+	user, err := h.users.FindByEmail(r.Context(), req.Email)
+	if errors.Is(err, store.ErrNotFound) || (err == nil && user.PasswordHash == "") {
 		writeError(w, http.StatusUnauthorized, invalid)
+		return
+	}
+	if err != nil {
+		log.Printf("login: gagal membaca database: %v", err)
+		writeError(w, http.StatusServiceUnavailable, "Layanan database tidak tersedia")
 		return
 	}
 	ok, err := password.Verify(req.Password, user.PasswordHash)
@@ -498,7 +504,12 @@ func (h *Handler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 3. Buat/ambil pengguna lokal, terbitkan JWT internal.
-	user := h.users.UpsertExternal("", gu.Name, gu.Email)
+	user, err := h.users.UpsertExternal(r.Context(), gu.Name, gu.Email)
+	if err != nil {
+		log.Printf("google upsert: %v", err)
+		writeError(w, http.StatusServiceUnavailable, "Layanan database tidak tersedia")
+		return
+	}
 	tokenStr, err := h.jwt.GenerateToken(user.ID, user.Email)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Failed to generate session token")

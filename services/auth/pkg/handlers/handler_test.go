@@ -19,7 +19,7 @@ func newHandler(cfg Config) *Handler {
 	if cfg.AllowedOrigins == nil {
 		cfg.AllowedOrigins = []string{"http://localhost:3000"}
 	}
-	return New(tokens.NewJWTManager(secret, time.Hour), store.New(), cfg)
+	return New(tokens.NewJWTManager(secret, time.Hour), store.NewMemory(), cfg)
 }
 
 func do(h http.Handler, method, path, body string, hdr map[string]string) *httptest.ResponseRecorder {

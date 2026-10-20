@@ -71,10 +71,24 @@ func main() {
 		origins = append(origins, o)
 	}
 
-	// 5. Inisialisasi Handler & Dependencies
+	// 5. Database wajib: auth tidak boleh berjalan tanpa penyimpanan permanen.
+	dsn := strings.TrimSpace(os.Getenv("DATABASE_URL"))
+	if dsn == "" {
+		log.Fatal("DATABASE_URL wajib diisi: layanan auth tidak berjalan tanpa database")
+	}
+	dbCtx, dbCancel := context.WithTimeout(context.Background(), 60*time.Second)
+	users, err := store.OpenPostgres(dbCtx, dsn)
+	dbCancel()
+	if err != nil {
+		log.Fatalf("Gagal menyiapkan database: %v", err)
+	}
+	defer users.Close()
+	log.Println("Database terhubung, skema auth siap")
+
+	// 6. Inisialisasi Handler & Dependencies
 	h := handlers.New(
 		tokens.NewJWTManager(jwtKey, 24*time.Hour),
-		store.New(),
+		users,
 		handlers.Config{
 			GoogleClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
 			GoogleClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
@@ -86,7 +100,7 @@ func main() {
 		},
 	)
 
-	// 6. Konfigurasi Server HTTP
+	// 7. Konfigurasi Server HTTP
 	addr := ":" + getenv("AUTH_PORT", "8080")
 	srv := &http.Server{
 		Addr:              addr,
@@ -97,7 +111,7 @@ func main() {
 		IdleTimeout:       60 * time.Second,
 	}
 
-	// 7. Jalankan Server di Goroutine terpisah
+	// 8. Jalankan Server di Goroutine terpisah
 	go func() {
 		log.Printf("Auth service listening on %s (env=%s)", addr, env)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -105,7 +119,7 @@ func main() {
 		}
 	}()
 
-	// 8. Graceful Shutdown listener (menunggu sinyal SIGINT / SIGTERM dari OS/Docker)
+	// 9. Graceful Shutdown listener (menunggu sinyal SIGINT / SIGTERM dari OS/Docker)
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit

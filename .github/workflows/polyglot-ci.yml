@@ -9,6 +9,20 @@ on:
 jobs:
   validate-all:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: auth
+          POSTGRES_PASSWORD: auth
+          POSTGRES_DB: authtest
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U auth -d authtest"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
 
@@ -68,6 +82,8 @@ jobs:
           cache-dependency-path: services/auth/go.sum
 
       - name: Build & Test Go Auth Service
+        env:
+          TEST_DATABASE_URL: postgres://auth:auth@localhost:5432/authtest?sslmode=disable
         run: |
           cd services/auth
           go mod tidy
