@@ -25,7 +25,13 @@ export class AuthService {
         ...payload,
         client: "web",
       })
-      .pipe(tap((res) => this.user.set(res.data)));
+      .pipe(
+        tap((res) => {
+          if (res.data) {
+            this.user.set(res.data);
+          }
+        }),
+      );
   }
 
   register(payload: Omit<RegisterPayload, "client">): Observable<AuthResponse> {
@@ -34,7 +40,13 @@ export class AuthService {
         ...payload,
         client: "web",
       })
-      .pipe(tap((res) => this.user.set(res.data)));
+      .pipe(
+        tap((res) => {
+          if (res.data) {
+            this.user.set(res.data);
+          }
+        }),
+      );
   }
 
   /** Cek sesi aktif ke backend (cookie). true = sudah login. */
@@ -42,10 +54,11 @@ export class AuthService {
     return this.http.get<MeResponse>(`${API_URL}/auth/me`).pipe(
       map((res) => {
         if (res.data) {
+          const currentName = this.user()?.name ?? "";
           this.user.set({
             id: res.data.user_id,
             email: res.data.email,
-            name: "", // Sesuaikan jika ada field name dari claims/session
+            name: currentName,
           });
         }
         return !!res.data;
