@@ -8,18 +8,17 @@ import { API_URL } from "./config";
 export const pingGuard: CanActivateFn = () => {
   const platformId = inject(PLATFORM_ID);
 
-  // Jika sedang berjalan di SSR/Server Build, skip ping
+  // Skip ping jika berjalan di SSR/Server
   if (!isPlatformBrowser(platformId)) {
     return true;
   }
 
   const http = inject(HttpClient);
-  const baseUrl = API_URL.endsWith("/") ? API_URL : `${API_URL}/`;
+  
+  // Clean base URL agar tidak ada trailing slash ganda
+  const cleanBaseUrl = API_URL.replace(/\/+$/, "");
+  const pingUrl = `${cleanBaseUrl}/api/health?_t=${Date.now()}`;
 
-  // Tambahkan query param timestamp agar URL selalu unik (membendung HTTP cache)
-  const pingUrl = `${baseUrl}?_t=${Date.now()}`;
-
-  // Tambahkan header anti-cache
   const headers = new HttpHeaders({
     "Cache-Control": "no-cache, no-store, must-revalidate",
     Pragma: "no-cache",
