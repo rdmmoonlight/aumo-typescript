@@ -16,6 +16,7 @@ export default [
       'dotnet/**',
       'native/**',
       'apps/nest/**',
+      "apps/analog"
     ],
   },
 

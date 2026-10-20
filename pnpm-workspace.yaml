@@ -8,3 +8,8 @@ allowBuilds:
   msgpackr-extract: true
   "@scarf/scarf": true
   nx: true
+  "@parcel/watcher": true
+  lmdb: true
+
+overrides:
+  '@app/cli': link:tools/cli

@@ -77,19 +77,19 @@ Dicek langsung ke `services/auth/pkg/handlers/handler.go` dan `apps/nest/src/mod
 
 ### Fase 1 — Baseline & Keputusan
 
-- [ ] Bekukan perubahan baru di `/analog` selama migrasi.
-- [ ] Tetapkan topologi: satu origin, prefix API `/api` (bagian 6).
-- [ ] Tetapkan Analog tetap SPA statis; SSR ditunda.
-- [ ] Catat di `docs/adr/0008-analog-frontend-masuk-monorepo.md` (status *Proposed*).
-- [ ] **Keluaran:** ADR 0008. **Selesai bila:** topologi dan batas lingkup tertulis.
+- [x] Bekukan perubahan baru di `/analog` selama migrasi.
+- [x] Tetapkan topologi: satu origin, prefix API `/api` (bagian 6).
+- [x] Tetapkan Analog tetap SPA statis; SSR ditunda.
+- [x] Catat di `docs/adr/0008-analog-frontend-masuk-monorepo.md` (status *Proposed*).
+- [x] **Keluaran:** ADR 0008. **Selesai bila:** topologi dan batas lingkup tertulis.
 
 ### Fase 2 — Penyelarasan Root (belum ada kode Analog)
 
-- [ ] `pnpm-workspace.yaml`: tambah `@parcel/watcher: true` dan `lmdb: true` pada `allowBuilds`.
-- [ ] `tsconfig.json` root: `exclude` + `apps/analog`.
-- [ ] `vitest.config.ts` root: `exclude` + `apps/analog/**`.
-- [ ] `eslint.config.mjs` root: `ignores` + `apps/analog/**`.
-- [ ] `nx.json`: tambah `outputs` target `build` (`{projectRoot}/dist`) agar cache Nx menyimpan hasil build.
+- [x] `pnpm-workspace.yaml`: tambah `@parcel/watcher: true` dan `lmdb: true` pada `allowBuilds`.
+- [x] `tsconfig.json` root: `exclude` + `apps/analog`.
+- [x] `vitest.config.ts` root: `exclude` + `apps/analog/**`.
+- [x] `eslint.config.mjs` root: `ignores` + `apps/analog/**`.
+- [x] `nx.json`: tambah `outputs` target `build` (`{projectRoot}/dist`) agar cache Nx menyimpan hasil build.
 - [ ] **Keluaran:** CI hijau tanpa perubahan fungsional. **Selesai bila:** 3 workflow lolos.
 
 ### Fase 3 — Salin Kode ke `apps/analog`
