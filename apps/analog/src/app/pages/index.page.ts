@@ -3,12 +3,10 @@ import { Component } from "@angular/core";
 import { RouterLink } from "@angular/router";
 
 import { FooterComponent } from "../components/footer.component";
-import { pingGuard } from "../core/ping.guard";
 import { Logo } from "../shared/logo";
 
 export const routeMeta: RouteMeta = {
   title: "Aumo Finance - Aplikasi Akuntansi",
-  canActivate: [pingGuard],
 };
 
 @Component({
