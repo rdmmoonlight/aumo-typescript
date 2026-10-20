@@ -109,7 +109,7 @@ Dicek langsung ke `services/auth/pkg/handlers/handler.go` dan `apps/nest/src/mod
 - [x] `lint`: buat `eslint.config.js` (typescript-eslint, globals browser).
 - [x] `test`: tambah `jsdom` dan `@analogjs/vitest-angular`; skrip `vitest run`. `app.spec.ts` yang ada harus lolos.
 - [x] `build` tidak lagi memanggil `clean` yang menghapus `node_modules/.cache` milik Nx (periksa `prebuild`).
-- [ ] **Keluaran:** `ci.yml` memvalidasi Analog. **Selesai bila:** 4 target hijau di GitHub Actions.
+- [x] **Keluaran:** `ci.yml` memvalidasi Analog. **Selesai bila:** 4 target hijau di GitHub Actions.
 
 ### Fase 5 — Kontrak ke `libs/contracts`
 
@@ -122,22 +122,22 @@ Dicek langsung ke `services/auth/pkg/handlers/handler.go` dan `apps/nest/src/mod
 
 ### Fase 6 — Env & Server Dev
 
-- [ ] `apps/analog/.env.example`: `VITE_API_URL=/api` (tanpa nilai rahasia).
-- [ ] `core/config.ts`: bawaan `/api`, bukan `http://localhost:5000`.
-- [ ] `vite.config.ts`: `server.proxy` `/api` → `http://localhost:10000` (hasil `docker compose up`), sehingga dev dan produksi memakai jalur yang sama.
-- [ ] Satukan port dev ke 3000 (`angular.json`, README).
-- [ ] `VITE_API_URL` dibaca **saat build**, bukan runtime; catat di dokumentasi.
+- [x] `apps/analog/.env.example`: `VITE_API_URL=/api` (tanpa nilai rahasia).
+- [x] `core/config.ts`: bawaan `/api`, bukan `http://localhost:5000`.
+- [x] `vite.config.ts`: `server.proxy` `/api` → `http://localhost:10000` (hasil `docker compose up`), sehingga dev dan produksi memakai jalur yang sama.
+- [x] Satukan port dev ke 3000 (`angular.json`, README).
+- [x] `VITE_API_URL` dibaca **saat build**, bukan runtime; catat di dokumentasi.
 - [ ] **Keluaran:** `pnpm --filter @app/analog dev` terhubung ke backend lokal. **Selesai bila:** login lokal berhasil dan cookie tersimpan.
 
 ### Fase 7 — Gateway & Docker (bagian 6)
 
-- [ ] `Dockerfile` root: tambah stage `builder-web` (Node 24, pnpm `12.14.0`, `--filter @app/analog...`, `ARG VITE_API_URL=/api`).
-- [ ] Stage akhir: salin `apps/analog/dist/client` ke `/usr/share/nginx/html`.
-- [ ] `nginx.conf`: API pindah ke prefix `/api/`; `/` menyajikan statis dengan `try_files` ke `/index.html`; `/health` tetap di root untuk Render.
-- [ ] `nest_proxy.conf`: tambah varian untuk `proxy_pass` ber-URI (pemotongan prefix).
-- [ ] Nest/Scalar: `servers` OpenAPI diisi `/api` agar "Try it" memakai prefix yang benar.
-- [ ] `render.yaml`: tambah `apps/analog/**` dan `libs/**` pada `buildFilter` (sudah ada `libs/**`).
-- [ ] `docker-compose.yml`: tidak berubah selain komentar alamat (`http://localhost:10000/`).
+- [x] `Dockerfile` root: tambah stage `builder-web` (Node 24, pnpm `12.14.0`, `--filter @app/analog...`, `ARG VITE_API_URL=/api`).
+- [x] Stage akhir: salin `apps/analog/dist/client` ke `/usr/share/nginx/html`.
+- [x] `nginx.conf`: API pindah ke prefix `/api/`; `/` menyajikan statis dengan `try_files` ke `/index.html`; `/health` tetap di root untuk Render.
+- [x] `nest_proxy.conf`: tambah varian untuk `proxy_pass` ber-URI (pemotongan prefix).
+- [x] Nest/Scalar: `servers` OpenAPI diisi `/api` agar "Try it" memakai prefix yang benar.
+- [x] `render.yaml`: tambah `apps/analog/**` dan `libs/**` pada `buildFilter` (sudah ada `libs/**`).
+- [x] `docker-compose.yml`: tidak berubah selain komentar alamat (`http://localhost:10000/`).
 - [ ] **Keluaran:** satu image berisi Go, Nest, dan web. **Selesai bila:** `docker compose up --build` menampilkan web di `/` dan Scalar di `/api/reference`.
 
 ### Fase 8 — Penyesuaian Halaman

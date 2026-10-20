@@ -1,8 +1,10 @@
 # Menjalankan image yang sama dengan Render (Dockerfile di root):
-# Nginx -> Go auth (8080) + NestJS (5000), satu port publik.
+# Nginx -> Go auth (8080) + NestJS (3000) + Web SPA (Nginx static)
 #
 #   docker compose up --build
-#   Scalar:  http://localhost:10000/reference
+#   Web:     http://localhost:10000/
+#   Scalar:  http://localhost:10000/api/reference
+#   API:     http://localhost:10000/api/
 services:
   app:
     build:
@@ -16,7 +18,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-ganti-dengan-rahasia-acak-minimal-32-karakter}
       DATABASE_URL: ${DATABASE_URL:?isi DATABASE_URL}
       REDIS_URL: ${REDIS_URL:-}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:10000}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       GOOGLE_REDIRECT_URL: ${GOOGLE_REDIRECT_URL:-http://localhost:10000/auth/google-callback}

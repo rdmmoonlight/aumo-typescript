@@ -4,6 +4,7 @@
 - prefix API `/api`
 - Analog tetap SPA statis
 - `.claude/skills` dan kunci `skills`/`permissions` dibuang
+- `VITE_API_URL` dibaca **saat build**, bukan runtime
 
 ```
 Browser ──► Nginx ($PORT)

@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Build context: root repo. Menjalankan Go auth + NestJS di belakang Nginx
+# Build context: root repo. Menjalankan Go auth + NestJS + Web di belakang Nginx
 # dalam satu container (Render hanya mengekspos satu port: $PORT).
 
 # ==========================================
@@ -34,7 +34,27 @@ RUN pnpm --filter "@app/nest..." build
 RUN pnpm --filter @app/nest deploy --prod /app/pruned
 
 # ==========================================
-# STAGE 3: Final image
+# STAGE 3: Build Web (@app/analog)
+# ==========================================
+FROM node:24-alpine AS builder-web
+WORKDIR /app
+RUN npm install -g pnpm@12.14.0
+
+ARG VITE_API_URL=/api
+ENV VITE_API_URL=${VITE_API_URL}
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/analog/package.json apps/analog/
+COPY libs/contracts/package.json libs/contracts/
+COPY libs/logger/package.json libs/logger/
+COPY libs/sdk/package.json libs/sdk/
+RUN pnpm install --frozen-lockfile --filter "@app/analog..."
+
+COPY . .
+RUN pnpm --filter "@app/analog..." build
+
+# ==========================================
+# STAGE 4: Final image
 # ==========================================
 FROM node:24-alpine AS runner
 RUN apk add --no-cache nginx supervisor
@@ -49,6 +69,9 @@ COPY --from=builder-go /build/go-auth-app /app/go-auth-app
 COPY --from=builder-nest /app/pruned/node_modules /app/nest/node_modules
 COPY --from=builder-nest /app/apps/nest/dist /app/nest/dist
 COPY --from=builder-nest /app/apps/nest/package.json /app/nest/package.json
+
+# Salin static assets Analog ke direktori web root Nginx
+COPY --from=builder-web /app/apps/analog/dist/client /usr/share/nginx/html
 
 COPY nginx.conf /etc/nginx/templates/gateway.conf
 COPY nest_proxy.conf /etc/nginx/nest_proxy.conf
