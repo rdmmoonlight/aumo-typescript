@@ -32,8 +32,8 @@ export class AuthService {
         tap((res) => {
           if (res.data) {
             this.user.set(res.data);
-            if (res.data.fullName) {
-              localStorage.setItem(USER_NAME_KEY, res.data.fullName);
+            if (res.data.name) {
+              localStorage.setItem(USER_NAME_KEY, res.data.name);
             }
           }
         })
@@ -66,7 +66,7 @@ export class AuthService {
           this.user.set({
             id: res.data.user_id,
             email: res.data.email,
-            fullName: savedName,
+            name: savedName,
           });
         }
         return !!res.data;
