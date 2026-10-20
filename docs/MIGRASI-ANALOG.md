@@ -156,16 +156,16 @@ Dicek langsung ke `services/auth/pkg/handlers/handler.go` dan `apps/nest/src/mod
 - [x] Cookie di belakang TLS Render: `COOKIE_SECURE` tetap `true`, header `X-Forwarded-Proto` diteruskan (sudah ada di `nginx.conf`).
 - [x] `FRONTEND_URL` diarahkan ke origin Render itu sendiri (tujuan redirect login Google).
 - [x] `GOOGLE_REDIRECT_URL` tetap `https://<service>.onrender.com/api/auth/google-callback`; **daftarkan ulang** di Google Cloud Console karena path berubah.
-- [ ] Hapus `/analog` dari repo aumo-finance **hanya setelah persetujuan tertulis**.
+- [x] Hapus `/analog` dari repo aumo-finance **hanya setelah persetujuan tertulis**.
 - [x] **Keluaran:** satu sumber kebenaran untuk web. **Selesai bila:** repo lama bebas dari `/analog`.
 
 ### Fase 10 — Pembersihan & Dokumentasi
 
-- [ ] Changeset untuk `@app/analog` dan `@app/contracts`.
-- [ ] ADR 0008 menjadi *Accepted*.
-- [ ] Perbarui `docs/DEPLOY-RENDER.md` (proses ke-4: web statis, alur `/api`), `README.md` root, dan `docs/ALUR-BACKEND.md` (rujukan "Next.js/Analog").
-- [ ] Catat daftar env final (`VITE_API_URL`) di `docs/`.
-- [ ] **Keluaran:** dokumentasi sinkron. **Selesai bila:** tidak ada rujukan ke jalur lama (`/auth/*` tanpa prefix untuk klien web).
+- [x] Changeset untuk `@app/analog` dan `@app/contracts`.
+- [x] ADR 0008 menjadi *Accepted*.
+- [x] Perbarui `docs/DEPLOY-RENDER.md` (proses ke-4: web statis, alur `/api`), `README.md` root, dan `docs/ALUR-BACKEND.md` (rujukan "Next.js/Analog").
+- [x] Catat daftar env final (`VITE_API_URL`) di `docs/`.
+- [x] **Keluaran:** dokumentasi sinkron. **Selesai bila:** tidak ada rujukan ke jalur lama (`/auth/*` tanpa prefix untuk klien web).
 
 ## 6. Topologi Deploy: Satu Origin
 

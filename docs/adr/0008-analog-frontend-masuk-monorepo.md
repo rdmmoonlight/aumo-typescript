@@ -1,4 +1,4 @@
-(status *Proposed*)
+(status *Accepted*.)
 
 - Bekukan perubahan baru di `/analog`
 - prefix API `/api`
