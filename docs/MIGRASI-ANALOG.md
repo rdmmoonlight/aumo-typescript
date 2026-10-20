@@ -118,7 +118,7 @@ Dicek langsung ke `services/auth/pkg/handlers/handler.go` dan `apps/nest/src/mod
 - [x] Analog memakai `import type` saja dari `@app/contracts`, agar Zod tidak masuk bundle browser.
 - [x] Hapus `models/auth.models.ts`, `core/api/v1.d.ts`, `scripts/gen-api.mjs`, dan skrip `gen:api` (K11).
 - [x] Bila kontrak berubah, perbarui DTO Rust, C#, dan Kotlin (kewajiban ADR 0004); jalankan `scripts/validate-contracts.ts`.
-- [ ] **Keluaran:** satu sumber tipe untuk web. **Selesai bila:** `pnpm run typecheck` hijau dan Analog tidak punya tipe API lokal.
+- [x] **Keluaran:** satu sumber tipe untuk web. **Selesai bila:** `pnpm run typecheck` hijau dan Analog tidak punya tipe API lokal.
 
 ### Fase 6 — Env & Server Dev
 
