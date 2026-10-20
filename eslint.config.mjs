@@ -35,7 +35,7 @@ export default [
       },
       parserOptions: {
         project: true,
-        tsconfigRootDir: __dirname, // Mengunci root dir ke posisi eslint.config.js
+        tsconfigRootDir: import.meta.dirname, // Mengunci root dir ke posisi eslint.config.mjs (ESM tidak punya __dirname)
       },
     },
     rules: {
