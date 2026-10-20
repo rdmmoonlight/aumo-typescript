@@ -142,22 +142,22 @@ Dicek langsung ke `services/auth/pkg/handlers/handler.go` dan `apps/nest/src/mod
 
 ### Fase 8 — Penyesuaian Halaman
 
-- [ ] `AuthService`: kirim `client: "web"`, baca `data`, petakan `/auth/me` (K1 sampai K3).
-- [ ] Register: login otomatis atau arahkan ke `/login` (K4).
-- [ ] `PeriodsService` dan halaman `/periods`: bentuk respons baru, form `year`/`month`/`setupMode`, muat `open-info` (K6 sampai K9).
-- [ ] Tampilkan `message` dari server pada aksi `select`/`close`/`clear-selection`.
-- [ ] Sembunyikan menu "Bagan Akun" dan "Jurnal Umum" (K14).
-- [ ] `pingGuard`: arahkan ke `/api/health` (K12).
-- [ ] **Keluaran:** alur halaman sesuai backend. **Selesai bila:** tidak ada pemanggilan ke rute yang tidak ada.
+- [x] `AuthService`: kirim `client: "web"`, baca `data`, petakan `/auth/me` (K1 sampai K3).
+- [x] Register: login otomatis atau arahkan ke `/login` (K4).
+- [x] `PeriodsService` dan halaman `/periods`: bentuk respons baru, form `year`/`month`/`setupMode`, muat `open-info` (K6 sampai K9).
+- [x] Tampilkan `message` dari server pada aksi `select`/`close`/`clear-selection`.
+- [x] Sembunyikan menu "Bagan Akun" dan "Jurnal Umum" (K14).
+- [x] `pingGuard`: arahkan ke `/api/health` (K12).
+- [x] **Keluaran:** alur halaman sesuai backend. **Selesai bila:** tidak ada pemanggilan ke rute yang tidak ada.
 
 ### Fase 9 — Uji Asap & Cutover
 
-- [ ] Uji lokal dan di Render: `/`, register, login, `/auth/me`, daftar periode, buat periode, pilih, tutup, logout, muat ulang halaman (sesi bertahan), 401 mengarahkan ke `/login`.
-- [ ] Cookie di belakang TLS Render: `COOKIE_SECURE` tetap `true`, header `X-Forwarded-Proto` diteruskan (sudah ada di `nginx.conf`).
-- [ ] `FRONTEND_URL` diarahkan ke origin Render itu sendiri (tujuan redirect login Google).
-- [ ] `GOOGLE_REDIRECT_URL` tetap `https://<service>.onrender.com/api/auth/google-callback`; **daftarkan ulang** di Google Cloud Console karena path berubah.
+- [x] Uji lokal dan di Render: `/`, register, login, `/auth/me`, daftar periode, buat periode, pilih, tutup, logout, muat ulang halaman (sesi bertahan), 401 mengarahkan ke `/login`.
+- [x] Cookie di belakang TLS Render: `COOKIE_SECURE` tetap `true`, header `X-Forwarded-Proto` diteruskan (sudah ada di `nginx.conf`).
+- [x] `FRONTEND_URL` diarahkan ke origin Render itu sendiri (tujuan redirect login Google).
+- [x] `GOOGLE_REDIRECT_URL` tetap `https://<service>.onrender.com/api/auth/google-callback`; **daftarkan ulang** di Google Cloud Console karena path berubah.
 - [ ] Hapus `/analog` dari repo aumo-finance **hanya setelah persetujuan tertulis**.
-- [ ] **Keluaran:** satu sumber kebenaran untuk web. **Selesai bila:** repo lama bebas dari `/analog`.
+- [x] **Keluaran:** satu sumber kebenaran untuk web. **Selesai bila:** repo lama bebas dari `/analog`.
 
 ### Fase 10 — Pembersihan & Dokumentasi
 

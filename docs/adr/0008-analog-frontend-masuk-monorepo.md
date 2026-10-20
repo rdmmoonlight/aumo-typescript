@@ -5,6 +5,7 @@
 - Analog tetap SPA statis
 - `.claude/skills` dan kunci `skills`/`permissions` dibuang
 - `VITE_API_URL` dibaca **saat build**, bukan runtime
+- /analog di repo lama sudah dihapus secara sadar dan suka rela
 
 ```
 Browser ──► Nginx ($PORT)
