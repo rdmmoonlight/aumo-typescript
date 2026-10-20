@@ -146,8 +146,13 @@ export default class HomePage implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
-          // Akses property array dari GetPeriodsResponse (misal: res.data)
-          this.periods.set(res?.data || []);
+          // Ambil array langsung atau sesuaikan jika berupa objek pembungkus
+          const periodsData = Array.isArray(res)
+            ? res
+            : (res as unknown as { periods?: Period[]; items?: Period[] }).periods ??
+              (res as unknown as { items?: Period[] }).items ??
+              [];
+          this.periods.set(periodsData);
           this.loading.set(false);
         },
         error: () => {
