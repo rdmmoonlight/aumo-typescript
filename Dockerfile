@@ -40,8 +40,11 @@ FROM node:24-alpine AS builder-web
 WORKDIR /app
 RUN npm install -g pnpm@12.14.0
 
-ARG VITE_API_URL=/api
-ENV VITE_API_URL=${VITE_API_URL}
+# Sengaja ENV (bukan ARG): web dan API satu origin lewat Nginx (/api).
+# Dengan ARG, Render meneruskan env var dashboard bernama sama ke build,
+# sehingga URL absolut lama (lintas origin) bisa ikut ter-bake ke bundel
+# dan semua request gagal dengan status 0 (CORS / SameSite).
+ENV VITE_API_URL=/api
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/analog/package.json apps/analog/

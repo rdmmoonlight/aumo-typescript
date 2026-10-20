@@ -270,6 +270,17 @@ Workspace yang di-deploy: `apps/nest`, `apps/analog`, `services/auth` (Go). `app
 | P8 | Tidak ada yang menangkap P7 di CI | `postbuild` menjalankan `scripts/verify-build.mjs`: gagal bila total JS < 100 KB atau `index.html` tanpa skrip modul. Diuji positif dan negatif |
 | P9 | `render.yaml` `buildFilter` tidak memuat `tsconfig.json` dan `.dockerignore`, padahal memengaruhi build | Ditambahkan |
 
+### Insiden Render: register gagal "Server tidak dapat dihubungi" (20 Okt 2026)
+
+Status 0 di browser berarti request tidak menerima respons HTTP (diblokir CORS/SameSite, URL tidak terjangkau, atau koneksi terputus). Log Render tidak memuat satu pun request `/api/auth/*` karena Nginx tidak mengirim access log ke stdout.
+
+| # | Tindakan | Alasan |
+| --- | --- | --- |
+| P10 | `nginx.conf`: `access_log /dev/stdout` dan `error_log /dev/stderr warn` | Setiap request ke gateway tampil di Render Logs |
+| P11 | `Dockerfile` stage web: `ENV VITE_API_URL=/api` (bukan `ARG`) | Render meneruskan env var dashboard ke build bila ada `ARG` bernama sama. Nilai absolut lama (mis. URL service API terpisah) ter-bake ke bundel, request jadi lintas origin dan cookie `SameSite=Lax` tidak terkirim |
+
+Cara memastikan penyebab pada deploy yang sedang berjalan: DevTools → Network → request `register` yang merah → lihat *Request URL*. Harus `https://<domain>/api/auth/register`. Bila domainnya berbeda, penyebabnya P11. Hapus `VITE_API_URL` dari Environment di dashboard Render.
+
 **Temuan terbuka (di luar dua butir Keluaran)**
 
 - [ ] **Fase 8 (K7):** form buat periode hanya mengirim `year`, `month`, `setupMode`. Untuk `CreateNew`, Nest menolak dengan "Account reference codes must be numeric" (respons HTTP 201 dengan `success:false`). Form perlu field kode akun kas/bank dan laba ditahan.
