@@ -13,6 +13,21 @@ export const routeMeta: RouteMeta = {
   imports: [ReactiveFormsModule],
   template: `
     <div class="space-y-6">
+      <!-- Notification Banner -->
+      @if (serverMessage()) {
+        <div
+          class="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-200"
+        >
+          <span class="text-sm font-medium">{{ serverMessage() }}</span>
+          <button
+            (click)="serverMessage.set(null)"
+            class="text-xs font-bold hover:underline"
+          >
+            Tutup
+          </button>
+        </div>
+      }
+
       <!-- Header Page -->
       <div
         class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
@@ -26,7 +41,7 @@ export const routeMeta: RouteMeta = {
           </p>
         </div>
         <div class="flex gap-2">
-          @if (selectedPeriod()) {
+          @if (selectedPeriodId()) {
             <button
               (click)="clearSelection()"
               [disabled]="isLoading()"
@@ -36,7 +51,7 @@ export const routeMeta: RouteMeta = {
             </button>
           }
           <button
-            (click)="openModal.set(true)"
+            (click)="handleOpenModal()"
             class="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
           >
             <svg
@@ -68,7 +83,7 @@ export const routeMeta: RouteMeta = {
               Periode Berjalan
             </span>
             <span class="text-lg font-bold">
-              {{ openPeriod()?.periodName }}
+              Bulan {{ openPeriod()?.month }} / {{ openPeriod()?.year }}
             </span>
           </div>
           <button
@@ -93,10 +108,9 @@ export const routeMeta: RouteMeta = {
               class="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-700 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-300"
             >
               <tr>
-                <th scope="col" class="px-6 py-4">Nama Periode</th>
-                <th scope="col" class="px-6 py-4">Rentang Waktu</th>
-                <th scope="col" class="px-6 py-4">Pemasukan</th>
-                <th scope="col" class="px-6 py-4">Pengeluaran</th>
+                <th scope="col" class="px-6 py-4">Periode</th>
+                <th scope="col" class="px-6 py-4">Tahun</th>
+                <th scope="col" class="px-6 py-4">Bulan</th>
                 <th scope="col" class="px-6 py-4">Status</th>
                 <th scope="col" class="px-6 py-4 text-right">Aksi</th>
               </tr>
@@ -104,7 +118,7 @@ export const routeMeta: RouteMeta = {
             <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
               @if (isLoading()) {
                 <tr>
-                  <td colspan="6" class="px-6 py-8 text-center text-slate-500">
+                  <td colspan="5" class="px-6 py-8 text-center text-slate-500">
                     Memuat data periode...
                   </td>
                 </tr>
@@ -112,13 +126,13 @@ export const routeMeta: RouteMeta = {
                 @for (period of periods(); track period.id) {
                   <tr
                     class="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/50"
-                    [class.bg-brand-50]="period.isSelected"
+                    [class.bg-brand-50]="period.id === selectedPeriodId()"
                   >
                     <td
                       class="px-6 py-4 font-semibold text-slate-900 dark:text-slate-100"
                     >
-                      {{ period.periodName }}
-                      @if (period.isSelected) {
+                      Bulan {{ period.month }} - {{ period.year }}
+                      @if (period.id === selectedPeriodId()) {
                         <span
                           class="ml-2 text-xs font-normal text-brand-700 dark:text-brand-400"
                         >
@@ -127,20 +141,13 @@ export const routeMeta: RouteMeta = {
                       }
                     </td>
                     <td class="px-6 py-4 text-slate-500 dark:text-slate-400">
-                      {{ period.startDate }} - {{ period.endDate }}
+                      {{ period.year }}
                     </td>
-                    <td
-                      class="px-6 py-4 font-medium text-emerald-600 dark:text-emerald-400"
-                    >
-                      Rp {{ (period.income || 0).toLocaleString("id-ID") }}
-                    </td>
-                    <td
-                      class="px-6 py-4 font-medium text-rose-600 dark:text-rose-400"
-                    >
-                      Rp {{ (period.expense || 0).toLocaleString("id-ID") }}
+                    <td class="px-6 py-4 text-slate-500 dark:text-slate-400">
+                      {{ period.month }}
                     </td>
                     <td class="px-6 py-4">
-                      @if (!period.isClosed) {
+                      @if (period.status === "OPEN") {
                         <span
                           class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20 dark:bg-emerald-950/50 dark:text-emerald-400"
                         >
@@ -157,12 +164,12 @@ export const routeMeta: RouteMeta = {
                     <td class="space-x-2 px-6 py-4 text-right">
                       <button
                         (click)="selectPeriod(period.id)"
-                        [disabled]="period.isSelected"
+                        [disabled]="period.id === selectedPeriodId()"
                         class="font-medium text-brand-700 hover:text-brand-900 hover:underline disabled:text-slate-400 dark:text-brand-400"
                       >
                         Pilih
                       </button>
-                      @if (!period.isClosed) {
+                      @if (period.status === "OPEN") {
                         <button
                           (click)="closePeriod(period.id)"
                           class="font-medium text-rose-600 hover:text-rose-800 hover:underline dark:text-rose-400"
@@ -175,7 +182,7 @@ export const routeMeta: RouteMeta = {
                 } @empty {
                   <tr>
                     <td
-                      colspan="6"
+                      colspan="5"
                       class="px-6 py-8 text-center text-slate-500"
                     >
                       Belum ada data periode keuangan.
@@ -226,51 +233,54 @@ export const routeMeta: RouteMeta = {
               (ngSubmit)="submitForm()"
               class="mt-4 space-y-4"
             >
-              <div>
-                <label
-                  for="periodName"
-                  class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
-                >
-                  Nama Periode
-                </label>
-                <input
-                  id="periodName"
-                  type="text"
-                  formControlName="periodName"
-                  placeholder="Contoh: Oktober 2026"
-                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-                />
-              </div>
-
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label
-                    for="startDate"
+                    for="year"
                     class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
                   >
-                    Tanggal Mulai
+                    Tahun
                   </label>
                   <input
-                    id="startDate"
-                    type="date"
-                    formControlName="startDate"
+                    id="year"
+                    type="number"
+                    formControlName="year"
                     class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   />
                 </div>
                 <div>
                   <label
-                    for="endDate"
+                    for="month"
                     class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
                   >
-                    Tanggal Selesai
+                    Bulan (1-12)
                   </label>
                   <input
-                    id="endDate"
-                    type="date"
-                    formControlName="endDate"
+                    id="month"
+                    type="number"
+                    min="1"
+                    max="12"
+                    formControlName="month"
                     class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label
+                  for="setupMode"
+                  class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300"
+                >
+                  Mode Setup
+                </label>
+                <select
+                  id="setupMode"
+                  formControlName="setupMode"
+                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                >
+                  <option value="CreateNew">Buat Baru (CreateNew)</option>
+                  <option value="LoadExisting">Gunakan Yang Ada (LoadExisting)</option>
+                </select>
               </div>
 
               <div class="mt-6 flex justify-end gap-3 pt-2">
@@ -283,7 +293,7 @@ export const routeMeta: RouteMeta = {
                 </button>
                 <button
                   type="submit"
-                  [disabled]="isSubmitting()"
+                  [disabled]="isSubmitting() || form.invalid"
                   class="rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800 disabled:opacity-50"
                 >
                   {{ isSubmitting() ? "Menyimpan..." : "Simpan Periode" }}
@@ -301,20 +311,24 @@ export default class PeriodsPage implements OnInit {
   private readonly fb = inject(FormBuilder);
 
   readonly periods = signal<Period[]>([]);
+  readonly selectedPeriodId = signal<string | null>(null);
   readonly isLoading = signal<boolean>(false);
   readonly isSubmitting = signal<boolean>(false);
   readonly openModal = signal<boolean>(false);
+  readonly serverMessage = signal<string | null>(null);
 
-  // Computed untuk membaca periode aktif / terpilih langsung dari list
-  readonly openPeriod = computed(() => this.periods().find((p) => !p.isClosed));
-  readonly selectedPeriod = computed(() =>
-    this.periods().find((p) => p.isSelected),
+  // Computed untuk membaca periode aktif langsung dari list
+  readonly openPeriod = computed(() =>
+    this.periods().find((p) => p.status === "OPEN"),
   );
 
   readonly form = this.fb.group({
-    periodName: ["", Validators.required],
-    startDate: ["", Validators.required],
-    endDate: ["", Validators.required],
+    year: [new Date().getFullYear(), [Validators.required, Validators.min(2000)]],
+    month: [
+      new Date().getMonth() + 1,
+      [Validators.required, Validators.min(1), Validators.max(12)],
+    ],
+    setupMode: ["CreateNew" as "CreateNew" | "LoadExisting", Validators.required],
   });
 
   ngOnInit(): void {
@@ -325,10 +339,28 @@ export default class PeriodsPage implements OnInit {
     this.isLoading.set(true);
     this.periodsService.getPeriods().subscribe({
       next: (res) => {
-        this.periods.set(res || []);
+        // K6: Membaca res.periods dan res.selectedPeriodId
+        this.periods.set(res.periods || []);
+        this.selectedPeriodId.set(res.selectedPeriodId || null);
         this.isLoading.set(false);
       },
       error: () => this.isLoading.set(false),
+    });
+  }
+
+  handleOpenModal(): void {
+    this.openModal.set(true);
+    // K7: Panggil open-info lebih dulu untuk rekomendasi nilai form
+    this.periodsService.getOpenInfo().subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.form.patchValue({
+            year: res.data.year,
+            month: res.data.month,
+            setupMode: res.data.setupMode || "CreateNew",
+          });
+        }
+      },
     });
   }
 
@@ -338,34 +370,47 @@ export default class PeriodsPage implements OnInit {
     this.isSubmitting.set(true);
     const dto = this.form.getRawValue() as CreatePeriodDto;
 
+    // K7: Mengirim DTO sesuai CreatePeriodRequest
     this.periodsService.createPeriod(dto).subscribe({
-      next: () => {
+      next: (res) => {
         this.isSubmitting.set(false);
         this.openModal.set(false);
-        this.form.reset();
+        this.serverMessage.set(res.message); // K9: Menampilkan pesan server
         this.fetchPeriods();
       },
       error: () => this.isSubmitting.set(false),
     });
   }
 
-  selectPeriod(id: number): void {
+  selectPeriod(id: string): void {
+    // K9: Membaca pesan dari respons server
     this.periodsService.selectPeriod(id).subscribe({
-      next: () => this.fetchPeriods(),
+      next: (res) => {
+        this.serverMessage.set(res.message);
+        this.fetchPeriods();
+      },
     });
   }
 
   clearSelection(): void {
+    // K9: Membaca pesan dari respons server
     this.periodsService.clearSelection().subscribe({
-      next: () => this.fetchPeriods(),
+      next: (res) => {
+        this.serverMessage.set(res.message);
+        this.fetchPeriods();
+      },
     });
   }
 
-  closePeriod(id: number): void {
+  closePeriod(id: string): void {
     if (!confirm("Apakah Anda yakin ingin menutup periode ini?")) return;
 
+    // K9: Membaca pesan dari respons server
     this.periodsService.closePeriod(id).subscribe({
-      next: () => this.fetchPeriods(),
+      next: (res) => {
+        this.serverMessage.set(res.message);
+        this.fetchPeriods();
+      },
     });
   }
 }
