@@ -1,5 +1,5 @@
 # Menjalankan image yang sama dengan Render (Dockerfile di root):
-# Nginx -> Go auth (8080) + NestJS (3000) + Web SPA (Nginx static)
+# Nginx -> Go auth (8080) + NestJS (5000) + Web SPA (Nginx static)
 #
 #   docker compose up --build
 #   Web:     http://localhost:10000/
@@ -21,6 +21,6 @@ services:
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:10000}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
-      GOOGLE_REDIRECT_URL: ${GOOGLE_REDIRECT_URL:-http://localhost:10000/auth/google-callback}
+      GOOGLE_REDIRECT_URL: ${GOOGLE_REDIRECT_URL:-http://localhost:10000/api/auth/google-callback}
       # HTTP biasa di lokal: cookie Secure tidak dikirim, matikan.
       COOKIE_SECURE: ${COOKIE_SECURE:-false}

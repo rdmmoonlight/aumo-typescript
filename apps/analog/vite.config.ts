@@ -15,6 +15,10 @@ export default defineConfig(() => ({
       ssr: false,
       static: true,
       prerender: { routes: [] },
+      // Prefix bawaan Analog adalah "api" (Nitro) dan akan menelan /api/* di
+      // dev sebelum proxy di bawah. Pindahkan ke prefix yang tidak dipakai
+      // agar /api sepenuhnya milik backend (Go auth + Nest).
+      apiPrefix: "analog-internal",
     }),
     tailwindcss(),
   ],
@@ -30,9 +34,13 @@ export default defineConfig(() => ({
   },
   server: {
     port: 3000,
+    // Dev memakai jalur yang sama dengan produksi: browser -> /api -> gateway
+    // Nginx (auth_request, pemotongan prefix, X-User-Id). Jalankan gateway
+    // lewat `docker compose up --build` (port 10000), atau ubah target
+    // dengan DEV_API_TARGET.
     proxy: {
       "/api": {
-        target: "http://localhost:5000",
+        target: process.env["DEV_API_TARGET"] ?? "http://localhost:10000",
         changeOrigin: true,
       },
     },

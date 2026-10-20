@@ -127,7 +127,7 @@ Dicek langsung ke `services/auth/pkg/handlers/handler.go` dan `apps/nest/src/mod
 - [x] `vite.config.ts`: `server.proxy` `/api` → `http://localhost:10000` (hasil `docker compose up`), sehingga dev dan produksi memakai jalur yang sama.
 - [x] Satukan port dev ke 3000 (`angular.json`, README).
 - [x] `VITE_API_URL` dibaca **saat build**, bukan runtime; catat di dokumentasi.
-- [ ] **Keluaran:** `pnpm --filter @app/analog dev` terhubung ke backend lokal. **Selesai bila:** login lokal berhasil dan cookie tersimpan.
+- [x] **Keluaran:** `pnpm --filter @app/analog dev` terhubung ke backend lokal. **Selesai bila:** login lokal berhasil dan cookie tersimpan.
 
 ### Fase 7 — Gateway & Docker (bagian 6)
 
@@ -138,7 +138,7 @@ Dicek langsung ke `services/auth/pkg/handlers/handler.go` dan `apps/nest/src/mod
 - [x] Nest/Scalar: `servers` OpenAPI diisi `/api` agar "Try it" memakai prefix yang benar.
 - [x] `render.yaml`: tambah `apps/analog/**` dan `libs/**` pada `buildFilter` (sudah ada `libs/**`).
 - [x] `docker-compose.yml`: tidak berubah selain komentar alamat (`http://localhost:10000/`).
-- [ ] **Keluaran:** satu image berisi Go, Nest, dan web. **Selesai bila:** `docker compose up --build` menampilkan web di `/` dan Scalar di `/api/reference`.
+- [x] **Keluaran:** satu image berisi Go, Nest, dan web. **Selesai bila:** `docker compose up --build` menampilkan web di `/` dan Scalar di `/api/reference`.
 
 ### Fase 8 — Penyesuaian Halaman
 
@@ -224,3 +224,36 @@ pnpm --filter @app/analog build        # hasil: apps/analog/dist/client
 docker compose up --build              # web: http://localhost:10000/  Scalar: /api/reference
 pnpm ls zod vitest                     # periksa versi ganda
 ```
+
+## 9. Hasil Verifikasi Lokal (20 Okt 2026)
+
+Dijalankan dengan Postgres 16, Go auth (`ENV=development`), Nest (`dist/main.js`), Nginx memakai `nginx.conf` dan `nest_proxy.conf` repo, serta hasil build Analog. Docker tidak tersedia di lingkungan uji; perilaku `docker compose` diverifikasi lewat komponen yang sama, bukan image-nya.
+
+| Uji | Hasil |
+| --- | --- |
+| `typecheck`, `lint`, `test`, `build` (root dan Analog) | Lolos |
+| `GET /` dan `/periods` (fallback SPA) | 200 `text/html` |
+| `GET /health` | 200 JSON dari Nest (sebelumnya jatuh ke HTML SPA) |
+| `GET /api/reference`, `/api/openapi.json` | 200 |
+| `POST /api/auth/register`, `/api/auth/login` | 201 / 200, cookie `auth_session` (HttpOnly, SameSite=Lax) |
+| `GET /api/auth/me`, `/api/periods` dengan cookie | 200 |
+| `GET /api/periods` tanpa cookie, setelah logout | 401 |
+| Login lewat dev server `:3000` (proxy ke gateway `:10000`) | 200, cookie tersimpan |
+
+**Perbaikan yang diperlukan agar dua Keluaran lolos**
+
+| # | Masalah | Perbaikan |
+| --- | --- | --- |
+| P1 | `/api/auth/*` (dipanggil Analog) melewati `auth_request`: login dan register selalu 401, `/api/auth/me` 404 dari Nest | `nginx.conf`: `location ^~ /api/auth/` ke Go dengan pemotongan prefix. `/auth/*` tanpa prefix tetap ada untuk klien lama |
+| P2 | `/health` di root jatuh ke fallback SPA (selalu 200), health check Render tidak menguji Nest | `nginx.conf`: `location = /health` ke Nest |
+| P3 | Dev: Analog memasang rute Nitro di prefix `/api`, sehingga proxy Vite tidak pernah dipakai | `vite.config.ts`: `apiPrefix: "analog-internal"` |
+| P4 | Dev: proxy menunjuk `:5000` tanpa pemotongan prefix dan tanpa `X-User-Id` | Target ke gateway `:10000` (dapat diganti `DEV_API_TARGET`) |
+| P5 | `.env.example` tercatat selesai tetapi tidak ada, dan `.gitignore` memuat `.env*` | Berkas dibuat; `!.env.example` ditambahkan |
+| P6 | Komentar dan bawaan `docker-compose.yml` masih menyebut port 3000 dan `/auth/google-callback` | Disamakan: 5000 dan `/api/auth/google-callback` |
+
+**Temuan terbuka (di luar dua butir Keluaran)**
+
+- [ ] **Fase 8 (K7):** form buat periode hanya mengirim `year`, `month`, `setupMode`. Untuk `CreateNew`, Nest menolak dengan "Account reference codes must be numeric" (respons HTTP 201 dengan `success:false`). Form perlu field kode akun kas/bank dan laba ditahan.
+- [ ] **Fase 8:** `getOpenInfo()` mengharap `res.data`, sedangkan Nest membalas objek datar (`availableCashAndBankAccounts`, dst.). Isi form dari `open-info` tidak pernah terjadi.
+- [ ] **Skema DB:** `apps/nest/drizzle/0000_*.sql` hanya membuat tabel Better Auth. Tabel `periods`, `chart-of-accounts`, `general-journal`, `selected_periods`, `transaction-counters` tidak ada di migrasi, sehingga `db:migrate` pada database kosong menghasilkan `/api/periods` 500. Perlu migrasi baru (`db:generate`) setelah diputuskan sumber skema tunggal.
+- [ ] **Minor:** Vite dev menampilkan peringatan `front-matter` (diminta `@analogjs/platform` di `optimizeDeps`); tidak berpengaruh pada build.

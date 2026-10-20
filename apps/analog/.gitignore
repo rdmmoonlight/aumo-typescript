@@ -48,3 +48,6 @@ Thumbs.db
 
 # Vitest output
 .vitest/
+
+# Contoh env boleh dilacak (tanpa nilai rahasia)
+!.env.example
