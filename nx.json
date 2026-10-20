@@ -2,43 +2,19 @@
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "targetDefaults": {
     "build": {
-      "dependsOn": [
-        "^build"
-      ],
-      "inputs": [
-        "production",
-        "^production"
-      ],
-      "outputs": [
-        "{projectRoot}/dist"
-      ]
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"],
+      "outputs": ["{projectRoot}/dist"]
     },
-    "typecheck": {
-      "dependsOn": [
-        "^build"
-      ]
-    },
-    "test": {
-      "dependsOn": [
-        "^build"
-      ]
-    },
-    "lint": {
-      "dependsOn": [
-        "^build"
-      ]
-    }
+    "typecheck": { "dependsOn": ["^build"] },
+    "test": { "dependsOn": ["^build"] },
+    "lint": { "dependsOn": ["^build"] }
   },
   "namedInputs": {
-    "default": [
-      "{projectRoot}/**/*",
-      "sharedGlobals"
-    ],
-    "production": [
-      "default",
-      "!{projectRoot}/**/*.spec.ts"
-    ],
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "production": ["default", "!{projectRoot}/**/*.spec.ts"],
     "sharedGlobals": []
   },
-  "analytics": true
+  "analytics": true,
+  "nxCloudId": "6ad6f18766884a87ccf4e54f"
 }
