@@ -251,6 +251,25 @@ Dijalankan dengan Postgres 16, Go auth (`ENV=development`), Nest (`dist/main.js`
 | P5 | `.env.example` tercatat selesai tetapi tidak ada, dan `.gitignore` memuat `.env*` | Berkas dibuat; `!.env.example` ditambahkan |
 | P6 | Komentar dan bawaan `docker-compose.yml` masih menyebut port 3000 dan `/auth/google-callback` | Disamakan: 5000 dan `/api/auth/google-callback` |
 
+### Audit Dockerfile Root (20 Okt 2026)
+
+Tiap stage direplikasi dengan konteks bersih (mengikuti `.dockerignore`), Node 24 dan pnpm `12.14.0`.
+
+| Stage | Hasil |
+| --- | --- |
+| 1. Go auth (`go mod download` + build statis, `-mod=readonly`) | Lolos, biner statis |
+| 2. Nest (`install --filter "@app/nest..."`, `build`, `deploy --prod`) | Lolos. Hasil `pruned/node_modules` dijalankan dengan susunan stage akhir: `/health` 200 |
+| 3. Web (`install --filter "@app/analog..."`, `build`) | **Gagal diam-diam, sudah diperbaiki** (lihat P7) |
+| 4. Runner (Alpine, Nginx, Supervisor) | Konfigurasi Nginx lolos `nginx -t` dan semua rute diuji. Start Nginx/Supervisor di Alpine sendiri tidak bisa diuji tanpa Docker |
+
+Workspace yang di-deploy: `apps/nest`, `apps/analog`, `services/auth` (Go). `apps/api` hanya tes dan `libs/*` hanya pustaka, jadi tidak perlu stage sendiri.
+
+| # | Masalah | Perbaikan |
+| --- | --- | --- |
+| P7 | `apps/analog/tsconfig.app.json` hanya memuat `src/main.server.ts` (tidak ada) dan tidak memuat `src/main.ts`. `vite build` sukses, tetapi Angular tidak dikompilasi: hanya 4 modul dan JS 0,7 KB (polyfill). Web produksi tampil kosong. Verifikasi "web di `/`" sebelumnya hanya memeriksa HTML | `files: ["src/main.ts"]`. Hasil: 328 modul, JS sekitar 500 KB |
+| P8 | Tidak ada yang menangkap P7 di CI | `postbuild` menjalankan `scripts/verify-build.mjs`: gagal bila total JS < 100 KB atau `index.html` tanpa skrip modul. Diuji positif dan negatif |
+| P9 | `render.yaml` `buildFilter` tidak memuat `tsconfig.json` dan `.dockerignore`, padahal memengaruhi build | Ditambahkan |
+
 **Temuan terbuka (di luar dua butir Keluaran)**
 
 - [ ] **Fase 8 (K7):** form buat periode hanya mengirim `year`, `month`, `setupMode`. Untuk `CreateNew`, Nest menolak dengan "Account reference codes must be numeric" (respons HTTP 201 dengan `success:false`). Form perlu field kode akun kas/bank dan laba ditahan.

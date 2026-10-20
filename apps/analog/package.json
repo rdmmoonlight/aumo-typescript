@@ -12,6 +12,7 @@
     "dev": "vite",
     "prebuild": "pnpm run clean",
     "build": "vite build",
+    "postbuild": "node scripts/verify-build.mjs",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist node_modules/.cache",
     "format": "prettier --write .",

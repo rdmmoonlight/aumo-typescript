@@ -18,6 +18,8 @@ services:
         - services/auth/**
         - libs/**
         - package.json
+        - tsconfig.json
+        - .dockerignore
         - pnpm-lock.yaml
         - pnpm-workspace.yaml
     envVars:
