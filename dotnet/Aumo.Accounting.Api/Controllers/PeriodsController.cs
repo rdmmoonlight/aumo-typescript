@@ -20,6 +20,7 @@ using Microsoft.EntityFrameworkCore;
 
 [ApiController]
 [Route("/periods")]
+[Authorize]
 
 public class PeriodsController : ControllerBase
 {

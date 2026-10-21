@@ -19,7 +19,7 @@ public class GatewayHeaderAuthTests : IClassFixture<WebApplicationFactory<Progra
     public async Task GetSummary_WithoutXUserIdHeader_Returns401Unauthorized()
     {
         // Act: Request tanpa header X-User-Id
-        var response = await _client.GetAsync("/api/summary");
+        var response = await _client.GetAsync("/reports/summary");
 
         // Assert: Harus 401 Unauthorized
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -33,7 +33,7 @@ public class GatewayHeaderAuthTests : IClassFixture<WebApplicationFactory<Progra
     public async Task GetSummary_WithInvalidXUserIdHeader_Returns401Unauthorized()
     {
         // Arrange
-        var request = new HttpRequestMessage(HttpMethod.Get, "/api/summary");
+        var request = new HttpRequestMessage(HttpMethod.Get, "/reports/summary");
         request.Headers.Add("X-User-Id", "invalid-guid-format");
 
         // Act
@@ -52,7 +52,7 @@ public class GatewayHeaderAuthTests : IClassFixture<WebApplicationFactory<Progra
     {
         // Arrange
         var validUserId = Guid.NewGuid().ToString();
-        var request = new HttpRequestMessage(HttpMethod.Get, "/api/summary");
+        var request = new HttpRequestMessage(HttpMethod.Get, "/reports/summary");
         request.Headers.Add("X-User-Id", validUserId);
 
         // Act

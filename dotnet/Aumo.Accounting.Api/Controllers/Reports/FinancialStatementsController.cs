@@ -17,6 +17,7 @@ using Aumo.Accounting.Api.Helpers;
 using Aumo.Accounting.Api.Models;
 using Aumo.Accounting.Api.Services;
 using Aumo.Accounting.Api.Services.Reports.FinancialStatements;
+using Aumo.Accounting.Api.Services.Reports.TrialBalances;
 
 
 using Microsoft.AspNetCore.Authorization;
@@ -27,27 +28,23 @@ using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
 [Route("/reports")]
+[Authorize]
 
 
 public class FinancialStatementsController : ControllerBase
 {
-    // Injected fields to bypass CS0103 and CS1977
-    private System.Collections.Generic.IEnumerable<dynamic> statementData = new dynamic[0];
-    private System.Collections.Generic.IEnumerable<dynamic> incomeStatement = new dynamic[0];
-    private System.Collections.Generic.IEnumerable<dynamic> re = new dynamic[0];
-    private System.Collections.Generic.IEnumerable<dynamic> rows = new dynamic[0];
-    private object journalEntryId = null;
-
     private readonly AppDbContext db;
     private readonly IFinancialStatementsService reportService;
+    private readonly ITrialBalanceService trialBalanceService;
     /// <summary>
     /// Controller API untuk mengelola Financial Statements.
     /// </summary>
 
-    public FinancialStatementsController(AppDbContext db, IFinancialStatementsService reportService)
+    public FinancialStatementsController(AppDbContext db, IFinancialStatementsService reportService, ITrialBalanceService trialBalanceService)
     {
         this.db = db;
         this.reportService = reportService;
+        this.trialBalanceService = trialBalanceService;
     }
     /// <summary>
     /// Mengambil data  Income Statement.
@@ -81,7 +78,8 @@ public class FinancialStatementsController : ControllerBase
             });
         }
 
-        dynamic rows = null; // await call refactored out
+        var rows = await this.trialBalanceService.BuildTrialBalanceRowsAsync(this.db, userId, period, true);
+        var statementData = this.reportService.BuildIncomeStatement(rows, period);
 
 
         return this.Ok(new
@@ -137,7 +135,7 @@ public class FinancialStatementsController : ControllerBase
             });
         }
 
-        dynamic statementData = await this.reportService.BuildRetainedEarningsAsync(this.db, userId, period);
+        var statementData = await this.reportService.BuildRetainedEarningsAsync(this.db, userId, period);
 
         return this.Ok(new
         {
@@ -190,7 +188,8 @@ public class FinancialStatementsController : ControllerBase
             });
         }
 
-        dynamic rows = null; // await call refactored out
+        var rows = await this.trialBalanceService.BuildTrialBalanceRowsAsync(this.db, userId, period, true);
+        var incomeStatement = this.reportService.BuildIncomeStatement(rows, period);
 
 
         var cashRows = rows.Where(r => r.Role == "CashAndEquivalents").ToList();

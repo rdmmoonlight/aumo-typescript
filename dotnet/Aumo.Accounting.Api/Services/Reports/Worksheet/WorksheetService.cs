@@ -14,6 +14,7 @@ using Aumo.Accounting.Api.DTOs;
 using Aumo.Accounting.Api.DTOs.Reports;
 using Aumo.Accounting.Api.Helpers;
 using Aumo.Accounting.Api.Models;
+using Aumo.Accounting.Api.Services.Reports.TrialBalances;
 
 
 using Microsoft.EntityFrameworkCore;
@@ -27,7 +28,7 @@ public interface IWorksheetService
         AppDbContext db,
         Guid userId,
         Period period,
-        IWorksheetService trialBalanceService);
+        ITrialBalanceService trialBalanceService);
 }
 /// <summary>
 /// Layanan logika bisnis untuk Worksheet Service.
@@ -35,13 +36,6 @@ public interface IWorksheetService
 
 public class WorksheetService : IWorksheetService
 {
-    // Injected fields to bypass CS0103 and CS1977
-    private System.Collections.Generic.IEnumerable<dynamic> statementData = new dynamic[0];
-    private System.Collections.Generic.IEnumerable<dynamic> incomeStatement = new dynamic[0];
-    private System.Collections.Generic.IEnumerable<dynamic> re = new dynamic[0];
-    private System.Collections.Generic.IEnumerable<dynamic> rows = new dynamic[0];
-    private object journalEntryId = null;
-
     /// <summary>
     /// Proses eksekusi kalkulasi Build Worksheet Rows Async.
     /// </summary>
@@ -49,7 +43,7 @@ public class WorksheetService : IWorksheetService
         AppDbContext db,
         Guid userId,
         Period period,
-        IWorksheetService trialBalanceService)
+        ITrialBalanceService trialBalanceService)
     {
         var unadjusted = await trialBalanceService.BuildTrialBalanceRowsAsync(db, userId, period, includeAdjusting: false);
         var adjusted = await trialBalanceService.BuildTrialBalanceRowsAsync(db, userId, period, includeAdjusting: true);

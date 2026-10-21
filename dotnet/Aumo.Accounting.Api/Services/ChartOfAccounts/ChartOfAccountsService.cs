@@ -78,16 +78,9 @@ public class ChartOfAccountsService(AppDbContext db) : IChartOfAccountsService
             {
                 if (accountBalances.TryGetValue(account.Id, out var balance))
                 {
-                    if (Enum.TryParse<AccountClassification>(account.Type.ToString(), true, out var classification))
-                    {
-                        account.Balance = AccountClassificationHelper.NormalBalanceIsDebit(classification)
-                            ? balance.TotalDebit - balance.TotalCredit
-                            : balance.TotalCredit - balance.TotalDebit;
-                    }
-                    else
-                    {
-                        account.Balance = balance.TotalDebit - balance.TotalCredit;
-                    }
+                    account.Balance = AccountClassificationHelper.NormalBalanceIsDebit(account.Type)
+                        ? balance.TotalDebit - balance.TotalCredit
+                        : balance.TotalCredit - balance.TotalDebit;
                 }
                 else
                 {
@@ -130,12 +123,12 @@ public class ChartOfAccountsService(AppDbContext db) : IChartOfAccountsService
             return Fail("Account category type is required.", 400);
         }
 
-        if (!Enum.TryParse<AccountClassification>(request.Type.ToString(), true, out var classification))
+        if (!AccountClassificationHelper.IsKnownAccountType(request.Type))
         {
             return Fail($"Invalid account classification category '{request.Type}'.", 400);
         }
 
-        if (!AccountClassificationHelper.ValidateReferenceNumber(classification.ToString()))
+        if (!AccountClassificationHelper.ValidateReferenceNumber(request.Type, request.ReferenceNumber))
         {
             return Fail($"Invalid reference number {request.ReferenceNumber} for category {request.Type}.", 400);
         }
@@ -196,12 +189,12 @@ public class ChartOfAccountsService(AppDbContext db) : IChartOfAccountsService
             return Fail("Account name is required.", 400);
         }
 
-        if (!Enum.TryParse<AccountClassification>(request.Type.ToString(), true, out var classification))
+        if (!AccountClassificationHelper.IsKnownAccountType(request.Type))
         {
             return Fail($"Invalid account classification category '{request.Type}'.", 400);
         }
 
-        if (!AccountClassificationHelper.ValidateReferenceNumber(classification.ToString()))
+        if (!AccountClassificationHelper.ValidateReferenceNumber(request.Type, request.ReferenceNumber))
         {
             return Fail($"Invalid reference number {request.ReferenceNumber} for category {request.Type}.", 400);
         }

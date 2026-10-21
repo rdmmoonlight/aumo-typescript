@@ -15,6 +15,8 @@ using Aumo.Accounting.Api.DTOs;
 using Aumo.Accounting.Api.Helpers;
 using Aumo.Accounting.Api.Models;
 using Aumo.Accounting.Api.Services;
+using Aumo.Accounting.Api.Services.Reports.TrialBalances;
+using Aumo.Accounting.Api.Services.Reports.Worksheet;
 
 
 using Microsoft.AspNetCore.Authorization;
@@ -25,13 +27,14 @@ using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
 [Route("/reports/worksheet")]
+[Authorize]
 
 
 public class WorksheetController : ControllerBase
 {
     private readonly AppDbContext db;
     private readonly IWorksheetService worksheetService;
-    private readonly IWorksheetService trialBalanceService;
+    private readonly ITrialBalanceService trialBalanceService;
     /// <summary>
     /// Controller API untuk mengelola Worksheet.
     /// </summary>
@@ -39,7 +42,7 @@ public class WorksheetController : ControllerBase
     public WorksheetController(
         AppDbContext db,
         IWorksheetService worksheetService,
-        IWorksheetService trialBalanceService)
+        ITrialBalanceService trialBalanceService)
     {
         this.db = db;
         this.worksheetService = worksheetService;

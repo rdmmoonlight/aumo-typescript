@@ -48,7 +48,7 @@ public class GatewayHeaderHandler : AuthenticationHandler<GatewayHeaderOptions>
 
     protected override async Task HandleChallengeAsync(AuthenticationProperties properties)
     {
-        Response.StatusCode = StatusCodes.Status401Created;
+        Response.StatusCode = StatusCodes.Status401Unauthorized;
         Response.ContentType = "application/json";
 
         var payload = new

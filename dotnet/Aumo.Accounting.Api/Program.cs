@@ -36,3 +36,10 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+/// <summary>
+/// Titik masuk aplikasi. Dideklarasikan partial agar dapat dipakai WebApplicationFactory pada tes integrasi.
+/// </summary>
+public partial class Program
+{
+}

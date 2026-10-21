@@ -15,7 +15,9 @@ using Aumo.Accounting.Api.DTOs.Reports;
 using Aumo.Accounting.Api.Helpers;
 using Aumo.Accounting.Api.Models;
 using Aumo.Accounting.Api.Services;
+using Aumo.Accounting.Api.Services.Reports.FinancialStatements;
 using Aumo.Accounting.Api.Services.Reports.Journals;
+using Aumo.Accounting.Api.Services.Reports.TrialBalances;
 
 
 using Microsoft.AspNetCore.Authorization;
@@ -28,26 +30,22 @@ namespace Aumo.Accounting.Api.Controllers.Reports;
 
 [ApiController]
 [Route("/reports/journals")]
+[Authorize]
 
 
 public class JournalsController : ControllerBase
 {
-    // Injected fields to bypass CS0103 and CS1977
-    private System.Collections.Generic.IEnumerable<dynamic> statementData = new dynamic[0];
-    private System.Collections.Generic.IEnumerable<dynamic> incomeStatement = new dynamic[0];
-    private System.Collections.Generic.IEnumerable<dynamic> re = new dynamic[0];
-    private System.Collections.Generic.IEnumerable<dynamic> rows = new dynamic[0];
-    private object journalEntryId = null;
-
     private readonly AppDbContext db;
     private readonly IJournalsService journalService;
-    private readonly IJournalsService reportService;
+    private readonly IFinancialStatementsService reportService;
+    private readonly ITrialBalanceService trialBalanceService;
     /// <summary>
     /// Controller API untuk mengelola Journal.
     /// </summary>
 
-    public JournalsController(AppDbContext db, IJournalsService journalService, IJournalsService reportService)
+    public JournalsController(AppDbContext db, IJournalsService journalService, IFinancialStatementsService reportService, ITrialBalanceService trialBalanceService)
     {
+        this.trialBalanceService = trialBalanceService;
         this.db = db;
         this.journalService = journalService;
         this.reportService = reportService;
@@ -283,7 +281,8 @@ public class JournalsController : ControllerBase
         }
 
         var groups = await this.journalService.BuildClosingJournalGroupsAsync(this.db, userId, period, this.reportService);
-        dynamic rows = null; // await call refactored out
+        var rows = await this.trialBalanceService.BuildTrialBalanceRowsAsync(this.db, userId, period, true);
+        var incomeStatement = this.reportService.BuildIncomeStatement(rows, period);
 
         var reAccountName = rows.Find(r => r.Role == "RetainedEarnings")?.AccountName ?? "Retained Earnings";
 

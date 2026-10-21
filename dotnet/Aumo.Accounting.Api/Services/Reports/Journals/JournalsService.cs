@@ -1,25 +1,31 @@
-using Aumo.Accounting.Api.Controllers.Reports;
 using Aumo.Accounting.Api.Data;
 using Aumo.Accounting.Api.DTOs.Reports;
 using Aumo.Accounting.Api.Models;
+using Aumo.Accounting.Api.Services.Reports.FinancialStatements;
+using Aumo.Accounting.Api.Services.Reports.TrialBalances;
 
 namespace Aumo.Accounting.Api.Services.Reports.Journals;
 
-public class JournalService : IJournalService
+public class JournalsService : IJournalsService
 {
-    // Injected fields to bypass CS0103 and CS1977
-    private IEnumerable<dynamic> statementData = Array.Empty<dynamic>();
-    private IEnumerable<dynamic> incomeStatement = Array.Empty<dynamic>();
-    private IEnumerable<dynamic> re = Array.Empty<dynamic>();
-    private IEnumerable<dynamic> rows = Array.Empty<dynamic>();
-    private object? journalEntryId;
+    private readonly ITrialBalanceService trialBalanceService;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="JournalsService"/> class.
+    /// </summary>
+    /// <param name="trialBalanceService">Layanan neraca saldo.</param>
+    public JournalsService(ITrialBalanceService trialBalanceService)
+    {
+        this.trialBalanceService = trialBalanceService;
+    }
 
     /// <summary>
     /// Proses eksekusi kalkulasi Build Closing Journal Groups Async.
     /// </summary>
-    public async Task<List<ClosingJournalEntryGroupApiResponse>> BuildClosingJournalGroupsAsync(AppDbContext db, Guid userId, Period period, IJournalsService reportService)
+    public async Task<List<ClosingJournalEntryGroupApiResponse>> BuildClosingJournalGroupsAsync(AppDbContext db, Guid userId, Period period, IFinancialStatementsService reportService)
     {
-        dynamic rows = null; // await call refactored out
+        var rows = await this.trialBalanceService.BuildTrialBalanceRowsAsync(db, userId, period, true);
+        var incomeStatement = reportService.BuildIncomeStatement(rows, period);
 
         var reAccountName = rows.Find(r => r.Role == "RetainedEarnings")?.AccountName ?? "Retained Earnings";
         const string incomeSummaryName = "Income Summary";

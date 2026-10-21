@@ -8,7 +8,6 @@ using System.Security.Claims;
 using Aumo.Accounting.Api.Data;
 using Aumo.Accounting.Api.DTOs;
 using Aumo.Accounting.Api.Models;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 /// <summary>
 /// Layanan logika bisnis untuk Summary Service.
@@ -16,15 +15,24 @@ using Microsoft.EntityFrameworkCore;
 
 public class SummaryService : ISummaryService
 {
-    private readonly AppDbContext? context;
-    private readonly UserManager<string>? userManager;
+    private readonly AppDbContext context;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SummaryService"/> class.
+    /// </summary>
+    /// <param name="context">Database context.</param>
+    public SummaryService(AppDbContext context)
+    {
+        this.context = context;
+    }
+
     /// <summary>
     /// Mengambil data  Summary Async.
     /// </summary>
 
     public async Task<SummaryDto?> GetSummaryAsync(ClaimsPrincipal userPrincipal)
     {
-        var userId = await this.ResolveUserIdAsync(userPrincipal);
+        var userId = ResolveUserId(userPrincipal);
         if (userId == null)
         {
             return null;
@@ -61,7 +69,7 @@ public class SummaryService : ISummaryService
         // 3. Hitung COA aktif
         var activeCoaCount = await this.context.ChartOfAccounts
             .AsNoTracking()
-            .CountAsync();
+            .CountAsync(c => c.UserId == uid && c.IsActive);
 
         return new SummaryDto
         {
@@ -73,22 +81,12 @@ public class SummaryService : ISummaryService
         };
     }
 
-    private async Task<Guid?> ResolveUserIdAsync(ClaimsPrincipal userPrincipal)
+    private static Guid? ResolveUserId(ClaimsPrincipal userPrincipal)
     {
-        var user = await this.userManager.GetUserAsync(userPrincipal);
-        if (user != null)
-        {
-            return null;
-        }
+        var userIdClaim = userPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var userIdClaim = userPrincipal.FindFirstValue(ClaimTypes.NameIdentifier)
-                         ?? userPrincipal.FindFirstValue(System.IdentityModel.Tokens.Jwt.System.IdentityModel.Tokens.Jwt.System.IdentityModel.Tokens.Jwt.System.IdentityModel.Tokens.Jwt.System.System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub);
-
-        if (!string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var parsedGuid))
-        {
-            return parsedGuid;
-        }
-
-        return null;
+        return !string.IsNullOrEmpty(userIdClaim) && Guid.TryParse(userIdClaim, out var parsedGuid)
+            ? parsedGuid
+            : null;
     }
 }

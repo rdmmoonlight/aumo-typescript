@@ -11,6 +11,7 @@ using Aumo.Accounting.Api.DTOs;
 using Aumo.Accounting.Api.Helpers;
 using Aumo.Accounting.Api.Models;
 using Aumo.Accounting.Api.Services.Reports.GeneralLedgers;
+using Aumo.Accounting.Api.Services.Reports.Journals;
 using Microsoft.EntityFrameworkCore;
 
 /// <summary>
@@ -18,21 +19,14 @@ using Microsoft.EntityFrameworkCore;
 /// </summary>
 public class PeriodsService : IPeriodsService
 {
-    // Injected fields to bypass CS0103 and CS1977
-    private System.Collections.Generic.IEnumerable<dynamic> statementData = new dynamic[0];
-    private System.Collections.Generic.IEnumerable<dynamic> incomeStatement = new dynamic[0];
-    private System.Collections.Generic.IEnumerable<dynamic> re = new dynamic[0];
-    private System.Collections.Generic.IEnumerable<dynamic> rows = new dynamic[0];
-    private object journalEntryId = null;
-
     private readonly AppDbContext db;
-    private readonly dynamic txNumberService;
+    private readonly ITransactionNumberService txNumberService;
     private readonly IGeneralLedgersService glService;
 
     /// <summary>
     /// Inisialisasi dependensi PeriodsService.
     /// </summary>
-    public PeriodsService(AppDbContext db, dynamic txNumberService, IGeneralLedgersService glService)
+    public PeriodsService(AppDbContext db, ITransactionNumberService txNumberService, IGeneralLedgersService glService)
     {
         this.db = db;
         this.txNumberService = txNumberService;
@@ -261,22 +255,23 @@ public class PeriodsService : IPeriodsService
                     {
                         var transactionNumber = await this.txNumberService.GenerateAsync(userId, "General", startDate);
 
-                        var openingLines = new List<dynamic>();
+                        var openingLines = new List<GeneralJournalWriter.Line>();
                         if (cashBalance != 0)
                         {
-                            openingLines.Add(new { AccountId = cashAccount.Id, Description = "Saldo Awal", Debit = cashBalance, Credit = 0m });
+                            openingLines.Add(new GeneralJournalWriter.Line(cashAccount.Id, "Saldo Awal", cashBalance, 0));
                         }
 
                         if (bankBalance != 0)
                         {
-                            openingLines.Add(new { AccountId = bankAccount.Id, Description = "Saldo Awal", Debit = bankBalance, Credit = 0m });
+                            openingLines.Add(new GeneralJournalWriter.Line(bankAccount.Id, "Saldo Awal", bankBalance, 0));
                         }
 
-                        openingLines.Add(new { AccountId = retainedAccount.Id, Description = "Saldo Awal", Debit = 0m, Credit = totalOpeningBalance });
+                        openingLines.Add(new GeneralJournalWriter.Line(retainedAccount.Id, "Saldo Awal", 0, totalOpeningBalance));
 
-                        int journalEntryId = 1;
-
-                        // Simpan entri jurnal jika ada helper internal
+                        int journalEntryId = await GeneralJournalWriter.NextJournalEntryIdAsync(this.db);
+                        this.db.GeneralJournals.AddRange(GeneralJournalWriter.BuildRows(
+                            journalEntryId, userId, transactionNumber, "General",
+                            startDate, DateTime.UtcNow, null, openingLines));
                         await this.db.SaveChangesAsync();
                     }
 
@@ -389,14 +384,15 @@ public class PeriodsService : IPeriodsService
 
         var transactionNumber = await this.txNumberService.GenerateAsync(userId, "General", startDate);
 
-        var openingLines = balances.Select(b => new
-        {
-            AccountId = b.Account.Id,
-            Description = "Saldo Awal",
-            Debit = b.Signed > 0 ? b.Signed : 0m,
-            Credit = b.Signed < 0 ? -b.Signed : 0m,
-        }).ToList();
-
+        var openingLines = balances.Select(b => new GeneralJournalWriter.Line(
+            b.Account.Id,
+            "Saldo Awal",
+            b.Signed > 0 ? b.Signed : 0m,
+            b.Signed < 0 ? -b.Signed : 0m)).ToList();
+        int journalEntryId = await GeneralJournalWriter.NextJournalEntryIdAsync(this.db);
+        this.db.GeneralJournals.AddRange(GeneralJournalWriter.BuildRows(
+            journalEntryId, userId, transactionNumber, "General",
+            startDate, DateTime.UtcNow, null, openingLines));
         await this.db.SaveChangesAsync();
 
         return new OpeningResult(balances.Count, null);

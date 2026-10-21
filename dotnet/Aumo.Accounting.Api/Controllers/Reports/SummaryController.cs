@@ -17,7 +17,6 @@ using Aumo.Accounting.Api.Services;
 
 
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 /// <summary>
@@ -26,20 +25,19 @@ using Microsoft.EntityFrameworkCore;
 
 [ApiController]
 [Route("reports/[controller]")]
+[Authorize]
 
 
 public class SummaryController : ControllerBase
 {
     private readonly AppDbContext context;
-    private readonly UserManager<string> userManager;
     /// <summary>
     /// Controller API untuk mengelola Summary.
     /// </summary>
 
-    public SummaryController(AppDbContext context, UserManager<string> userManager)
+    public SummaryController(AppDbContext context)
     {
         this.context = context;
-        this.userManager = userManager;
     }
     /// <summary>
     /// Mengambil data  Summary.
@@ -48,22 +46,10 @@ public class SummaryController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetSummary()
     {
-        var user = await this.userManager.GetUserAsync(this.User);
-
-        Guid userId;
-        if (user != null)
+        var userIdClaim = this.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
         {
-            userId = Guid.TryParse(user, out var g) ? g : Guid.Empty;
-        }
-        else
-        {
-            var userIdClaim = this.User.FindFirstValue(ClaimTypes.NameIdentifier)
-                             ?? this.User.FindFirstValue(System.IdentityModel.Tokens.Jwt.System.IdentityModel.Tokens.Jwt.System.IdentityModel.Tokens.Jwt.System.IdentityModel.Tokens.Jwt.System.System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub);
-
-            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out userId))
-            {
-                return this.Unauthorized(new { success = false, message = "User session expired or invalid." });
-            }
+            return this.Unauthorized(new { success = false, message = "User session expired or invalid." });
         }
 
         // 1. Cari periode yang sedang dipilih oleh user (IsSelected == true)

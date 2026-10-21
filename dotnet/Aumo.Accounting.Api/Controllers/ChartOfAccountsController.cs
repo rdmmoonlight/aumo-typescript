@@ -32,6 +32,7 @@ using Microsoft.EntityFrameworkCore;
 
 [ApiController]
 [Route("/chart-of-accounts")]
+[Authorize]
 
 
 public class ChartOfAccountsController : ControllerBase

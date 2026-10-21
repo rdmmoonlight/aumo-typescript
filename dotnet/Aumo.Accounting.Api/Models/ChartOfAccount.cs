@@ -1,4 +1,4 @@
-﻿// <copyright file="ChartOfAccount.cs" company="PlaceholderCompany">
+// <copyright file="ChartOfAccount.cs" company="PlaceholderCompany">
 // Copyright (c) PlaceholderCompany. All rights reserved.
 // </copyright>
 
@@ -55,7 +55,7 @@ public partial class ChartOfAccount
     /// <summary>
     /// Mewakili Display Label.
     /// </summary>
-    public string DisplayLabel => $"{this.ReferenceNumber} {this.AccountName}";
+    public string DisplayLabel => $"{this.ReferenceNumber} - {this.AccountName}";
 
     /// <summary>
     /// Mewakili General Journals.

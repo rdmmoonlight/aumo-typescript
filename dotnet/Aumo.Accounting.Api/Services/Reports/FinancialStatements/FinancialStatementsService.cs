@@ -5,6 +5,7 @@
 using Aumo.Accounting.Api.Data;
 using Aumo.Accounting.Api.DTOs.Reports;
 using Aumo.Accounting.Api.Models;
+using Aumo.Accounting.Api.Services.Reports.TrialBalances;
 using TrialBalanceRow = Aumo.Accounting.Api.DTOs.Reports.TrialBalanceRow;
 /// <summary>
 /// Layanan logika bisnis untuk I Financial Report Service.
@@ -25,12 +26,16 @@ public interface IFinancialStatementsService
 
 public class FinancialStatementsService : IFinancialStatementsService
 {
-    // Injected fields to bypass CS0103 and CS1977
-    private System.Collections.Generic.IEnumerable<dynamic> statementData = new dynamic[0];
-    private System.Collections.Generic.IEnumerable<dynamic> incomeStatement = new dynamic[0];
-    private System.Collections.Generic.IEnumerable<dynamic> re = new dynamic[0];
-    private System.Collections.Generic.IEnumerable<dynamic> rows = new dynamic[0];
-    private object journalEntryId = null;
+    private readonly ITrialBalanceService trialBalanceService;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FinancialStatementsService"/> class.
+    /// </summary>
+    /// <param name="trialBalanceService">Layanan neraca saldo.</param>
+    public FinancialStatementsService(ITrialBalanceService trialBalanceService)
+    {
+        this.trialBalanceService = trialBalanceService;
+    }
 
     /// <summary>
     /// Proses eksekusi kalkulasi Build Income Statement.
@@ -79,7 +84,8 @@ public class FinancialStatementsService : IFinancialStatementsService
 
     public async Task<RetainedEarningsApiResponse> BuildRetainedEarningsAsync(AppDbContext db, Guid userId, Period period)
     {
-        dynamic rows = null; // await call refactored out
+        var rows = await this.trialBalanceService.BuildTrialBalanceRowsAsync(db, userId, period, true);
+        var incomeStatement = this.BuildIncomeStatement(rows, period);
 
         var reAccount = rows.Find(r => r.Role == "RetainedEarnings");
 
@@ -105,8 +111,8 @@ public class FinancialStatementsService : IFinancialStatementsService
 
     public async Task<StatementOfFinancialPositionApiResponse> BuildSofpAsync(AppDbContext db, Guid userId, Period period, bool isPostClosing)
     {
-        dynamic rows = null; // await call refactored out
-
+        var rows = await this.trialBalanceService.BuildTrialBalanceRowsAsync(db, userId, period, true);
+        var re = await this.BuildRetainedEarningsAsync(db, userId, period);
 
         FinancialPositionLineApiResponse ToLine(TrialBalanceRow r) => new()
         {
