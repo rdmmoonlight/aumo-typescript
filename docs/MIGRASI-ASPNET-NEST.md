@@ -134,11 +134,11 @@ apps/nest/src/test/<nama>.test.ts
 
 ### Fase 2 — Kerangka dan Konvensi Modul
 
-- [ ] Tambah dependensi: `multer` dan `@types/multer`, `exceljs`.
-- [ ] Buat generator kerangka modul (atau template) sesuai bagian 5.
-- [ ] Seragamkan bentuk respons dan penanganan error dengan sumber (`{ success, message }`).
-- [ ] Guard `X-User-Id` dipakai seragam. Rute publik ditandai eksplisit.
-- [ ] **Keluaran:** kerangka modul kosong lolos CI. **Selesai bila:** `lint`, `typecheck`, `test`, `build` hijau.
+- [x] Tambah dependensi: `multer` dan `@types/multer`, `exceljs`.
+- [x] Buat generator kerangka modul (atau template) sesuai bagian 5.
+- [x] Seragamkan bentuk respons dan penanganan error dengan sumber (`{ success, message }`).
+- [x] Guard `X-User-Id` dipakai seragam. Rute publik ditandai eksplisit.
+- [x] **Keluaran:** kerangka modul kosong lolos CI. **Selesai bila:** `lint`, `typecheck`, `test`, `build` hijau.
 
 ### Fase 3 — Skema Drizzle Tambahan
 
