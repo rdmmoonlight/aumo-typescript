@@ -23,7 +23,7 @@ Peta fase lengkap: [`docs/MIGRASI-ASPNET-ACCOUNTING.md`](../MIGRASI-ASPNET-ACCOU
 ## Keputusan
 
 1. **Satu penangan.** ASP.NET Core menjadi satu-satunya penangan rute akuntansi: `/api/reports/*`, `/api/periods/*`, `/api/chart-of-accounts/*`.
-2. **Lokasi.** Kode disalin ke `dotnet/src/Aumo.Accounting.Api` dan `dotnet/tests/Aumo.Accounting.Tests`, masuk `dotnet/App.sln`.
+2. **Lokasi.** Kode disalin ke `dotnet/Aumo.Accounting.Api` dan `dotnet/Aumo.Accounting.Tests`, masuk `dotnet/App.sln`.
 3. **Duplikasi, bukan pemindahan.** Tidak ada kode yang dihapus di `aumo-finance` maupun `apps/nest`. Modul Nest `periods` dan `chart-of-accounts` dibekukan dan tidak dirutekan Nginx.
 4. **Auth tetap Go.** `services/auth` tetap otoritas tunggal. .NET tidak memakai Identity, cookie, atau JWT sendiri. Identitas dibaca dari header `X-User-Id` yang diisi Nginx lewat `auth_request`. Kestrel hanya mendengarkan `127.0.0.1:5100`.
 5. **Skema tetap Drizzle.** Skema dimiliki `apps/nest/drizzle/`. EF Core hanya membaca dan memetakan. Tanpa `MigrateAsync`, tanpa folder `Migrations/`. Perubahan skema dijalankan manual ke Neon, bukan dari CI.

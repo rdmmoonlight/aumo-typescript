@@ -13,7 +13,7 @@
 | Pos | Keputusan |
 | --- | --- |
 | Peran ASP.NET Core | Satu-satunya penangan rute akuntansi: `/api/reports/*`, `/api/periods/*`, `/api/chart-of-accounts/*` |
-| Proyek tujuan | `dotnet/src/Aumo.Accounting.Api` (web) dan `dotnet/tests/Aumo.Accounting.Tests` (tes). Keduanya masuk `dotnet/App.sln` |
+| Proyek tujuan | `dotnet/Aumo.Accounting.Api` (web) dan `dotnet/Aumo.Accounting.Tests` (tes). Keduanya masuk `dotnet/App.sln` |
 | Penghapusan | **Tidak ada.** Sumber di aumo-finance tetap. Modul `periods` dan `chart-of-accounts` di `apps/nest` tetap ada di kode, hanya tidak dirutekan oleh Nginx |
 | `apps/nest` | Tetap menangani `/api/*` yang bukan akuntansi (mis. health). Tidak diubah |
 | `services/auth` (Go) | Tetap satu-satunya otoritas auth (ADR 0006, 0007). ASP.NET **tidak** memakai Identity, cookie, atau JWT sendiri |
@@ -80,8 +80,8 @@ Dua implementasi periode hidup berdampingan selama pola duplikasi. Penanganannya
 
 | # | Temuan | Penanganan |
 | --- | --- | --- |
-| 1 | `TrialBalanceController` tidak punya endpoint. Isinya dua method statis yang selalu mengembalikan list kosong | Tidak disalin. Kalkulasi tetap lewat `ITrialBalanceService` |
-| 2 | Ada dua service trial balance: `TrialBalanceService` (dipakai Worksheet) dan `TrialBalancesService` | Pilih satu di Fase 3, yang lain tidak disalin |
+| 1 | `TrialBalanceController` tidak punya endpoint. Isinya dua method statis stub yang selalu mengembalikan list kosong. **Di sumber, `FinancialStatements`, `Journals` (jurnal penutup), dan `FinancialReportService` memanggil stub ini**, sehingga laba rugi, laba ditahan, posisi keuangan, dan jurnal penutup di backend lama dihitung dari data kosong | Controller stub tidak disalin. Pemanggil diganti `ITrialBalanceService.BuildTrialBalanceRowsAsync(db, userId, period, true)` yang asli (disuntikkan lewat konstruktor). Hasil laporan tersebut **sengaja berbeda** dari backend lama (lihat bagian 6) |
+| 2 | Ada dua service trial balance: `TrialBalanceService` (terdaftar di DI sumber, dipakai Worksheet) dan `TrialBalancesService` (tidak terdaftar dan tidak dipakai di sumber) | **Diputuskan:** `TrialBalanceService` dipertahankan. `TrialBalancesService` dan `ITrialBalancesService` tidak disalin |
 | 3 | `SummaryController` memakai rute `/summary`, bukan `/reports/summary` | Dinormalisasi ke `/reports/summary`. Alias lama dipertahankan di Nginx sampai klien diperbarui |
 | 4 | Nama kelas `JournalController` tidak sama dengan file `JournalsController.cs` | Samakan menjadi `JournalsController` |
 | 5 | `SelectedPeriodHelper` punya overload `object` sebagai "safety fallback" | Hanya overload bertipe kuat yang disalin |
@@ -93,6 +93,12 @@ Dua implementasi periode hidup berdampingan selama pola duplikasi. Penanganannya
 | 11 | Tabel buku besar (`GeneralLedgerPermanentAccounts`, `GeneralLedgerTemporaryAccounts`) **tidak ada** di skema Drizzle (`apps/nest/src/db/schema/` hanya `auth`, `chart-of-accounts`, `general-journal`, `periods`, `transaction-counters`) | Tambahkan ke skema Drizzle di Fase 5, atau dokumentasikan sebagai SQL manual Neon. Satu pilihan, tertulis |
 | 12 | Hanya ada satu tes di sumber (`CoreControllerTests`), tidak ada untuk akuntansi | Tes dibuat baru di Fase 7 |
 | 13 | Header file memakai `PlaceholderCompany` | Dibersihkan agar lolos StyleCop (lihat bagian 3) |
+| 14 | Salinan awal di repo ini dirusak skrip perbaikan otomatis: logika dikosongkan (`dynamic rows = null; // await call refactored out`), field `dynamic` palsu, dan antarmuka tertukar (`IJournalsService` di mana-mana, `IWorksheetService` menggantikan `ITrialBalanceService`) | Dipulihkan dari sumber. Skrip `dotnet/fix_code_references.py` dihapus |
+| 15 | `PeriodsService` di salinan awal tidak pernah menyimpan jurnal saldo awal (`journalEntryId = 1`, tanpa `AddRange`). Sumber memakai `GeneralJournalWriter` | `GeneralJournalWriter` disalin ke `Services/Reports/Journals`. Ia memakai sekuens PostgreSQL `GeneralJournal_JournalEntryId_seq`, **wajib diverifikasi di Neon pada Fase 5** |
+| 16 | Validasi tipe akun di `ChartOfAccountsService` mem-parse tipe plural (`Assets`, `Liabilities`) ke enum singular `AccountClassification` (`Asset`, `Liability`), dan `ValidateReferenceNumber(enum)` di sumber melempar `NotImplementedException`. Pembuatan akun nyaris selalu ditolak | Memakai `IsKnownAccountType` dan `ValidateReferenceNumber(type, nomor)`, serta `NormalBalanceIsDebit(string)`. Enum lama tidak lagi dipakai |
+| 17 | `SummaryService`: `ActiveCoa` menghitung akun semua pengguna; `ResolveUserIdAsync` mengembalikan `null` bila `UserManager` ada | Difilter per pengguna dan `IsActive`. Id pengguna dibaca dari claim `NameIdentifier` |
+| 18 | `ChartOfAccount.DisplayLabel` kehilangan pemisah ` - ` di salinan awal | Dikembalikan ke format sumber (`{no} - {nama}`) |
+| 19 | Tidak ada `[Authorize]` pada satu pun controller di salinan awal | `[Authorize]` ditambahkan ke seluruh controller. Tes integrasi gateway menyusul di Fase 4 dan 7 |
 
 ### 2.4 Ketergantungan bersama yang ikut disalin
 
@@ -100,7 +106,7 @@ Dua implementasi periode hidup berdampingan selama pola duplikasi. Penanganannya
 | --- | --- | --- |
 | Model EF | `Period`, `ChartOfAccount`, `GeneralJournal`, `GeneralLedgerPermanentAccount`, `GeneralLedgerTemporaryAccount`; `TransactionCounter` bila terpakai (temuan 8) | 5 sampai 6 entitas |
 | DbContext | `AppDbContext` versi ramping | 5 sampai 6 `DbSet`. Tanpa Identity, Hangfire, DataProtection |
-| Helper | `SelectedPeriodHelper` | Periode terpilih ditentukan lewat `IsSelected` per pengguna |
+| Helper | `SelectedPeriodHelper`, `GeneralJournalWriter` | Periode terpilih ditentukan lewat `IsSelected` per pengguna. `GeneralJournalWriter` menulis jurnal saldo awal (temuan 15) |
 | DTO bersama | `SummaryDto`, `QueryParametersDto` (bagian `GetAccountsQuery`) | |
 | Validator | `CreatePeriodRequestValidator`, `Create/UpdateAccountRequestValidator`, `AccountRuleExtensions`, `GetAccountsQueryValidator`, `ValidationResultExtensions` | |
 
@@ -158,7 +164,9 @@ Urutan salin mengikuti arah ketergantungan: model → helper → validator → s
 - [x] Ganti namespace `AumoBackend.*` → `Aumo.Accounting.Api.*`.
 - [x] Terapkan temuan 1–5, 8–10, dan 13 (bagian 2.3).
 - [x] Daftarkan service di satu `AddAccountingServices()` (pengganti `AddApplicationServices`).
-- [ ] **Keluaran:** `Aumo.Accounting.Api` terbangun. **Selesai bila:** `dotnet build` lolos tanpa kode `Identity`, `Hangfire`, `Redis`, atau `Rust`.
+- [x] **Keluaran:** `Aumo.Accounting.Api` terbangun. **Selesai bila:** `dotnet build` lolos tanpa kode `Identity`, `Hangfire`, `Redis`, atau `Rust`.
+
+> Verifikasi Fase 3 (CI, `dotnet build dotnet/App.sln -c Release /p:TreatWarningsAsErrors=true`): **0 warning, 0 error**. Pencarian `Identity`, `UserManager`, `Hangfire`, `Redis`, `Rust`, dan token JWT pada `Aumo.Accounting.Api` tidak menemukan apa pun. `dotnet test`: 19 dari 22 tes lolos. Tiga tes `GatewayHeaderAuthTests` gagal karena `AppDbContext` belum didaftarkan di DI. Itu pekerjaan Fase 5, bukan cacat Fase 3.
 
 ### Fase 4 — Autentikasi via Gateway
 
@@ -239,7 +247,7 @@ Urutan blok `location` penting: blok akuntansi harus berada di atas `/api/`, aga
 | --- | --- | --- |
 | Memori container Render free tier (512 MB) dengan 4 proses | Proses di-kill (OOM) | Publish trimmed, `DOTNET_GCHeapHardLimit`, ukur sebelum cutover. Bila tidak cukup, pisahkan menjadi service Render tersendiri |
 | Nama tabel/kolom EF tidak cocok dengan skema Drizzle | Query gagal atau salah kolom | Fase 5 mengacu pada skema nyata, bukan kode sumber |
-| Angka laporan berbeda dari backend lama | Kesalahan akuntansi | Perbandingan angka pada data identik di Fase 9 |
+| Angka laporan berbeda dari backend lama | Kesalahan akuntansi | Perbandingan angka pada data identik di Fase 9. **Pengecualian yang diketahui:** laba rugi, laba ditahan, posisi keuangan, dan jurnal penutup di backend lama dihitung dari stub kosong (temuan 1). Selisih pada empat laporan itu dinilai dari perhitungan `TrialBalanceService`, bukan dari keluaran backend lama |
 | **Dua implementasi periode** (Nest dan .NET) menulis ke tabel yang sama | Aturan periode tidak sinkron, data ganda atau saling menimpa | Nginx tidak lagi merutekan `/api/periods` ke Nest. Modul Nest dibekukan. Tidak ada klien yang boleh memanggil Nest untuk periode |
 | Perbedaan bentuk rute `select`/`close` (Nest vs .NET) | Klien lama gagal (404) | Alias di Fase 6 |
 | Tabel buku besar tidak ada di Drizzle | Skema tidak punya satu pemilik | Keputusan tertulis di Fase 5 |
