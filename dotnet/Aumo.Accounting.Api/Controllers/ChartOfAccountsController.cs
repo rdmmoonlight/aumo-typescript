@@ -31,7 +31,7 @@ using Microsoft.EntityFrameworkCore;
 /// </summary>
 
 [ApiController]
-[Route("api/chart-of-accounts[controller]")]
+[Route("api/chart-of-accounts")]
 [Authorize]
 
 
