@@ -26,7 +26,7 @@ using Microsoft.AspNetCore.Mvc;
 /// </summary>
 
 [ApiController]
-[Route("/reports/worksheet")]
+[Route("api/reports/worksheet[controller]")]
 [Authorize]
 
 

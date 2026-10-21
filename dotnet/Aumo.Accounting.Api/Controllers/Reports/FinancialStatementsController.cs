@@ -27,7 +27,7 @@ using Microsoft.AspNetCore.Mvc;
 /// </summary>
 
 [ApiController]
-[Route("/reports")]
+[Route("api/reports[controller]")]
 [Authorize]
 
 
