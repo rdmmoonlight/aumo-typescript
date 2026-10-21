@@ -1,16 +1,15 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 
 namespace Aumo.Accounting.Tests.Tests;
 
-public class GatewayHeaderAuthTests : IClassFixture<WebApplicationFactory<Program>>
+public class GatewayHeaderAuthTests : IClassFixture<AccountingApiFactory>
 {
     private readonly HttpClient client;
 
-    public GatewayHeaderAuthTests(WebApplicationFactory<Program> factory)
+    public GatewayHeaderAuthTests(AccountingApiFactory factory)
     {
         this.client = factory.CreateClient();
     }
@@ -63,6 +62,9 @@ public class GatewayHeaderAuthTests : IClassFixture<WebApplicationFactory<Progra
 
         var json = await response.Content.ReadFromJsonAsync<JsonElement>();
         Assert.True(json.GetProperty("success").GetBoolean());
-        Assert.Equal(validUserId, json.GetProperty("userId").GetString());
+        Assert.Equal(0, json.GetProperty("totalJournal").GetInt32());
+        Assert.Equal(0, json.GetProperty("activeCoa").GetInt32());
+        Assert.Equal("Tidak Ada Periode Aktif", json.GetProperty("activePeriodName").GetString());
+        Assert.False(json.GetProperty("isPeriodOpen").GetBoolean());
     }
 }

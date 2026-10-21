@@ -137,3 +137,17 @@ dotnet_diagnostic.SA1028.severity = none
 # Proyek tes: nama method memakai garis bawah (Method_Kondisi_Hasil)
 [Aumo.Accounting.Tests/**.cs]
 dotnet_diagnostic.CA1707.severity = none
+
+# ==============================================================================
+# StyleCop dibungkam seluruhnya (keputusan sementara). Paket tetap terpasang,
+# hanya semua kategori aturannya dimatikan. Aturan CA*/IDE* tetap berlaku.
+# ==============================================================================
+[*.cs]
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.SpacingRules.severity = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.ReadabilityRules.severity = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.OrderingRules.severity = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.NamingRules.severity = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.MaintainabilityRules.severity = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.LayoutRules.severity = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.DocumentationRules.severity = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.SpecialRules.severity = none

@@ -1,4 +1,9 @@
+using Aumo.Accounting.Api.DTOs;
 using Aumo.Accounting.Api.Services.Reports.Worksheet;
+using Aumo.Accounting.Api.Validators;
+using Aumo.Accounting.Api.Validators.ChartOfAccounts;
+using Aumo.Accounting.Api.Validators.Queries;
+using FluentValidation;
 using Aumo.Accounting.Api.Services.Reports.Journals;
 using Aumo.Accounting.Api.Services.ChartOfAccounts;
 using Aumo.Accounting.Api.Services.Reports.GeneralLedgers;
@@ -30,6 +35,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISummaryService, SummaryService>();
         services.AddScoped<ITrialBalanceService, TrialBalanceService>();
         services.AddScoped<IWorksheetService, WorksheetService>();
+
+        services.AddScoped<IValidator<CreatePeriodRequest>, CreatePeriodRequestValidator>();
+        services.AddScoped<IValidator<CreateAccountRequest>, CreateAccountRequestValidator>();
+        services.AddScoped<IValidator<UpdateAccountRequest>, UpdateAccountRequestValidator>();
+        services.AddScoped<IValidator<GetAccountsQuery>, GetAccountsQueryValidator>();
 
         return services;
     }

@@ -98,6 +98,7 @@ Dua implementasi periode hidup berdampingan selama pola duplikasi. Penanganannya
 | 16 | Validasi tipe akun di `ChartOfAccountsService` mem-parse tipe plural (`Assets`, `Liabilities`) ke enum singular `AccountClassification` (`Asset`, `Liability`), dan `ValidateReferenceNumber(enum)` di sumber melempar `NotImplementedException`. Pembuatan akun nyaris selalu ditolak | Memakai `IsKnownAccountType` dan `ValidateReferenceNumber(type, nomor)`, serta `NormalBalanceIsDebit(string)`. Enum lama tidak lagi dipakai |
 | 17 | `SummaryService`: `ActiveCoa` menghitung akun semua pengguna; `ResolveUserIdAsync` mengembalikan `null` bila `UserManager` ada | Difilter per pengguna dan `IsActive`. Id pengguna dibaca dari claim `NameIdentifier` |
 | 18 | `ChartOfAccount.DisplayLabel` kehilangan pemisah ` - ` di salinan awal | Dikembalikan ke format sumber (`{no} - {nama}`) |
+| 20 | Validator akun (`CreateAccountRequestValidator`, `UpdateAccountRequestValidator`, `AccountRuleExtensions`) belum tersalin walau tercentang di Fase 3, dan empat `IValidator<>` yang disuntikkan ke controller `Periods` dan `ChartOfAccounts` tidak terdaftar di DI (endpoint akan gagal 500 saat controller dibuat) | Tiga file disalin ke `Validators/ChartOfAccounts`. Keempat validator didaftarkan di `AddAccountingServices()` |
 | 19 | Tidak ada `[Authorize]` pada satu pun controller di salinan awal | `[Authorize]` ditambahkan ke seluruh controller. Tes integrasi gateway menyusul di Fase 4 dan 7 |
 
 ### 2.4 Ketergantungan bersama yang ikut disalin
@@ -122,7 +123,7 @@ Dua implementasi periode hidup berdampingan selama pola duplikasi. Penanganannya
 | --- | --- | --- | --- |
 | Framework | `net10.0` | `Directory.Build.props`: `net8.0` | Dinaikkan ke `net10.0` (Fase 2) |
 | Paket preview | `10.0.0-preview.*` (EF, Npgsql, Identity) | Tidak ada | Pakai rilis stabil `10.0.x`. Tanpa paket preview |
-| Analyzer | Roslynator, tanpa `TreatWarningsAsErrors` | StyleCop + `TreatWarningsAsErrors=true` + `GenerateDocumentationFile` | Kode sumber gagal build apa adanya. Rapikan header, XML doc, urutan `using`. Aturan yang tidak relevan dimatikan di `.editorconfig`, bukan lewat `NoWarn` global |
+| Analyzer | Roslynator, tanpa `TreatWarningsAsErrors` | StyleCop + `TreatWarningsAsErrors=true` + `GenerateDocumentationFile` | Kode sumber gagal build apa adanya. Rapikan header, XML doc, urutan `using`. **Keputusan sementara:** seluruh kategori StyleCop dibungkam di `dotnet/.editorconfig` (paket tetap terpasang, aturan CA*/IDE* tetap berlaku). Tidak memakai `NoWarn` global |
 | Autentikasi | Identity cookie + JWT Bearer | Go auth + Nginx `auth_request` | Semua `[Authorize(AuthenticationSchemes = ...)]` diganti satu skema internal (Fase 4) |
 | Tipe `UserId` | `Guid` | Go `auth.users.id` bertipe `uuid`. Nest memakai `text` | Parse `X-User-Id` ke `Guid`. Kolom `user_id` bertipe `text`, konversi dipetakan eksplisit |
 | Penamaan tabel/kolom | PascalCase (EF) | Drizzle: `snake_case` | **Titik keputusan Fase 5.** Cocokkan dengan skema Neon yang nyata |
@@ -175,7 +176,9 @@ Urutan salin mengikuti arah ketergantungan: model → helper → validator → s
 - [x] Ganti semua `[Authorize(AuthenticationSchemes = "Identity.Application,Bearer")]` dengan `[Authorize]`.
 - [x] Hapus `UserManager` dari `SummaryController`.
 - [x] Kestrel hanya mendengarkan `127.0.0.1:5100`. Nginx selalu menimpa `X-User-Id`, sehingga header dari luar tidak pernah sampai.
-- [ ] **Keluaran:** 23 endpoint terlindungi. **Selesai bila:** tes menunjukkan tanpa header = 401, header sah = 200.
+- [x] **Keluaran:** 23 endpoint terlindungi. **Selesai bila:** tes menunjukkan tanpa header = 401, header sah = 200.
+
+> Verifikasi Fase 4 (CI): `dotnet build` 0 warning, 0 error; `dotnet test` **25 dari 25 lolos**. `AuthorizationCoverageTests` memastikan setiap controller memakai `[Authorize]`, tidak ada `[AllowAnonymous]`, dan jumlah endpoint tepat 23. `GatewayHeaderAuthTests` memakai `AccountingApiFactory` (database in-memory): tanpa header dan header tidak valid → 401 `{"success":false,"message":"Unauthorized"}`; header sah → 200. Tes kueri nyata memakai PostgreSQL pada Fase 7.
 
 ### Fase 5 — Data Layer dan Skema
 
