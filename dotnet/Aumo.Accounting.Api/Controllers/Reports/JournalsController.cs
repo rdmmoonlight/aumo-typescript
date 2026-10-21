@@ -23,11 +23,11 @@ using Aumo.Accounting.Api.Services.Reports.TrialBalances;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+namespace Aumo.Accounting.Api.Controllers.Reports;
+
 /// <summary>
 /// Controller API untuk mengelola Journal.
 /// </summary>
-namespace Aumo.Accounting.Api.Controllers.Reports;
-
 [ApiController]
 [Route("/reports/journals")]
 [Authorize]

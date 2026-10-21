@@ -7,11 +7,11 @@ using Aumo.Accounting.Api.DTOs.Reports;
 using Aumo.Accounting.Api.Models;
 using Aumo.Accounting.Api.Services.Reports.TrialBalances;
 using TrialBalanceRow = Aumo.Accounting.Api.DTOs.Reports.TrialBalanceRow;
-/// <summary>
-/// Layanan logika bisnis untuk I Financial Report Service.
-/// </summary>
 namespace Aumo.Accounting.Api.Services.Reports.FinancialStatements;
 
+/// <summary>
+/// Layanan penyusunan laporan keuangan (laba rugi, laba ditahan, posisi keuangan).
+/// </summary>
 public interface IFinancialStatementsService
 {
     IncomeStatementApiResponse BuildIncomeStatement(List<TrialBalanceRow> rows, Period period);
