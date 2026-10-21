@@ -18,7 +18,7 @@ public class GatewayHeaderAuthTests : IClassFixture<AccountingApiFactory>
     public async Task GetSummary_WithoutXUserIdHeader_Returns401Unauthorized()
     {
         // Act: Request tanpa header X-User-Id
-        var response = await this.client.GetAsync("/reports/summary");
+        var response = await this.client.GetAsync("/api/reports/summary");
 
         // Assert: Harus 401 Unauthorized
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -32,7 +32,7 @@ public class GatewayHeaderAuthTests : IClassFixture<AccountingApiFactory>
     public async Task GetSummary_WithInvalidXUserIdHeader_Returns401Unauthorized()
     {
         // Arrange
-        var request = new HttpRequestMessage(HttpMethod.Get, "/reports/summary");
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/reports/summary");
         request.Headers.Add("X-User-Id", "invalid-guid-format");
 
         // Act
@@ -51,7 +51,7 @@ public class GatewayHeaderAuthTests : IClassFixture<AccountingApiFactory>
     {
         // Arrange
         var validUserId = Guid.NewGuid().ToString();
-        var request = new HttpRequestMessage(HttpMethod.Get, "/reports/summary");
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/reports/summary");
         request.Headers.Add("X-User-Id", validUserId);
 
         // Act

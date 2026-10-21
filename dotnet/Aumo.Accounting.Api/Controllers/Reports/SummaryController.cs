@@ -24,7 +24,7 @@ using Microsoft.EntityFrameworkCore;
 /// </summary>
 
 [ApiController]
-[Route("reports/[controller]")]
+[Route("api/reports/[controller]")]
 [Authorize]
 
 
