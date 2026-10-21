@@ -179,6 +179,8 @@ Urutan salin mengikuti arah ketergantungan: model → helper → validator → s
 - [x] **Keluaran:** 23 endpoint terlindungi. **Selesai bila:** tes menunjukkan tanpa header = 401, header sah = 200.
 
 > Verifikasi Fase 4 (CI): `dotnet build` 0 warning, 0 error; `dotnet test` **25 dari 25 lolos**. `AuthorizationCoverageTests` memastikan setiap controller memakai `[Authorize]`, tidak ada `[AllowAnonymous]`, dan jumlah endpoint tepat 23. `GatewayHeaderAuthTests` memakai `AccountingApiFactory` (database in-memory): tanpa header dan header tidak valid → 401 `{"success":false,"message":"Unauthorized"}`; header sah → 200. Tes kueri nyata memakai PostgreSQL pada Fase 7.
+>
+> Pembaruan: `dotnet test` kini **26 dari 26 lolos** (ditambah `RouteTableTests` yang mengunci 23 rute). Rute .NET sekarang memakai prefiks `api/` (commit pengguna `94ef82c`), contoh `api/periods` dan `api/reports/income-statement`. Akhiran `[controller]` yang ikut tertempel pada 6 controller dibuang karena menghasilkan path salah (`/api/periodsPeriods`). **Keputusan terbuka untuk Fase 6 dan 8:** bagian 2.1, 3, 5 dan Fase 8 masih menulis rute tanpa `/api` dan `rewrite ^/api/(.*) /$1`. Dengan prefiks `api/` di .NET, Nginx meneruskan path apa adanya (tanpa rewrite), dan dokumen perlu diselaraskan.
 
 ### Fase 5 — Data Layer dan Skema
 
