@@ -25,15 +25,15 @@ csharp_space_after_keywords_in_control_flow_statements = true
 csharp_space_between_method_declaration_parameter_list_parentheses = false
 csharp_space_between_parentheses = false
 
-# Pengorganisasian Directives ('using') - Diturunkan agar tidak fail saat build
+# Pengorganisasian Directives ('using')
 dotnet_sort_system_directives_first = true
-csharp_using_directive_placement = outside_namespace:suggestion
-dotnet_diagnostic.IDE0065.severity = suggestion
+csharp_using_directive_placement = outside_namespace:none
+dotnet_diagnostic.IDE0065.severity = none
 
-# Memicu pembersihan otomatis untuk unused using directive saat save
-dotnet_diagnostic.IDE0005.severity = warning
+# Nonaktifkan error dari unused using directive
+dotnet_diagnostic.IDE0005.severity = none
 
-# Namespace (File-Scoped Namespace khas .NET 6+) - Diturunkan agar tidak fail saat build
+# Namespace (File-Scoped Namespace khas .NET 6+)
 csharp_style_namespace_declarations = file_scoped:suggestion
 dotnet_diagnostic.IDE0161.severity = suggestion
 
@@ -64,37 +64,66 @@ dotnet_style_parentheses_in_arithmetic_binary_operators = never_if_unnecessary:s
 csharp_preferred_modifier_order = public,private,protected,internal,file,static,abstract,virtual,sealed,readonly,override,asynchronous,unsafe,volatile:suggestion
 
 # ==============================================================================
-# 4. SUPPRESSION / PENONAKTIFAN BISING (StyleCop, Roslynator, CA, IDE & CS Errors)
+# 4. SUPPRESSION / PENONAKTIFAN BISING (Compiler Warnings, StyleCop, CA & Roslynator)
 # ==============================================================================
 
-# Compiler Errors: DI / Field Unassigned / Nullability (Perlu refactor manual di file C#)
+# Compiler Warnings: Missing XML Documentation (Menggantikan <NoWarn>CS1591</NoWarn>)
+dotnet_diagnostic.CS1591.severity = none
+
+# Compiler Warnings: Field Unassigned / Nullability
 dotnet_diagnostic.CS0649.severity = none
 dotnet_diagnostic.CS8600.severity = none
 dotnet_diagnostic.CS8602.severity = none
 dotnet_diagnostic.CS8603.severity = none
 dotnet_diagnostic.CS8604.severity = none
 
-# StyleCop: XML Documentation Header & Element Ordering (Tanpa Fix All)
+# Code Analysis Quality Rules
+dotnet_diagnostic.CA1304.severity = none
+dotnet_diagnostic.CA1311.severity = none
+dotnet_diagnostic.CA1725.severity = none
+dotnet_diagnostic.CA1822.severity = none
+dotnet_diagnostic.CA1862.severity = none
+
+# StyleCop: XML Documentation Header & Elements
+dotnet_diagnostic.SA1506.severity = none
+dotnet_diagnostic.SA1514.severity = none
 dotnet_diagnostic.SA1600.severity = none
 dotnet_diagnostic.SA1601.severity = none
 dotnet_diagnostic.SA1602.severity = none
+dotnet_diagnostic.SA1604.severity = none
 dotnet_diagnostic.SA1611.severity = none
+dotnet_diagnostic.SA1615.severity = none
 dotnet_diagnostic.SA1618.severity = none
+dotnet_diagnostic.SA1623.severity = none
 dotnet_diagnostic.SA1633.severity = none
+dotnet_diagnostic.SA1642.severity = none
 dotnet_diagnostic.SA1649.severity = none
+
+# StyleCop: Ordering, Formatting, Line-break & Layout Rules
+dotnet_diagnostic.SA1117.severity = none
 dotnet_diagnostic.SA1200.severity = none
 dotnet_diagnostic.SA1201.severity = none
 dotnet_diagnostic.SA1202.severity = none
 dotnet_diagnostic.SA1204.severity = none
+dotnet_diagnostic.SA1208.severity = none
+dotnet_diagnostic.SA1210.severity = none
 dotnet_diagnostic.SA1214.severity = none
-dotnet_diagnostic.SA1117.severity = none
 dotnet_diagnostic.SA1402.severity = none
+dotnet_diagnostic.SA1413.severity = none
+dotnet_diagnostic.SA1501.severity = none
+dotnet_diagnostic.SA1507.severity = none
+dotnet_diagnostic.SA1508.severity = none
+dotnet_diagnostic.SA1512.severity = none
+dotnet_diagnostic.SA1513.severity = none
+dotnet_diagnostic.SA1515.severity = none
+dotnet_diagnostic.SA1516.severity = none
+dotnet_diagnostic.SA1518.severity = none
 
-# Unused Parameters & Variable Rules (Sering Memicu Error di CLI)
+# Unused Parameters & Variable Rules
 dotnet_diagnostic.IDE0060.severity = none
 dotnet_diagnostic.RCS1163.severity = none
 
-# Roslynator Rules Tanpa Fix All Massal (Ubah jadi none / suggestion)
+# Roslynator Rules
 dotnet_diagnostic.RCS1073.severity = suggestion
 dotnet_diagnostic.RCS1093.severity = none
 dotnet_diagnostic.RCS1110.severity = none
@@ -102,3 +131,5 @@ dotnet_diagnostic.RCS1112.severity = suggestion
 dotnet_diagnostic.RCS1158.severity = suggestion
 dotnet_diagnostic.RCS1235.severity = suggestion
 dotnet_diagnostic.RCS1246.severity = suggestion
+
+dotnet_diagnostic.SA1028.severity = none

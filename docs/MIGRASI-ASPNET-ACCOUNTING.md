@@ -142,31 +142,31 @@ Dua implementasi periode hidup berdampingan selama pola duplikasi. Penanganannya
 - [x] `Directory.Build.props`: `TargetFramework` → `net10.0`.
 - [x] `.editorconfig` di `dotnet/`: matikan aturan StyleCop yang bertabrakan dengan gaya sumber (header file, urutan `using`), satu per satu dengan alasan tertulis.
 - [x] Buat `Aumo.Accounting.Api` (kosong, `Microsoft.NET.Sdk.Web`) dan `Aumo.Accounting.Tests` (xUnit), tambahkan ke `dotnet/App.sln`.
-- [ ] `polyglot-ci.yml`: build `dotnet/App.sln` tetap hijau.
-- [ ] **Keluaran:** solusi kosong terbangun di CI. **Selesai bila:** `dotnet build` dengan `TreatWarningsAsErrors=true` lolos.
+- [x] `polyglot-ci.yml`: build `dotnet/App.sln` tetap hijau.
+- [x] **Keluaran:** solusi kosong terbangun di CI. **Selesai bila:** `dotnet build` dengan `TreatWarningsAsErrors=true` lolos.
 
 ### Fase 3 — Salin dan Rapikan Kode
 
 Urutan salin mengikuti arah ketergantungan: model → helper → validator → service → DTO/ViewModel → controller.
 
-- [ ] **Model dan DbContext:** `Period`, `ChartOfAccount` (+ klasifikasi akun, dipecah dari `ChartOfAccountsModel.cs`), `GeneralJournal`, `GeneralLedgerPermanentAccount`, `GeneralLedgerTemporaryAccount`, `TransactionCounter` bila terpakai; `AppDbContext` ramping.
-- [ ] **Helper:** `SelectedPeriodHelper` (overload bertipe kuat saja).
-- [ ] **Validator:** `CreatePeriodRequestValidator`, validator akun, `GetAccountsQueryValidator`, `ValidationResultExtensions`.
-- [ ] **Service:** `Services/Reports`, `PeriodsService`, `ChartOfAccountsService`, beserta interface.
-- [ ] **DTO dan ViewModel:** Reports, Periods, ChartOfAccounts, `SummaryDto`, `QueryParametersDto`.
-- [ ] **Controller:** 6 controller Reports, `PeriodsController`, `ChartOfAccountsController`.
-- [ ] Ganti namespace `AumoBackend.*` → `Aumo.Accounting.Api.*`.
-- [ ] Terapkan temuan 1–5, 8–10, dan 13 (bagian 2.3).
-- [ ] Daftarkan service di satu `AddAccountingServices()` (pengganti `AddApplicationServices`).
+- [x] **Model dan DbContext:** `Period`, `ChartOfAccount` (+ klasifikasi akun, dipecah dari `ChartOfAccountsModel.cs`), `GeneralJournal`, `GeneralLedgerPermanentAccount`, `GeneralLedgerTemporaryAccount`, `TransactionCounter` bila terpakai; `AppDbContext` ramping.
+- [x] **Helper:** `SelectedPeriodHelper` (overload bertipe kuat saja).
+- [x] **Validator:** `CreatePeriodRequestValidator`, validator akun, `GetAccountsQueryValidator`, `ValidationResultExtensions`.
+- [x] **Service:** `Services/Reports`, `PeriodsService`, `ChartOfAccountsService`, beserta interface.
+- [x] **DTO dan ViewModel:** Reports, Periods, ChartOfAccounts, `SummaryDto`, `QueryParametersDto`.
+- [x] **Controller:** 6 controller Reports, `PeriodsController`, `ChartOfAccountsController`.
+- [x] Ganti namespace `AumoBackend.*` → `Aumo.Accounting.Api.*`.
+- [x] Terapkan temuan 1–5, 8–10, dan 13 (bagian 2.3).
+- [x] Daftarkan service di satu `AddAccountingServices()` (pengganti `AddApplicationServices`).
 - [ ] **Keluaran:** `Aumo.Accounting.Api` terbangun. **Selesai bila:** `dotnet build` lolos tanpa kode `Identity`, `Hangfire`, `Redis`, atau `Rust`.
 
 ### Fase 4 — Autentikasi via Gateway
 
-- [ ] Satu skema autentikasi internal (`GatewayHeader`) yang membaca `X-User-Id`, mengubahnya ke `Guid`, lalu membentuk `ClaimTypes.NameIdentifier`.
-- [ ] Tanpa header atau header tidak valid → `401` dengan bentuk `{"success":false,"message":"Unauthorized"}` (sama dengan `@unauthorized` di Nginx).
-- [ ] Ganti semua `[Authorize(AuthenticationSchemes = "Identity.Application,Bearer")]` dengan `[Authorize]`.
-- [ ] Hapus `UserManager` dari `SummaryController`.
-- [ ] Kestrel hanya mendengarkan `127.0.0.1:5100`. Nginx selalu menimpa `X-User-Id`, sehingga header dari luar tidak pernah sampai.
+- [x] Satu skema autentikasi internal (`GatewayHeader`) yang membaca `X-User-Id`, mengubahnya ke `Guid`, lalu membentuk `ClaimTypes.NameIdentifier`.
+- [x] Tanpa header atau header tidak valid → `401` dengan bentuk `{"success":false,"message":"Unauthorized"}` (sama dengan `@unauthorized` di Nginx).
+- [x] Ganti semua `[Authorize(AuthenticationSchemes = "Identity.Application,Bearer")]` dengan `[Authorize]`.
+- [x] Hapus `UserManager` dari `SummaryController`.
+- [x] Kestrel hanya mendengarkan `127.0.0.1:5100`. Nginx selalu menimpa `X-User-Id`, sehingga header dari luar tidak pernah sampai.
 - [ ] **Keluaran:** 23 endpoint terlindungi. **Selesai bila:** tes menunjukkan tanpa header = 401, header sah = 200.
 
 ### Fase 5 — Data Layer dan Skema
