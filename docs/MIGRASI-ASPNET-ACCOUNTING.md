@@ -131,17 +131,17 @@ Dua implementasi periode hidup berdampingan selama pola duplikasi. Penanganannya
 
 ### Fase 1 — Baseline & Keputusan
 
-- [ ] Catat commit SHA sumber (`aumo-finance`) sebagai titik acuan salinan.
-- [ ] Tetapkan keputusan: auth dipegang Go, .NET membaca `X-User-Id`; skema dipegang Drizzle, EF hanya membaca; aturan periode dipegang .NET.
-- [ ] Tetapkan pola duplikasi: tidak ada file yang dihapus di aumo-finance maupun `apps/nest`.
-- [ ] Catat di `docs/adr/0009-aspnet-akuntansi-masuk-monorepo.md` (status *Proposed*).
-- [ ] **Keluaran:** ADR 0009. **Selesai bila:** otoritas auth, pemilik skema, pemilik aturan periode, dan daftar 23 rute tertulis.
+- [x] Catat commit SHA sumber (`aumo-finance`) sebagai titik acuan salinan.
+- [x] Tetapkan keputusan: auth dipegang Go, .NET membaca `X-User-Id`; skema dipegang Drizzle, EF hanya membaca; aturan periode dipegang .NET.
+- [x] Tetapkan pola duplikasi: tidak ada file yang dihapus di aumo-finance maupun `apps/nest`.
+- [x] Catat di `docs/adr/0009-aspnet-akuntansi-masuk-monorepo.md` (status *Proposed*).
+- [x] **Keluaran:** ADR 0009. **Selesai bila:** otoritas auth, pemilik skema, pemilik aturan periode, dan daftar 23 rute tertulis.
 
 ### Fase 2 — Penyelarasan Toolchain .NET (belum ada kode akuntansi)
 
-- [ ] `Directory.Build.props`: `TargetFramework` → `net10.0`.
-- [ ] `.editorconfig` di `dotnet/`: matikan aturan StyleCop yang bertabrakan dengan gaya sumber (header file, urutan `using`), satu per satu dengan alasan tertulis.
-- [ ] Buat `Aumo.Accounting.Api` (kosong, `Microsoft.NET.Sdk.Web`) dan `Aumo.Accounting.Tests` (xUnit), tambahkan ke `dotnet/App.sln`.
+- [x] `Directory.Build.props`: `TargetFramework` → `net10.0`.
+- [x] `.editorconfig` di `dotnet/`: matikan aturan StyleCop yang bertabrakan dengan gaya sumber (header file, urutan `using`), satu per satu dengan alasan tertulis.
+- [x] Buat `Aumo.Accounting.Api` (kosong, `Microsoft.NET.Sdk.Web`) dan `Aumo.Accounting.Tests` (xUnit), tambahkan ke `dotnet/App.sln`.
 - [ ] `polyglot-ci.yml`: build `dotnet/App.sln` tetap hijau.
 - [ ] **Keluaran:** solusi kosong terbangun di CI. **Selesai bila:** `dotnet build` dengan `TreatWarningsAsErrors=true` lolos.
 
