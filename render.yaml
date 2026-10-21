@@ -1,5 +1,5 @@
 services:
-  - type: web
+    - type: web
     name: aumo-api
     runtime: docker
     dockerfilePath: ./Dockerfile
@@ -8,32 +8,33 @@ services:
     autoDeploy: true
     buildFilter:
       paths:
-        - Dockerfile
-        - nginx.conf
-        - nest_proxy.conf
-        - supervisord.conf
-        - entrypoint.sh
-        - apps/nest/**
-        - apps/analog/**
-        - services/auth/**
-        - libs/**
-        - package.json
-        - tsconfig.json
-        - .dockerignore
-        - pnpm-lock.yaml
-        - pnpm-workspace.yaml
+                - Dockerfile
+                - nginx.conf
+                - nest_proxy.conf
+                - supervisord.conf
+                - entrypoint.sh
+                - apps/nest/**
+                - apps/analog/**
+                - services/auth/**
+                - dotnet/**
+                - libs/**
+                - package.json
+                - tsconfig.json
+                - .dockerignore
+                - pnpm-lock.yaml
+                - pnpm-workspace.yaml
     envVars:
-      - key: JWT_SECRET
+            - key: JWT_SECRET
         generateValue: true
-      - key: DATABASE_URL
+            - key: DATABASE_URL
         sync: false
-      - key: REDIS_URL
+            - key: REDIS_URL
         sync: false
-      - key: FRONTEND_URL
+            - key: FRONTEND_URL
         sync: false
-      - key: GOOGLE_CLIENT_ID
+            - key: GOOGLE_CLIENT_ID
         sync: false
-      - key: GOOGLE_CLIENT_SECRET
+            - key: GOOGLE_CLIENT_SECRET
         sync: false
-      - key: GOOGLE_REDIRECT_URL
+            - key: GOOGLE_REDIRECT_URL
         sync: false
