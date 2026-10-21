@@ -127,9 +127,9 @@ apps/nest/src/test/<nama>.test.ts
 
 ### Fase 1 — Baseline & Keputusan
 
-- [ ] Catat commit SHA sumber (`aumo-finance`) sebagai titik acuan salinan.
-- [ ] Tetapkan keputusan bagian 2 dan 3.2. Tetapkan siapa yang melayani `profile`, `change-password`, `delete-account` (Go).
-- [ ] Catat di `docs/adr/0010-duplikasi-backend-ke-nest.md` (status *Proposed*).
+- [x] Catat commit SHA sumber (`aumo-finance`) sebagai titik acuan salinan.
+- [x] Tetapkan keputusan bagian 2 dan 3.2. Tetapkan siapa yang melayani `profile`, `change-password`, `delete-account` (Go).
+- [x] Catat di `docs/adr/0010-duplikasi-backend-ke-nest.md` (status *Proposed*).
 - [ ] **Keluaran:** ADR 0010. **Selesai bila:** daftar 26 endpoint dan pemilik tiap endpoint tertulis.
 
 ### Fase 2 — Kerangka dan Konvensi Modul
