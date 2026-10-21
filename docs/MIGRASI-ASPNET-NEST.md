@@ -172,7 +172,7 @@ apps/nest/src/test/<nama>.test.ts
 - [ ] Impor memakai transaksi database (semua baris masuk atau tidak sama sekali).
 - [ ] **Keluaran:** 3 endpoint aktif. **Selesai bila:** berkas contoh menghasilkan jurnal yang sama dengan backend lama.
 
-### Fase 7 — Settings dan Guardian
+### Fase 7 — Settings dan Guardian (hapus guardian)
 
 - [ ] `POST avatar`: unggah ke bucket S3, validasi tipe dan ukuran (setara `AvatarFileValidator`).
 - [ ] `guardian/dashboard`, `guardian/revoke-session/{sessionId}`, `guardian/revoke-all-sessions` di Nest.
