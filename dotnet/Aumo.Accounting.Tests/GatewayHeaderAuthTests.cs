@@ -8,18 +8,18 @@ namespace Aumo.Accounting.Tests.Tests;
 
 public class GatewayHeaderAuthTests : IClassFixture<WebApplicationFactory<Program>>
 {
-    private readonly HttpClient _client;
+    private readonly HttpClient client;
 
     public GatewayHeaderAuthTests(WebApplicationFactory<Program> factory)
     {
-        _client = factory.CreateClient();
+        this.client = factory.CreateClient();
     }
 
     [Fact]
     public async Task GetSummary_WithoutXUserIdHeader_Returns401Unauthorized()
     {
         // Act: Request tanpa header X-User-Id
-        var response = await _client.GetAsync("/reports/summary");
+        var response = await this.client.GetAsync("/reports/summary");
 
         // Assert: Harus 401 Unauthorized
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -37,7 +37,7 @@ public class GatewayHeaderAuthTests : IClassFixture<WebApplicationFactory<Progra
         request.Headers.Add("X-User-Id", "invalid-guid-format");
 
         // Act
-        var response = await _client.SendAsync(request);
+        var response = await this.client.SendAsync(request);
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -56,7 +56,7 @@ public class GatewayHeaderAuthTests : IClassFixture<WebApplicationFactory<Progra
         request.Headers.Add("X-User-Id", validUserId);
 
         // Act
-        var response = await _client.SendAsync(request);
+        var response = await this.client.SendAsync(request);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
