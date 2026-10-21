@@ -1,4 +1,4 @@
-﻿namespace Aumo.Accounting.Tests;
+namespace Aumo.Accounting.Tests;
 
 /// <summary>
 /// Unit tests for accounting features.
