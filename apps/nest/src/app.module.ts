@@ -5,7 +5,6 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter.
 import { GlobalRateLimitGuard } from './common/guards/rate-limit.guard.js';
 import { databaseProvider } from './db/database.provider.js';
 import { HealthModule } from './modules/health/health.module.js';
-import { PeriodsModule } from './modules/periods/periods.module.js';
 
 @Module({
   imports: [
@@ -13,7 +12,6 @@ import { PeriodsModule } from './modules/periods/periods.module.js';
       isGlobal: true, // Membuat ConfigService tersedia di seluruh modul tanpa perlu re-import
     }),
     HealthModule,
-    PeriodsModule,
   ],
   providers: [
     databaseProvider,
