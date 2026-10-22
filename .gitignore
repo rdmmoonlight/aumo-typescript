@@ -35,3 +35,7 @@ local.properties
 
 # Hasil build
 dist/
+
+# Abaikan file konfigurasi utama yang berisi kredensial asli
+dotnet/**/appsettings.json
+dotnet/**/appsettings.Development.json
