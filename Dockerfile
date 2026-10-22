@@ -44,12 +44,12 @@ COPY . .
 RUN --mount=type=cache,id=nextjs,target=/app/apps/next/.next/cache \
     pnpm --filter "@app/next..." build
 
-# STAGE 4: Build .NET - BARU FASE 8
+# STAGE 4: Build .NET
 FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS builder-dotnet
 WORKDIR /src
 COPY dotnet/ ./
 RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
-    dotnet publish Accounting.Api/Accounting.Api.csproj \
+    dotnet publish Aumo.Accounting.Api/Aumo.Accounting.Api.csproj \
     -c Release \
     -r linux-musl-x64 \
     --self-contained true \
