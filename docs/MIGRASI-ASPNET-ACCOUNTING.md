@@ -184,13 +184,13 @@ Urutan salin mengikuti arah ketergantungan: model → helper → validator → s
 
 ### Fase 5 — Data Layer dan Skema
 
-- [ ] Ambil skema nyata dari Neon (`information_schema.columns`) untuk semua tabel akuntansi. Hasilnya menjadi acuan.
-- [ ] Petakan nama tabel dan kolom di `OnModelCreating` agar cocok dengan skema nyata. Satu konvensi, tidak dicampur.
-- [ ] Petakan `UserId` `Guid` ↔ kolom `text` (value converter).
-- [ ] Putuskan tempat tabel buku besar (temuan 11): ditambahkan ke skema Drizzle, atau SQL manual Neon yang didokumentasikan.
-- [ ] Tanpa `Database.MigrateAsync()` dan tanpa folder `Migrations/`. Perubahan skema lewat Drizzle dan dijalankan manual, bukan dari CI.
-- [ ] Koneksi memakai `DATABASE_URL` yang sama dengan Nest. Konversi URL → connection string Npgsql dilakukan di satu tempat.
-- [ ] **Keluaran:** catatan pemetaan skema di `docs/`. **Selesai bila:** query baca tiap tabel berhasil di Neon pengembangan.
+- [x] Ambil skema nyata dari Neon (`information_schema.columns`) untuk semua tabel akuntansi. Hasilnya menjadi acuan.
+- [x] Petakan nama tabel dan kolom di `OnModelCreating` agar cocok dengan skema nyata. Satu konvensi, tidak dicampur.
+- [x] Petakan `UserId` `Guid` ↔ kolom `text` (value converter).
+- [x] Putuskan tempat tabel buku besar (temuan 11): ditambahkan ke skema Drizzle, atau SQL manual Neon yang didokumentasikan.
+- [x] Tanpa `Database.MigrateAsync()` dan tanpa folder `Migrations/`. Perubahan skema lewat Drizzle dan dijalankan manual, bukan dari CI.
+- [x] Koneksi memakai `DATABASE_URL` yang sama dengan Nest. Konversi URL → connection string Npgsql dilakukan di satu tempat.
+- [x] **Keluaran:** catatan pemetaan skema di `docs/`. **Selesai bila:** query baca tiap tabel berhasil di Neon pengembangan.
 
 ### Fase 6 — Rute dan Kontrak
 

@@ -24,4 +24,10 @@
     <ProjectReference Include="..\Aumo.Accounting.Api\Aumo.Accounting.Api.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+  <None Update="appsettings.json">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </None>
+  </ItemGroup>
+
 </Project>
