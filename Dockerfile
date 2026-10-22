@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Build context: root repo. Go + Nest + Web + .NET di belakang Nginx
+# Build context: root repo. Go + Nest + Next.js + .NET di belakang Nginx
 
 # STAGE 1: Build Go Auth
 FROM golang:1.22-alpine AS builder-go
@@ -24,19 +24,19 @@ COPY . .
 RUN pnpm --filter "@app/nest..." build
 RUN pnpm --filter @app/nest deploy --prod /app/pruned
 
-# STAGE 3: Build Web
+# STAGE 3: Build Next.js (SSG / Static Export)
 FROM node:24-alpine AS builder-web
 WORKDIR /app
 RUN npm install -g pnpm@12.14.0
-ENV VITE_API_URL=/api
+ENV NEXT_PUBLIC_API_URL=/api
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY apps/analog/package.json apps/analog/
+COPY apps/next/package.json apps/next/
 COPY libs/contracts/package.json libs/contracts/
 COPY libs/logger/package.json libs/logger/
 COPY libs/sdk/package.json libs/sdk/
-RUN pnpm install --frozen-lockfile --filter "@app/analog..."
+RUN pnpm install --frozen-lockfile --filter "@app/next..."
 COPY . .
-RUN pnpm --filter "@app/analog..." build
+RUN pnpm --filter "@app/next..." build
 
 # STAGE 4: Build .NET - BARU FASE 8
 FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS builder-dotnet
@@ -64,7 +64,7 @@ COPY --from=builder-go /build/go-auth-app /app/go-auth-app
 COPY --from=builder-nest /app/pruned/node_modules /app/nest/node_modules
 COPY --from=builder-nest /app/apps/nest/dist /app/nest/dist
 COPY --from=builder-nest /app/apps/nest/package.json /app/nest/package.json
-COPY --from=builder-web /app/apps/analog/dist/client /usr/share/nginx/html
+COPY --from=builder-web /app/apps/next/out /usr/share/nginx/html
 COPY --from=builder-dotnet /out /app/dotnet
 
 COPY nginx.conf /etc/nginx/templates/gateway.conf
