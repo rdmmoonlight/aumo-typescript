@@ -49,7 +49,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS builder-dotnet
 WORKDIR /src
 COPY dotnet/ ./
 RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
-    dotnet publish src/Accounting.Api/Accounting.Api.csproj \
+    dotnet publish Accounting.Api/Accounting.Api.csproj \
     -c Release \
     -r linux-musl-x64 \
     --self-contained true \
