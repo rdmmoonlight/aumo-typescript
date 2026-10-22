@@ -1,13 +1,16 @@
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1.4
 # Build context: root repo. Go + Nest + Next.js + .NET di belakang Nginx
 
 # STAGE 1: Build Go Auth
 FROM golang:1.22-alpine AS builder-go
 WORKDIR /build
 COPY services/auth/go.mod services/auth/go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 COPY services/auth/ ./
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o go-auth-app ./cmd/server
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o go-auth-app ./cmd/server
 
 # STAGE 2: Build NestJS
 FROM node:24-alpine AS builder-nest
@@ -19,7 +22,8 @@ COPY apps/api/package.json apps/api/
 COPY libs/contracts/package.json libs/contracts/
 COPY libs/logger/package.json libs/logger/
 COPY libs/sdk/package.json libs/sdk/
-RUN pnpm install --frozen-lockfile --filter "@app/nest..."
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile --filter "@app/nest..."
 COPY . .
 RUN pnpm --filter "@app/nest..." build
 RUN pnpm --filter @app/nest deploy --prod /app/pruned
@@ -34,16 +38,18 @@ COPY apps/next/package.json apps/next/
 COPY libs/contracts/package.json libs/contracts/
 COPY libs/logger/package.json libs/logger/
 COPY libs/sdk/package.json libs/sdk/
-RUN pnpm install --frozen-lockfile --filter "@app/next..."
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile --filter "@app/next..."
 COPY . .
-RUN pnpm --filter "@app/next..." build
+RUN --mount=type=cache,id=nextjs,target=/app/apps/next/.next/cache \
+    pnpm --filter "@app/next..." build
 
 # STAGE 4: Build .NET - BARU FASE 8
 FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS builder-dotnet
 WORKDIR /src
 COPY dotnet/ ./
-# Sesuaikan path csproj jika beda: dotnet/src/Accounting.Api/...
-RUN dotnet publish src/Accounting.Api/Accounting.Api.csproj \
+RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
+    dotnet publish src/Accounting.Api/Accounting.Api.csproj \
     -c Release \
     -r linux-musl-x64 \
     --self-contained true \
