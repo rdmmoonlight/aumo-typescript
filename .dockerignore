@@ -1,16 +1,22 @@
+# Dependency & Output Build
 **/node_modules
 **/dist
 **/target
 **/bin
 **/obj
-.git
-.github
-.gitignore
 .nx
-android
-dotnet
-native
+
+# VCS & Tools
+.git
+.gitignore
+.github
+
+# Documentation & Env
 docs
 README.md
 .env*
 **/.env*
+
+# Folder Mobile/Native (jika memang tidak dipakai di Docker)
+android
+native
