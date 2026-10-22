@@ -1,3 +1,5 @@
+> **Digantikan:** `apps/next` menggantikan `apps/analog` secara total (ADR 0011, `docs/PETA-RUTE-NEXT-API.md`). Dokumen ini hanya arsip.
+
 # Peta Migrasi: `/analog` (aumo-finance) → `apps/analog` (aumo-typescript)
 
 > Status: **PEMETAAN SAJA.** Dokumen ini tidak memindahkan atau mengubah kode apa pun.
