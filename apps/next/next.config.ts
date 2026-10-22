@@ -1,30 +1,37 @@
 import type { NextConfig } from "next";
 
-const getBackendTarget = (): string => {
-  let target =
-    process.env.NEXT_PUBLIC__WEB_API_URL ||
-    process.env.WEB_API_URL ||
-    process.env.NEXT_PUBLIC_WEB_API_URL ||
-    "http://localhost:5000";
-
-  if (!target.includes("localhost") && target.startsWith("http://")) {
-    target = target.replace("http://", "https://");
-  }
-
-  return target;
-};
+const isExport = process.env.NODE_ENV === "production";
 
 const nextConfig: NextConfig = {
-  async rewrites() {
-    const backendTarget = getBackendTarget();
+  // Wajib untuk mengaktifkan Next.js Static Export
+  output: "export",
 
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${backendTarget}/api/:path*`,
-      },
-    ];
+  // Opsional: Memastikan trailing slash konsisten dengan Nginx try_files ($uri.html / $uri/index.html)
+  trailingSlash: false,
+
+  // Menonaktifkan optimasi gambar bawaan Next.js Server (karena butuh Node.js server)
+  images: {
+    unoptimized: true,
   },
+
+  // Rewrites hanya aktif saat 'next dev' (Local Development tanpa Nginx)
+  ...(isExport
+    ? {}
+    : {
+      async rewrites() {
+        const backendTarget =
+          process.env.NEXT_PUBLIC_WEB_API_URL ||
+          process.env.WEB_API_URL ||
+          "http://localhost:5000";
+
+        return [
+          {
+            source: "/api/:path*",
+            destination: `${backendTarget}/api/:path*`,
+          },
+        ];
+      },
+    }),
 };
 
 export default nextConfig;
