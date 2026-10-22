@@ -42,9 +42,11 @@
   "dependencies": {
     "@app/cli": "link:tools/cli"
   },
-  "pnpm": {
+   "pnpm": {
     "onlyBuiltDependencies": [
-      "unrs-resolver"
+      "unrs-resolver",
+      "@swc/core",
+      "esbuild",
+      "bcrypt"
     ]
-  }
 }
