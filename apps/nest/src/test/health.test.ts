@@ -36,7 +36,7 @@ describe('Health Routes', () => {
     const res = await request(app.getHttpServer()).get('/');
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ status: 'ok', message: 'Aumone API Server Online 🚀' });
+    expect(res.body).toEqual({ status: 'ok', message: 'Aumo API Server Online 🚀' });
   });
 
   it('HEAD / - status 200 dengan body kosong (ping)', async () => {

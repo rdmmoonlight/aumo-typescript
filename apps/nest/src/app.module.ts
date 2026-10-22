@@ -23,9 +23,8 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     AvatarsModule,
   ],
   providers: [
-    databaseProvider,
-    { provide: APP_FILTER, useClass: GlobalExceptionFilter },
-    { provide: APP_GUARD, useClass: GlobalRateLimitGuard },
+    provide: APP_GUARD,
+    useClass: AuthGuard,
     UserIdGuard,
   ],
 })

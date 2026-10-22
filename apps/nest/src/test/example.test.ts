@@ -1,16 +1,31 @@
+// src/test/example.test.ts
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { AppModule } from '../app.module.js';
+import { ExampleService } from '../modules/example/example.service.js';
 
 describe('ExampleModule (E2E)', () => {
     let app: INestApplication;
 
+    const mockExampleService = {
+        findAll: vi.fn().mockResolvedValue([
+            { id: '1', title: 'Example 1' },
+        ]),
+        getPublicInfo: vi.fn().mockReturnValue({
+            success: true,
+            message: 'Informasi publik berhasil diambil',
+        }),
+    };
+
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [AppModule],
-        }).compile();
+        })
+            .overrideProvider(ExampleService)
+            .useValue(mockExampleService)
+            .compile();
 
         app = moduleFixture.createNestApplication();
         await app.init();
