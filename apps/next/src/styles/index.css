@@ -1,0 +1,306 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap");
+
+@import "tailwindcss";
+@import "./theme.css";
+
+/* =========================================
+      1. VARIANTS & SETUP
+   ========================================= */
+@custom-variant dark (&:is(.dark *));
+
+/* =========================================
+      2. DESIGN TOKENS - AUMO MATTE
+   ========================================= */
+@theme inline {
+  /* Radius */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Core Colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Matte System */
+  --color-matte: #0e0e10;
+  --color-matte-soft: #151519;
+  --color-matte-hover: #1e1e22;
+  --color-matte-border: rgba(255, 255, 255, 0.07);
+  --color-matte-border-strong: rgba(255, 255, 255, 0.11);
+  --color-matte-active: #ffffff;
+  --color-matte-active-fg: #0e0e10;
+
+  /* Shadows */
+  --shadow-soft:
+    0 1px 2px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  --shadow-glow:
+    0 0 0 1px rgba(255, 255, 255, 0.06), 0 8px 32px rgba(0, 0, 0, 0.5);
+
+  /* Sidebar */
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+
+  /* Typography */
+  --text-label-small: 11px;
+  --text-caption: 12px;
+  --text-secondary: 13px;
+  --text-ui: 14px;
+  --text-body: 16px;
+  --text-h4: 18px;
+  --text-h3: 20px;
+  --text-h2: 24px;
+  --text-h1: 28px;
+  --text-h1-large: 30px;
+  --text-h1-xlarge: 32px;
+  --text-display: 48px;
+}
+
+/* =========================================
+      3. BASE RESET & GLOBAL
+   ========================================= */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scrollbar-gutter: stable;
+    background-color: #0e0e10;
+    color-scheme: dark;
+
+    /* Selection Default */
+    --selection-bg: #000000;
+    --selection-fg: #ffffff;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02";
+    letter-spacing: -0.011em;
+  }
+
+  /* Force font & icon color di dark mode / auth */
+  .dark,
+  .dark body,
+  .dark input,
+  .dark textarea,
+  .dark select,
+  .dark button {
+    color: #ffffff;
+  }
+
+  /* Placeholder input di dark mode */
+  .dark ::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  /* =========================================
+        4. SELECTION SYSTEM
+     ========================================= */
+  /* 4a. Global selection */
+  ::selection {
+    background-color: var(--selection-bg);
+    color: var(--selection-fg);
+  }
+  ::-moz-selection {
+    background-color: var(--selection-bg);
+    color: var(--selection-fg);
+  }
+
+  /* 4b. Explicit light islands inside dark mode */
+  /* Hanya ubah warna teks hitam jika elemen tersebut berada dalam konteks light mode aktif */
+  .light
+    :is(
+      .bg-white,
+      .bg-zinc-50,
+      .bg-zinc-100,
+      .bg-gray-50,
+      .bg-gray-100,
+      .bg-slate-50
+    ) {
+    color: #000000;
+  }
+
+  :is(
+    .bg-white,
+    .bg-zinc-50,
+    .bg-zinc-100,
+    .bg-gray-50,
+    .bg-gray-100,
+    .bg-slate-50
+  )::selection,
+  :is(
+      .bg-white,
+      .bg-zinc-50,
+      .bg-zinc-100,
+      .bg-gray-50,
+      .bg-gray-100,
+      .bg-slate-50
+    )
+    *::selection {
+    background-color: #ffffff;
+    color: #000000;
+  }
+
+  :is(
+    .bg-white,
+    .bg-zinc-50,
+    .bg-zinc-100,
+    .bg-gray-50,
+    .bg-gray-100,
+    .bg-slate-50
+  )::-moz-selection,
+  :is(
+      .bg-white,
+      .bg-zinc-50,
+      .bg-zinc-100,
+      .bg-gray-50,
+      .bg-gray-100,
+      .bg-slate-50
+    )
+    *::-moz-selection {
+    background-color: #ffffff;
+    color: #000000;
+  }
+
+  /* 4c. Light mode selection override */
+  .light,
+  .light
+    :is(
+      .bg-card,
+      .bg-popover,
+      .bg-background,
+      .bg-muted,
+      input,
+      textarea,
+      select
+    ) {
+    --selection-bg: #ffffff;
+    --selection-fg: #000000;
+  }
+
+  .light
+    :is(
+      .bg-card,
+      .bg-popover,
+      .bg-background,
+      .bg-muted,
+      input,
+      textarea,
+      select
+    )::selection,
+  .light
+    :is(
+      .bg-card,
+      .bg-popover,
+      .bg-background,
+      .bg-muted,
+      input,
+      textarea,
+      select
+    )
+    *::selection {
+    background-color: #ffffff;
+    color: #000000;
+  }
+
+  /* =========================================
+        5. SCROLLBAR SYSTEM
+     ========================================= */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 9999px;
+    background-clip: padding-box;
+    border: 1px solid transparent;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.22);
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+/* =========================================
+      6. CUSTOM UTILITIES
+   ========================================= */
+@layer utilities {
+  .matte-card {
+    background: var(--color-matte-soft);
+    border: 1px solid var(--color-matte-border);
+    box-shadow: var(--shadow-soft);
+  }
+  .matte-hover {
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .matte-hover:hover {
+    background: var(--color-matte-hover);
+    border-color: var(--color-matte-border-strong);
+  }
+  .glass {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+  }
+}
+
+/* =========================================
+      7. SIDEBAR TOKENS
+   ========================================= */
+:root {
+  --sidebar: hsl(0 0% 98%);
+  --sidebar-foreground: hsl(240 5.3% 26.1%);
+  --sidebar-primary: hsl(240 5.9% 10%);
+  --sidebar-primary-foreground: hsl(0 0% 98%);
+  --sidebar-accent: hsl(240 4.8% 95.9%);
+  --sidebar-accent-foreground: hsl(240 5.9% 10%);
+  --sidebar-border: hsl(220 13% 91%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+}
+
+.dark {
+  --sidebar: hsl(240 5.9% 10%);
+  --sidebar-foreground: hsl(240 4.8% 95.9%);
+  --sidebar-primary: hsl(224.3 76.3% 48%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(240 3.7% 15.9%);
+  --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
+  --sidebar-border: hsl(240 3.7% 15.9%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+}

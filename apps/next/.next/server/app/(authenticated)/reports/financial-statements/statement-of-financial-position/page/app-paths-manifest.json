@@ -1,0 +1,3 @@
+{
+  "/(authenticated)/reports/financial-statements/statement-of-financial-position/page": "app/(authenticated)/reports/financial-statements/statement-of-financial-position/page.js"
+}

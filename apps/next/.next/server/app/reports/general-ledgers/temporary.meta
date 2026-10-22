@@ -1,0 +1,49 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/(authenticated)/layout,_N_T_/(authenticated)/reports/layout,_N_T_/(authenticated)/reports/general-ledgers/layout,_N_T_/(authenticated)/reports/general-ledgers/temporary/layout,_N_T_/(authenticated)/reports/general-ledgers/temporary/page,_N_T_/reports/general-ledgers/temporary"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/!KGF1dGhlbnRpY2F0ZWQp/reports/general-ledgers/temporary/__PAGE__"
+  ],
+  "prefetchHints": {
+    "hints": 64,
+    "slots": {
+      "children": {
+        "hints": 96,
+        "slots": {
+          "children": {
+            "hints": 96,
+            "slots": {
+              "children": {
+                "hints": 96,
+                "slots": {
+                  "children": {
+                    "hints": 96,
+                    "slots": {
+                      "children": {
+                        "hints": 160,
+                        "slots": null
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "routeCache": {
+    "key": "/route-cache/APP_PAGE/39407b2e8c216b217f9c4045124b7409049ed258f7149d0d57b81d3672cb94fa/$/reports/general-ledgers/temporary",
+    "owner": {
+      "kind": "APP_PAGE",
+      "sourceRoute": "/(authenticated)/reports/general-ledgers/temporary/page"
+    },
+    "isFallback": false
+  }
+}

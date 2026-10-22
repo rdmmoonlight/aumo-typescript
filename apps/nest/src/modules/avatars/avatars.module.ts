@@ -6,6 +6,6 @@ import { AvatarsService } from './avatars.service.js';
 @Module({
     controllers: [AvatarsController],
     providers: [AvatarsService, AvatarsStorageService],
-    exports: [AvatarsService],
+    exports: [AvatarsService, AvatarsStorageService],
 })
 export class AvatarsModule { }

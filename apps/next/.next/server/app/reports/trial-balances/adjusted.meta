@@ -1,0 +1,49 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/(authenticated)/layout,_N_T_/(authenticated)/reports/layout,_N_T_/(authenticated)/reports/trial-balances/layout,_N_T_/(authenticated)/reports/trial-balances/adjusted/layout,_N_T_/(authenticated)/reports/trial-balances/adjusted/page,_N_T_/reports/trial-balances/adjusted"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/!KGF1dGhlbnRpY2F0ZWQp/reports/trial-balances/adjusted/__PAGE__"
+  ],
+  "prefetchHints": {
+    "hints": 64,
+    "slots": {
+      "children": {
+        "hints": 96,
+        "slots": {
+          "children": {
+            "hints": 96,
+            "slots": {
+              "children": {
+                "hints": 96,
+                "slots": {
+                  "children": {
+                    "hints": 96,
+                    "slots": {
+                      "children": {
+                        "hints": 160,
+                        "slots": null
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "routeCache": {
+    "key": "/route-cache/APP_PAGE/a3e27b05b7583e016fd51013dd14ba942b8ff40dec2210347694ae31ff54d28e/$/reports/trial-balances/adjusted",
+    "owner": {
+      "kind": "APP_PAGE",
+      "sourceRoute": "/(authenticated)/reports/trial-balances/adjusted/page"
+    },
+    "isFallback": false
+  }
+}

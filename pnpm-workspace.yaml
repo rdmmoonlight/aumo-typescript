@@ -10,6 +10,7 @@ allowBuilds:
   nx: true
   "@parcel/watcher": true
   lmdb: true
+  unrs-resolver: set this to true or false
 
 overrides:
   '@app/cli': link:tools/cli

@@ -1,0 +1,39 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/(authenticated)/layout,_N_T_/(authenticated)/periods/layout,_N_T_/(authenticated)/periods/page,_N_T_/periods"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/!KGF1dGhlbnRpY2F0ZWQp/periods/__PAGE__"
+  ],
+  "prefetchHints": {
+    "hints": 64,
+    "slots": {
+      "children": {
+        "hints": 96,
+        "slots": {
+          "children": {
+            "hints": 96,
+            "slots": {
+              "children": {
+                "hints": 160,
+                "slots": null
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "routeCache": {
+    "key": "/route-cache/APP_PAGE/85d8562f5bb7d5ba30c680d926cec034b8fe37a77600dfba0a3e5fecf3732b36/$/periods",
+    "owner": {
+      "kind": "APP_PAGE",
+      "sourceRoute": "/(authenticated)/periods/page"
+    },
+    "isFallback": false
+  }
+}

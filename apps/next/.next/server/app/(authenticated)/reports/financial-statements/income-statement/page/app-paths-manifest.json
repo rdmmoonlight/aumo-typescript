@@ -1,0 +1,3 @@
+{
+  "/(authenticated)/reports/financial-statements/income-statement/page": "app/(authenticated)/reports/financial-statements/income-statement/page.js"
+}

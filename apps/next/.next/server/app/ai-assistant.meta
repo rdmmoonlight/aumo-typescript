@@ -1,0 +1,39 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/(authenticated)/layout,_N_T_/(authenticated)/ai-assistant/layout,_N_T_/(authenticated)/ai-assistant/page,_N_T_/ai-assistant"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/!KGF1dGhlbnRpY2F0ZWQp/ai-assistant/__PAGE__"
+  ],
+  "prefetchHints": {
+    "hints": 64,
+    "slots": {
+      "children": {
+        "hints": 96,
+        "slots": {
+          "children": {
+            "hints": 96,
+            "slots": {
+              "children": {
+                "hints": 160,
+                "slots": null
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "routeCache": {
+    "key": "/route-cache/APP_PAGE/b4079e9fa9767d0f5a8a78594f7e5b12cf11bc447f8f4207e0ea7b9068ee6e80/$/ai-assistant",
+    "owner": {
+      "kind": "APP_PAGE",
+      "sourceRoute": "/(authenticated)/ai-assistant/page"
+    },
+    "isFallback": false
+  }
+}

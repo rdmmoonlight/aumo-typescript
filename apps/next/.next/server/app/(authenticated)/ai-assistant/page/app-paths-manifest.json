@@ -1,0 +1,3 @@
+{
+  "/(authenticated)/ai-assistant/page": "app/(authenticated)/ai-assistant/page.js"
+}

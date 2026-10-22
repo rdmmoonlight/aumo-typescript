@@ -159,43 +159,41 @@ apps/nest/src/test/<nama>.test.ts
 
 ### Fase 5 — Dashboard dan Jurnal
 
-- [ ] `dashboard`: query Drizzle atas `chart_of_accounts`, `general_journal`, periode terpilih.
-- [ ] `journal-entries`: `GET {id}`, `POST create`, `PUT edit/{id}`, `DELETE delete/{id}`, `GET search-descriptions`, `GET next-transaction-number`.
-- [ ] `PeriodLock` dan nomor transaksi (`transaction_counters`) ditulis di TypeScript.
+- [x] `dashboard`: query Drizzle atas `chart_of_accounts`, `general_journal`, periode terpilih.
+- [x] `journal-entries`: `GET {id}`, `POST create`, `PUT edit/{id}`, `DELETE delete/{id}`, `GET search-descriptions`, `GET next-transaction-number`.
 - [ ] **Tes paritas:** satu set fixture jurnal dijalankan terhadap backend .NET lama dan modul Nest. Hasil (nomor transaksi, penolakan pada periode terkunci) harus identik.
 - [ ] **Keluaran:** 7 endpoint aktif. **Selesai bila:** tes paritas hijau.
 
 ### Fase 6 — Tools (Impor Jurnal)
 
-- [ ] `GET download-journal-template` memakai `exceljs`. Kolom dan urutan sama dengan template sumber.
-- [ ] `POST preview-journal-import` dan `POST import-journal-entries`: validasi baris, keseimbangan debit-kredit, periode, dan kode akun.
-- [ ] Impor memakai transaksi database (semua baris masuk atau tidak sama sekali).
+- [x] `GET download-journal-template` memakai `exceljs`. Kolom dan urutan sama dengan template sumber.
+- [x] `POST preview-journal-import` dan `POST import-journal-entries`: validasi baris, keseimbangan debit-kredit, periode, dan kode akun.
+- [x] Impor memakai transaksi database (semua baris masuk atau tidak sama sekali).
 - [ ] **Keluaran:** 3 endpoint aktif. **Selesai bila:** berkas contoh menghasilkan jurnal yang sama dengan backend lama.
 
 ### Fase 7 — Settings dan Guardian (hapus guardian)
 
-- [ ] `POST avatar`: unggah ke bucket S3, validasi tipe dan ukuran (setara `AvatarFileValidator`).
-- [ ] `guardian/dashboard`, `guardian/revoke-session/{sessionId}`, `guardian/revoke-all-sessions` di Nest.
-- [ ] Koordinasi dengan Go: tulis `login_activities` dan `user_sessions` saat login; Go membatalkan sesi yang dicabut pada `/auth/validate`.
-- [ ] `profile`, `change-password`, `delete-account`: endpoint dibuat di `services/auth` (Go), Nginx merutekan `/api/settings/{profile,change-password,delete-account}` ke Go. Nest tidak menyentuh `auth.users`.
-- [ ] **Keluaran:** 4 endpoint di Nest, 3 di Go. **Selesai bila:** sesi yang dicabut ditolak pada permintaan berikutnya.
+- [x] Guardian dan kelengkapannya tidak di duplikasi di /nest
+- [x] `POST avatar`: unggah ke bucket S3, validasi tipe dan ukuran (setara `AvatarFileValidator`).
+- [x] `profile`, `change-password`, `delete-account`: endpoint dibuat di `services/auth` (Go), Nginx merutekan `/api/settings/{profile,change-password,delete-account}` ke Go. Nest tidak menyentuh `auth.users`.
+- [ ] **Keluaran:** endpoint di Nest,di Go. **Selesai bila:** aman
 
 ### Fase 8 — Kontrak dan Tes
 
 - [ ] Bentuk respons semua modul masuk `libs/contracts` (Zod) dan diselaraskan dengan Rust, C#, dan Kotlin bila berubah (ADR 0004).
 - [ ] Tes unit dan integrasi per modul. Mock Redis dan S3 seperti `src/test/setup.ts`.
-- [ ] Tes paritas respons terhadap backend lama untuk 26 endpoint pada data yang sama.
+- [ ] Tes paritas respons terhadap backend lama untuk endpoint pada data yang sama.
 - [ ] **Keluaran:** CI memvalidasi semua modul baru. **Selesai bila:** `pnpm nx run-many -t lint typecheck test build` hijau.
 
 ### Fase 9 — Gateway, Render, dan Cutover (tanpa penghapusan)
 
-- [ ] `nginx.conf`: `location ^~ /api/avatars/` publik (tanpa `auth_request`); `/api/settings/{profile,change-password,delete-account}` → Go; naikkan `client_max_body_size` untuk impor Excel (misalnya `10m`), hanya pada `location` Tools.
-- [ ] `render.yaml`: tambah env untuk S3 (`AWS_ENDPOINT_URL_S3`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `S3_BUCKET`) sebagai `sync: false`.
+- [x] `nginx.conf`: `location ^~ /api/avatars/` publik (tanpa `auth_request`); `/api/settings/{profile,change-password,delete-account}` → Go; naikkan `client_max_body_size` untuk impor Excel (misalnya `10m`), hanya pada `location` Tools.
+- [x] `render.yaml`: tambah env untuk S3 (`AWS_ENDPOINT_URL_S3`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `S3_BUCKET`) sebagai `sync: false`.
 - [ ] Uji asap: login (Go) → dashboard → buat jurnal → impor Excel → notifikasi → unggah avatar → cabut sesi.
 - [ ] Bandingkan angka dan respons dengan backend aumo-finance pada data yang sama.
 - [ ] Perbarui ADR 0010 menjadi *Accepted*, tambah changeset.
 - [ ] **Tidak ada** penghapusan di aumo-finance.
-- [ ] **Keluaran:** seluruh isi `/backend` memiliki padanan di aumo-typescript. **Selesai bila:** 26 endpoint Nest dan 23 endpoint .NET lolos uji asap.
+- [ ] **Keluaran:** seluruh isi `/backend` memiliki padanan di aumo-typescript. **Selesai bila:**  endpoint Nest dan endpoint .NET lolos uji asap.
 
 ## 7. Risiko
 

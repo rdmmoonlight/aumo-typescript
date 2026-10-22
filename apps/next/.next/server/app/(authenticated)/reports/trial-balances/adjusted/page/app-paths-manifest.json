@@ -1,0 +1,3 @@
+{
+  "/(authenticated)/reports/trial-balances/adjusted/page": "app/(authenticated)/reports/trial-balances/adjusted/page.js"
+}

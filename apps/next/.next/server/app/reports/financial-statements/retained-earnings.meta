@@ -1,0 +1,49 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/(authenticated)/layout,_N_T_/(authenticated)/reports/layout,_N_T_/(authenticated)/reports/financial-statements/layout,_N_T_/(authenticated)/reports/financial-statements/retained-earnings/layout,_N_T_/(authenticated)/reports/financial-statements/retained-earnings/page,_N_T_/reports/financial-statements/retained-earnings"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/!KGF1dGhlbnRpY2F0ZWQp/reports/financial-statements/retained-earnings/__PAGE__"
+  ],
+  "prefetchHints": {
+    "hints": 64,
+    "slots": {
+      "children": {
+        "hints": 96,
+        "slots": {
+          "children": {
+            "hints": 96,
+            "slots": {
+              "children": {
+                "hints": 96,
+                "slots": {
+                  "children": {
+                    "hints": 96,
+                    "slots": {
+                      "children": {
+                        "hints": 160,
+                        "slots": null
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "routeCache": {
+    "key": "/route-cache/APP_PAGE/7b99785677b039393b0bc7d70c298d49cc7cd58389fa53470ff4cea4d7f4c993/$/reports/financial-statements/retained-earnings",
+    "owner": {
+      "kind": "APP_PAGE",
+      "sourceRoute": "/(authenticated)/reports/financial-statements/retained-earnings/page"
+    },
+    "isFallback": false
+  }
+}
