@@ -142,19 +142,19 @@ apps/nest/src/test/<nama>.test.ts
 
 ### Fase 3 — Skema Drizzle Tambahan
 
-- [ ] Tambah tabel `notifications`, `login_activities`, `user_sessions`, `security_settings` (dan `trusted_devices`, `recovery_codes` bila temuan 4 mengharuskan).
-- [ ] Cocokkan nama tabel dan kolom dengan Neon nyata sebelum `db:generate`.
-- [ ] Migrasi dijalankan manual (`db:migrate`) di Neon, **bukan** dari CI.
-- [ ] **Keluaran:** migrasi baru di `apps/nest/drizzle/`. **Selesai bila:** `db:generate` tidak menghasilkan diff lanjutan.
+- [x] Tambah tabel `notifications`, `login_activities`, `user_sessions`, `security_settings` (dan `trusted_devices`, `recovery_codes` bila temuan 4 mengharuskan).
+- [x] Cocokkan nama tabel dan kolom dengan Neon nyata sebelum `db:generate`.
+- [x] Migrasi dijalankan manual (`db:migrate`) di Neon, **bukan** dari CI.
+- [x] **Keluaran:** migrasi baru di `apps/nest/drizzle/`. **Selesai bila:** `db:generate` tidak menghasilkan diff lanjutan.
 
 ### Fase 4 — Modul Ringan dan Publik
 
-- [ ] `health`: selaraskan bentuk respons dengan `HealthController` sumber.
-- [ ] `core`: `GET/POST /core/salam` di TypeScript. Salin logika `axum/src/lib.rs` ke `native/core_engine/src/salam.rs` (fungsi biasa) dengan `cargo test`.
-- [ ] `home`: `kurs` dan `market-indicators` memakai `fetch` dengan batas waktu; cache Redis opsional.
-- [ ] `notifications`: daftar, tandai satu dibaca, tandai semua dibaca.
-- [ ] `avatars`: baca dari bucket S3 (Neon Bucket), publik.
-- [ ] Port `CoreControllerTests` ke `src/test/core.test.ts`.
+- [x] `health`: selaraskan bentuk respons dengan `HealthController` sumber.
+- [x] `core`: `GET/POST /core/salam` di TypeScript. Salin logika `axum/src/lib.rs` ke `native/core_engine/src/salam.rs` (fungsi biasa) dengan `cargo test`.
+- [x] `home`: `kurs` dan `market-indicators` memakai `fetch` dengan batas waktu; cache Redis opsional.
+- [x] `notifications`: daftar, tandai satu dibaca, tandai semua dibaca.
+- [x] `avatars`: baca dari bucket S3 (Neon Bucket), publik.
+- [x] Port `CoreControllerTests` ke `src/test/core.test.ts`.
 - [ ] **Keluaran:** 9 endpoint aktif. **Selesai bila:** tes modul hijau.
 
 ### Fase 5 — Dashboard dan Jurnal
