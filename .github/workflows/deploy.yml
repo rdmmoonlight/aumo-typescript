@@ -27,10 +27,10 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ghcr.io/${{ github.rdmmoonlight }}/aumo-typescript:latest
+          tags: ghcr.io/${{ github.repository_owner }}/aumo-typescript:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Trigger Render Deploy Hook
-        if: ${{ secrets.RENDER_DEPLOY_HOOK_URL != '' }}
-        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        if: secrets.RENDER_DEPLOY_HOOK_URL != ''
+        run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
