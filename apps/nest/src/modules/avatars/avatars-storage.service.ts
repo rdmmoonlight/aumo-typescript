@@ -3,53 +3,66 @@ import { Injectable } from '@nestjs/common';
 import { Readable } from 'stream';
 import { AvatarFile } from './avatars.types.js';
 
+const KEY_PREFIX = 'avatars/';
+/** Sama dengan NeonBucketStorage.FileNamePattern sumber (mencegah path traversal). */
+const FILE_NAME_PATTERN = /^[A-Za-z0-9_-]+\.(jpg|jpeg|png|gif|webp)$/i;
+
+const CONTENT_TYPES: Record<string, string> = {
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    png: 'image/png',
+    gif: 'image/gif',
+    webp: 'image/webp',
+};
+
 @Injectable()
 export class AvatarsStorageService {
-    private s3Client: S3Client | null = null;
-    private bucketName: string;
+    private readonly s3Client: S3Client | null = null;
+    private readonly bucketName: string;
 
     constructor() {
-        this.bucketName = process.env.S3_NEON_BUCKET || '';
-        const region = process.env.S3_REGION || 'us-east-1';
-        const endpoint = process.env.S3_ENDPOINT;
+        const endpoint = process.env.AWS_ENDPOINT_URL_S3;
+        const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+        const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+        const region = process.env.AWS_REGION || 'ap-southeast-1';
+        this.bucketName = process.env.S3_BUCKET || 'assets';
 
-        // Memeriksa ketersediaan konfigurasi S3
-        if (this.bucketName) {
+        if (endpoint?.trim() && accessKeyId?.trim() && secretAccessKey?.trim()) {
             this.s3Client = new S3Client({
                 region,
-                endpoint: endpoint || undefined,
+                endpoint,
                 forcePathStyle: true,
+                credentials: { accessKeyId, secretAccessKey },
+                requestChecksumCalculation: 'WHEN_REQUIRED',
+                responseChecksumValidation: 'WHEN_REQUIRED',
             });
         }
     }
 
     get isConfigured(): boolean {
-        return this.s3Client !== null && this.bucketName !== '';
+        return this.s3Client !== null;
     }
 
     async getAvatar(fileName: string): Promise<AvatarFile | null> {
-        if (!this.isConfigured || !this.s3Client) {
+        if (!this.s3Client || !FILE_NAME_PATTERN.test(fileName)) {
             return null;
         }
 
         try {
-            const command = new GetObjectCommand({
-                Bucket: this.bucketName,
-                Key: `avatars/${fileName}`,
-            });
-
-            const response = await this.s3Client.send(command);
-
+            const response = await this.s3Client.send(
+                new GetObjectCommand({ Bucket: this.bucketName, Key: KEY_PREFIX + fileName }),
+            );
             if (!response.Body) {
                 return null;
             }
 
+            const ext = fileName.split('.').pop()!.toLowerCase();
             return {
                 stream: response.Body as Readable,
-                contentType: response.ContentType || 'image/jpeg',
+                contentType: CONTENT_TYPES[ext] ?? 'application/octet-stream',
             };
-        } catch (error) {
-            // Mengabaikan error 'NoSuchKey' atau error S3 dan mengembalikan null
+        } catch {
+            // NoSuchKey atau galat S3 lain: perlakukan sebagai tidak ditemukan
             return null;
         }
     }

@@ -1,5 +1,5 @@
 import { Controller, Get, Param, Res, StreamableFile } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { Public } from '../../common/decorators/public.decorator.js';
 import { AvatarsService } from './avatars.service.js';
 

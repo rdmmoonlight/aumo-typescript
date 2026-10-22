@@ -7,10 +7,12 @@ export interface KursDataDto {
     change: number;
 }
 
+/** Setara MarketIndicatorDto sumber: Symbol, Name, Price, Change (persen). */
 export interface MarketIndicatorDto {
+    symbol: string;
     name: string;
-    value: number;
-    changePercent: number;
+    price: number;
+    change: number;
 }
 
 export interface ApiIndonesiaKursResponse {

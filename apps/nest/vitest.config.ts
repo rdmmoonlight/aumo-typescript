@@ -1,7 +1,11 @@
+import swc from 'unplugin-swc';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   envDir: '.',
+  // SWC menghasilkan metadata decorator (emitDecoratorMetadata) yang dibutuhkan DI Nest.
+  // esbuild bawaan Vitest tidak menghasilkannya, sehingga constructor injection tidak berfungsi.
+  plugins: [swc.vite({ module: { type: 'es6' } })],
   test: {
     globals: true,
     environment: 'node',

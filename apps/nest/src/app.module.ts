@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
 import { UserIdGuard } from './common/guards/user-id.guard.js';
 import { AvatarsModule } from './modules/avatars/avatars.module.js';
 import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 import { DrizzleModule } from './modules/drizzle/drizzle.module.js';
 import { ExampleModule } from './modules/example/example.module.js';
+import { HomeModule } from './modules/home/home.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { JournalEntryModule } from './modules/journal-entries/journal-entry.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
@@ -19,7 +21,8 @@ import { ToolsModule } from './modules/tools/tools.module.js';
     }),
     ExampleModule,
     HealthModule,
-    DrizzleModule,
+    DrizzleModule.register(),
+    HomeModule,
     NotificationsModule,
     AvatarsModule,
     DashboardModule,
@@ -27,6 +30,9 @@ import { ToolsModule } from './modules/tools/tools.module.js';
     ToolsModule,
     SettingsModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: UserIdGuard }],
+  providers: [
+    { provide: APP_GUARD, useClass: UserIdGuard },
+    { provide: APP_FILTER, useClass: GlobalExceptionFilter },
+  ],
 })
 export class AppModule { }

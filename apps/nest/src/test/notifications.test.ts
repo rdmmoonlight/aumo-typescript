@@ -1,60 +1,93 @@
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { AppModule } from '../app.module.js';
+import { NotificationsModule } from '../modules/notifications/notifications.module.js';
+import { createFakeDb, createModuleApp } from './helpers/create-module-app.js';
 
-describe('NotificationsModule (E2E)', () => {
-    let app: INestApplication;
+const ID = '123e4567-e89b-12d3-a456-426614174000';
+const row = {
+    id: ID,
+    userId: 'user-123',
+    title: 'Judul',
+    message: 'Isi',
+    type: 'INFO',
+    isRead: false,
+    targetUrl: null,
+    createdAt: new Date('2026-01-02T03:04:05.000Z'),
+};
+
+describe('NotificationsModule', () => {
+    const db = createFakeDb([row]);
+    let app: NestExpressApplication;
 
     beforeAll(async () => {
-        const moduleFixture: TestingModule = await Test.createTestingModule({
-            imports: [AppModule],
-        }).compile();
-
-        app = moduleFixture.createNestApplication();
-        await app.init();
+        app = await createModuleApp([NotificationsModule], db);
     });
-
     afterAll(async () => {
         await app.close();
     });
 
-    it('GET /notifications - Tanpa X-User-Id (Harus Error 401)', async () => {
+    it('GET /notifications - 401 tanpa X-User-Id', async () => {
         const res = await request(app.getHttpServer()).get('/notifications');
-
         expect(res.status).toBe(401);
-        expect(res.body).toEqual({
-            success: false,
-            message: 'Header X-User-Id wajib diisi',
-        });
+        expect(res.body).toEqual({ success: false, message: 'Header X-User-Id wajib diisi' });
     });
 
-    it('GET /notifications - Dengan X-User-Id Valid', async () => {
+    it('GET /notifications - array polos sesuai NotificationDto sumber', async () => {
         const res = await request(app.getHttpServer())
-            .get('/notifications')
+            .get('/notifications?limit=5')
             .set('X-User-Id', 'user-123');
-
         expect(res.status).toBe(200);
-        expect(res.body.success).toBe(true);
-        expect(Array.isArray(res.body.data)).toBe(true);
+        expect(res.body).toEqual([
+            {
+                id: ID,
+                title: 'Judul',
+                message: 'Isi',
+                type: 'INFO',
+                isRead: false,
+                targetUrl: null,
+                createdAt: '2026-01-02T03:04:05.000Z',
+            },
+        ]);
+        expect(db.builder.limit).toHaveBeenCalledWith(5);
     });
 
-    it('PATCH /notifications/:id/read - Tandai Satu Dibaca', async () => {
+    it.each(['0', '101', 'abc'])('GET /notifications?limit=%s - 400', async (limit) => {
         const res = await request(app.getHttpServer())
-            .patch('/notifications/123e4567-e89b-12d3-a456-426614174000/read')
+            .get(`/notifications?limit=${limit}`)
             .set('X-User-Id', 'user-123');
-
-        expect(res.status).toBe(200);
-        expect(res.body.success).toBe(true);
+        expect(res.status).toBe(400);
+        expect(res.body.success).toBe(false);
     });
 
-    it('PATCH /notifications/read-all - Tandai Semua Dibaca', async () => {
+    it('PUT /notifications/:id/read - 204', async () => {
         const res = await request(app.getHttpServer())
-            .patch('/notifications/read-all')
+            .put(`/notifications/${ID}/read`)
             .set('X-User-Id', 'user-123');
+        expect(res.status).toBe(204);
+    });
 
-        expect(res.status).toBe(200);
-        expect(res.body.success).toBe(true);
+    it('PUT /notifications/:id/read - 404 bila bukan milik pengguna / tidak ada', async () => {
+        const kosong = createFakeDb([]);
+        const app2 = await createModuleApp([NotificationsModule], kosong);
+        const res = await request(app2.getHttpServer())
+            .put(`/notifications/${ID}/read`)
+            .set('X-User-Id', 'user-123');
+        expect(res.status).toBe(404);
+        await app2.close();
+    });
+
+    it('PUT /notifications/bukan-guid/read - 404 (setara {id:guid})', async () => {
+        const res = await request(app.getHttpServer())
+            .put('/notifications/bukan-guid/read')
+            .set('X-User-Id', 'user-123');
+        expect(res.status).toBe(404);
+    });
+
+    it('PUT /notifications/read-all - 204', async () => {
+        const res = await request(app.getHttpServer())
+            .put('/notifications/read-all')
+            .set('X-User-Id', 'user-123');
+        expect(res.status).toBe(204);
     });
 });

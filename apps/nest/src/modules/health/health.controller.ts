@@ -1,12 +1,17 @@
-import { Controller, Get, Head, HttpCode, ServiceUnavailableException } from '@nestjs/common';
+import { Controller, Get, Head, HttpCode, Res } from '@nestjs/common';
+import type { Response } from 'express';
+import { Public } from '../../common/decorators/public.decorator.js';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { sql } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { InjectDrizzle } from '../drizzle/drizzle.decorator.js';
 
 @ApiTags('Health')
+@Public()
 @Controller()
 export class HealthController {
   constructor(
-    private readonly db: NodePgDatabase,
+    @InjectDrizzle() private readonly db: NodePgDatabase,
   ) { }
 
   @Get()
@@ -31,10 +36,10 @@ export class HealthController {
   })
   @ApiResponse({ status: 200, description: 'Server dan database berjalan normal' })
   @ApiResponse({ status: 503, description: 'Server atau database bermasalah' })
-  async health() {
+  async health(@Res({ passthrough: true }) res: Response) {
     try {
-      // Cek koneksi ke PostgreSQL via Drizzle
-      await this.db.execute('SELECT 1');
+      // Cek koneksi ke PostgreSQL via Drizzle (setara CanConnectAsync sumber)
+      await this.db.execute(sql`SELECT 1`);
 
       return {
         status: 'online',
@@ -43,12 +48,14 @@ export class HealthController {
         timestamp: new Date().toISOString(),
       };
     } catch (error: unknown) {
-      throw new ServiceUnavailableException({
+      // Bentuk 503 sama dengan HealthController sumber
+      res.status(503);
+      return {
         status: 'offline',
         database: 'error',
         message: error instanceof Error ? error.message : 'Database connection failed',
         timestamp: new Date().toISOString(),
-      });
+      };
     }
   }
 }

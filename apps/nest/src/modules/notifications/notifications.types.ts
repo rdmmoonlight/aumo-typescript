@@ -1,14 +1,10 @@
-import { ApiResponse } from '../../common/types/api-response.type.js';
-
+/** Bentuk respons sama dengan NotificationDto sumber (.NET). */
 export interface NotificationDto {
     id: string;
     title: string;
     message: string;
     type: string;
     isRead: boolean;
-    targetUrl?: string;
-    createdAt: Date;
+    targetUrl: string | null;
+    createdAt: string;
 }
-
-export type NotificationListResponse = ApiResponse<NotificationDto[]>;
-export type NotificationActionResponse = ApiResponse<null>;

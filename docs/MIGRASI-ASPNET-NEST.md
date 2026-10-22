@@ -13,15 +13,22 @@
 | Isi `/backend` | Tujuan | Dokumen |
 | --- | --- | --- |
 | `asp-net-core`: `Reports`, `Periods`, `ChartOfAccounts` + kelengkapannya | `dotnet/src/Aumo.Accounting.Api` | `MIGRASI-ASPNET-ACCOUNTING.md` |
-| `asp-net-core`: `Health`, `Core`, `Home`, `Dashboard`, `Notifications`, `Avatars`, `JournalEntry`, `Tools`, `Settings` + kelengkapannya | `apps/nest/src/modules/*` | **dokumen ini** |
+| `asp-net-core`: `Health`, `Home`, `Dashboard`, `Notifications`, `Avatars`, `JournalEntry`, `Tools`, `Settings` (tanpa `guardian/*`) + kelengkapannya | `apps/nest/src/modules/*` | **dokumen ini** |
+| `asp-net-core`: `CoreController` + `RustCoreService` | **Tidak disalin.** Dead code di sumber (lihat catatan di bawah tabel) | dokumen ini |
+| `asp-net-core`: `guardian/*` di `SettingsController` + tabel Guardian | **Tidak disalin.** Fitur guardian tidak diduplikasi ke Nest | dokumen ini, Fase 7 |
 | `asp-net-core`: `Auth` + `Services/Auth`, `Services/Identity` | Tidak disalin. Sudah ditangani `services/auth` (Go) | ADR 0006, 0007 |
-| `asp-net-core/Tests/Controllers/CoreControllerTests.cs` | `apps/nest/src/test/core.test.ts` (Vitest) | dokumen ini, Fase 4 |
+| `asp-net-core/Tests/Controllers/CoreControllerTests.cs` | Tidak disalin. Mengikuti `CoreController` | dokumen ini |
 | `asp-net-core/Migrations/` | Tidak disalin. Skema dimiliki Drizzle | `MIGRASI-ASPNET-ACCOUNTING.md`, Fase 5 |
-| `axum/` (Rust, `cdylib`, `get_salam`) | `native/core_engine/src/salam.rs` (fungsi Rust biasa + `cargo test`). Endpoint Nest memakai TypeScript | dokumen ini, Fase 4 |
+| `axum/` (Rust, `cdylib`, `get_salam`) | Tidak disalin. Hanya dipakai `CoreController` yang tidak diduplikasi | dokumen ini |
 | `go/Test.txt`, `python/Test.txt` | Placeholder tanpa kode. Tidak ada yang disalin. Padanan Go sudah ada: `services/auth` | dokumen ini |
 | `Dockerfile` (backend) | Tidak disalin. Digantikan `Dockerfile` root | `MIGRASI-ASPNET-ACCOUNTING.md`, Fase 8 |
 | `Backend.slnx` | Tidak disalin. Digantikan `dotnet/App.sln` | `MIGRASI-ASPNET-ACCOUNTING.md`, Fase 2 |
 | `README.md`, `Note.txt` | Ringkasan prinsip ada di bagian 8 | dokumen ini |
+
+> **Catatan cakupan (keputusan pemilik repo).**
+> - `CoreController` (`/api/core/salam`, GET dan POST), `RustCoreService`, `CoreControllerTests`, dan `axum/` **tidak diduplikasi.** Di sumber semuanya *dead code*: tidak dipakai klien mana pun. Tidak ada modul `core` di Nest.
+> - `guardian/*` di `SettingsController` (3 endpoint) beserta tabel `login_activities`, `user_sessions`, `security_settings`, `trusted_devices`, `recovery_codes` **tidak diduplikasi.**
+> - Akibatnya cakupan endpoint turun dari 26 menjadi **21** (26 − 2 `core` − 3 `guardian`). Pemilik tiap endpoint tertulis di ADR 0010.
 
 ## 2. Ringkasan Keputusan
 
@@ -41,20 +48,20 @@
 
 ## 3. Inventaris Baseline
 
-### 3.1 Controller yang diduplikasi ke Nest (9 controller, 26 endpoint)
+### 3.1 Controller yang diduplikasi ke Nest (8 controller, 21 endpoint; sumber memiliki 9 controller, 26 endpoint)
 
 | Controller sumber | Baris | Rute sumber | Modul Nest | Metode |
 | --- | --- | --- | --- | --- |
 | `HealthController` | 80 | `/health` | `health` (**sudah ada**) | GET |
-| `CoreController` | 102 | `/api/core/salam` | `core` | GET, POST |
+| `CoreController` | 102 | `/api/core/salam` | **tidak diduplikasi** (dead code di sumber) | GET, POST |
 | `HomeController` (2 kelas) | 176 | `/kurs`, `/home/market-indicators` | `home` | GET ×2 |
 | `DashboardController` | 261 | `/dashboard` | `dashboard` | GET |
 | `NotificationsController` | 138 | `/notifications`, `/notifications/{id:guid}/read`, `/notifications/read-all` | `notifications` | GET, PUT ×2 |
 | `AvatarsController` | 51 | `/avatars/{fileName}` (publik) | `avatars` | GET |
 | `JournalEntryController` | 399 | `/journal-entry/{id}`, `create`, `edit/{id}`, `delete/{id}`, `search-descriptions`, `next-transaction-number` | `journal-entries` | GET ×3, POST, PUT, DELETE |
 | `ToolsController` | 396 | `/tools/download-journal-template`, `preview-journal-import`, `import-journal-entries` | `tools` | GET, POST ×2 |
-| `SettingsController` | 312 | `/settings/profile`, `avatar`, `change-password`, `delete-account`, `guardian/dashboard`, `guardian/revoke-session/{id}`, `guardian/revoke-all-sessions` | `settings` | PUT, POST ×4, GET, DELETE |
-| **Total** | **1.915** | | | **26 endpoint** |
+| `SettingsController` | 312 | `/settings/profile`, `avatar`, `change-password`, `delete-account`; `guardian/*` (3 endpoint) **tidak diduplikasi** | `settings` (hanya `avatar`); sisanya Go | PUT, POST ×4 (+ GET, DELETE guardian, tidak diduplikasi) |
+| **Total** | **1.915** | | | **26 endpoint sumber, 21 dipetakan** |
 
 Service pendukung: sekitar 2.400 baris (`Dashboard`, `Home`, `JournalEntries`, `Notifications`, `Settings`, `Storage`, `Tools`, `Health`, `Core`). Total controller + service sekitar **4.300 baris**, belum termasuk DTO, validator, dan model.
 
@@ -75,11 +82,11 @@ Service pendukung: sekitar 2.400 baris (`Dashboard`, `Home`, `JournalEntries`, `
 | 1 | `JournalEntryService` memakai `PeriodLock` (6 kali), `ITransactionNumberService` (2 kali), dan menulis `GeneralJournals`. `PeriodLock` ada di `ChartOfAccountsModel.cs` (bagian akuntansi) | Aturan ditulis ulang di TypeScript dan dikunci dengan tes paritas terhadap perilaku .NET (Fase 5) |
 | 2 | `DashboardService` hanya membaca `ChartOfAccounts`, `GeneralJournals`, dan periode terpilih | Cukup Drizzle. Skema `chart-of-accounts`, `general-journal`, `periods` sudah ada di Nest. Tidak memanggil .NET |
 | 3 | `SettingsService` memakai `UserManager` dan `SignInManager` (profil, kata sandi, hapus akun). Pengguna sekarang ada di `auth.users` milik Go (`id uuid`, `name`, `email`, `password_hash`) | `profile`, `change-password`, `delete-account` mengubah `auth.users`. Ketiganya **dilayani Go** (endpoint baru di Go), Nginx merutekannya ke Go. Nest hanya memiliki `avatar` dan `guardian/*` |
-| 4 | Guardian memakai tabel `LoginActivity`, `UserSession`, `TrustedDevice`, `RecoveryCode`, `SecuritySetting` yang belum ada di Drizzle. Pencatatan sesi hanya benar bila Go mencatat aktivitas login | Tabel ditambahkan ke Drizzle. Go wajib menulis `login_activities` dan `user_sessions` saat login. Tabel `trusted_devices` dan `recovery_codes` hanya disalin bila fitur 2FA terbukti dipakai |
+| 4 | ~~Guardian memakai tabel `LoginActivity`, `UserSession`, `TrustedDevice`, `RecoveryCode`, `SecuritySetting` yang belum ada di Drizzle. Pencatatan sesi hanya benar bila Go mencatat aktivitas login | Tabel ditambahkan ke Drizzle. Go wajib menulis `login_activities` dan `user_sessions` saat login. Tabel `trusted_devices` dan `recovery_codes` hanya disalin bila fitur 2FA terbukti dipakai~~ **Tidak berlaku.** Guardian tidak diduplikasi, jadi tabel dan pekerjaan di Go tidak diperlukan |
 | 5 | `ToolsService` memakai ClosedXML (template dan impor Excel) | Diganti `exceljs`. Format kolom template dikunci dengan tes |
 | 6 | `AvatarsController` publik (`AllowAnonymous`) dan `NeonBucketStorage` memakai S3 | `@aws-sdk/client-s3` sudah ada di `apps/nest`. `GET /api/avatars/*` publik, tanpa `auth_request` di Nginx |
 | 7 | `HomeService` memanggil sumber kurs dan indikator pasar lewat `HttpClient` | Diganti `fetch` bawaan Node 24 dengan batas waktu. Cache Redis opsional (fail-open, seperti rate limit Nest) |
-| 8 | `CoreController` hanya mengembalikan pesan "salam" dari Rust | Dikembalikan dari TypeScript. Logika Rust diduplikasi ke `native/core_engine` sebagai fungsi biasa |
+| 8 | `CoreController` hanya mengembalikan pesan "salam" dari Rust | **Tidak diduplikasi.** Dead code di sumber |
 | 9 | `HealthController` sudah punya padanan di Nest | Selaraskan bentuk respons saja. Tidak ada modul baru |
 | 10 | Sumber hanya memiliki satu tes (`CoreControllerTests`) | Tes modul baru dibuat di Fase 8 |
 
@@ -89,8 +96,7 @@ Service pendukung: sekitar 2.400 baris (`Dashboard`, `Home`, `JournalEntries`, `
 | --- | --- | --- |
 | `chart_of_accounts`, `general_journal`, `periods`, `transaction_counters` | Sudah ada | `dashboard`, `journal-entries`, `tools` |
 | `notifications` | **Baru** | `notifications` |
-| `login_activities`, `user_sessions`, `security_settings` | **Baru** | `settings` (guardian) |
-| `trusted_devices`, `recovery_codes` | Baru, bersyarat (temuan 4) | `settings` (guardian) |
+| `login_activities`, `user_sessions`, `security_settings`, `trusted_devices`, `recovery_codes` | **Tidak dibuat.** Guardian tidak diduplikasi | - |
 | `general_ledger_*` | Dibahas di dokumen akuntansi (Fase 5) | `dotnet/` |
 
 ## 4. Benturan Konfigurasi (Sumber vs `apps/nest`)
@@ -130,7 +136,7 @@ apps/nest/src/test/<nama>.test.ts
 - [x] Catat commit SHA sumber (`aumo-finance`) sebagai titik acuan salinan.
 - [x] Tetapkan keputusan bagian 2 dan 3.2. Tetapkan siapa yang melayani `profile`, `change-password`, `delete-account` (Go).
 - [x] Catat di `docs/adr/0010-duplikasi-backend-ke-nest.md` (status *Proposed*).
-- [ ] **Keluaran:** ADR 0010. **Selesai bila:** daftar 26 endpoint dan pemilik tiap endpoint tertulis.
+- [x] **Keluaran:** ADR 0010. **Selesai bila:** daftar endpoint dan pemilik tiap endpoint tertulis. (21 endpoint dipetakan; `core` dan `guardian` dikeluarkan dari cakupan. Lihat bagian *Daftar Endpoint dan Pemilik* di ADR 0010.)
 
 ### Fase 2 — Kerangka dan Konvensi Modul
 
@@ -142,7 +148,7 @@ apps/nest/src/test/<nama>.test.ts
 
 ### Fase 3 — Skema Drizzle Tambahan
 
-- [x] Tambah tabel `notifications`, `login_activities`, `user_sessions`, `security_settings` (dan `trusted_devices`, `recovery_codes` bila temuan 4 mengharuskan).
+- [x] Tambah tabel `notifications`. Tabel guardian (`login_activities`, `user_sessions`, `security_settings`, `trusted_devices`, `recovery_codes`) tidak dibuat karena guardian tidak diduplikasi.
 - [x] Cocokkan nama tabel dan kolom dengan Neon nyata sebelum `db:generate`.
 - [x] Migrasi dijalankan manual (`db:migrate`) di Neon, **bukan** dari CI.
 - [x] **Keluaran:** migrasi baru di `apps/nest/drizzle/`. **Selesai bila:** `db:generate` tidak menghasilkan diff lanjutan.
@@ -150,12 +156,12 @@ apps/nest/src/test/<nama>.test.ts
 ### Fase 4 — Modul Ringan dan Publik
 
 - [x] `health`: selaraskan bentuk respons dengan `HealthController` sumber.
-- [x] `core`: `GET/POST /core/salam` di TypeScript. Salin logika `axum/src/lib.rs` ke `native/core_engine/src/salam.rs` (fungsi biasa) dengan `cargo test`.
+- [x] `core`: **tidak diduplikasi.** Dead code di sumber (`CoreController`, `RustCoreService`, `axum/`). Tidak ada modul `core` dan tidak ada `salam.rs`.
 - [x] `home`: `kurs` dan `market-indicators` memakai `fetch` dengan batas waktu; cache Redis opsional.
 - [x] `notifications`: daftar, tandai satu dibaca, tandai semua dibaca.
 - [x] `avatars`: baca dari bucket S3 (Neon Bucket), publik.
-- [x] Port `CoreControllerTests` ke `src/test/core.test.ts`.
-- [ ] **Keluaran:** 9 endpoint aktif. **Selesai bila:** tes modul hijau.
+- [x] `CoreControllerTests`: **tidak diport.** Mengikuti `core`. Tes Fase 4 dibuat untuk `health`, `home`, `notifications`, dan `avatars`.
+- [x] **Keluaran:** 7 endpoint aktif (`health` 1, `home` 2, `notifications` 3, `avatars` 1; semula 9, dikurangi 2 endpoint `core`). **Selesai bila:** tes modul hijau. (24 tes lulus: `health`, `home`, `notifications`, `avatars`.)
 
 ### Fase 5 — Dashboard dan Jurnal
 
@@ -176,7 +182,7 @@ apps/nest/src/test/<nama>.test.ts
 - [x] Guardian dan kelengkapannya tidak di duplikasi di /nest
 - [x] `POST avatar`: unggah ke bucket S3, validasi tipe dan ukuran (setara `AvatarFileValidator`).
 - [x] `profile`, `change-password`, `delete-account`: endpoint dibuat di `services/auth` (Go), Nginx merutekan `/api/settings/{profile,change-password,delete-account}` ke Go. Nest tidak menyentuh `auth.users`.
-- [ ] **Keluaran:** endpoint di Nest,di Go. **Selesai bila:** aman
+- [ ] **Keluaran:** endpoint di Nest, di Go. **Selesai bila:** aman
 
 ### Fase 8 — Kontrak dan Tes
 

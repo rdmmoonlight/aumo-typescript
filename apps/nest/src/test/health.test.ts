@@ -1,60 +1,43 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import * as testAppHelpers from './helpers/create-test-app.test.js';
+import { HealthModule } from '../modules/health/health.module.js';
+import { createFakeDb, createModuleApp } from './helpers/create-module-app.js';
 
-describe('Health Routes', () => {
-  let app: NestExpressApplication | undefined;
+describe('HealthModule', () => {
+    const db = createFakeDb();
+    let app: NestExpressApplication;
 
-  beforeAll(async () => {
-    // Menangani kompatibilitas named export maupun default export
-    type CreateTestApp = () => Promise<NestExpressApplication>;
-    const helpers = testAppHelpers as unknown as {
-      createTestApp?: CreateTestApp;
-      default?: CreateTestApp;
-    };
-    const createTestAppFn =
-      helpers.createTestApp ?? helpers.default;
+    beforeAll(async () => {
+        app = await createModuleApp([HealthModule], db);
+    });
+    afterAll(async () => {
+        await app.close();
+    });
 
-    if (typeof createTestAppFn !== 'function') {
-      throw new TypeError(
-        'createTestApp is not exported as a function from ./helpers/create-test-app.test.js'
-      );
-    }
+    it('GET / - publik, status 200', async () => {
+        const res = await request(app.getHttpServer()).get('/');
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({ status: 'ok', message: 'Aumo API Server Online 🚀' });
+    });
 
-    app = await createTestAppFn();
-  });
+    it('GET /health - bentuk respons sama dengan HealthController sumber', async () => {
+        const res = await request(app.getHttpServer()).get('/health');
+        expect(res.status).toBe(200);
+        expect(res.body.status).toBe('online');
+        expect(res.body.database).toBe('connected');
+        expect(res.body).toHaveProperty('commit');
+        expect(Number.isNaN(Date.parse(res.body.timestamp))).toBe(false);
+    });
 
-  afterAll(async () => {
-    // Optional chaining mencegah crash 'Cannot read properties of undefined (reading close)'
-    await app?.close();
-  });
-
-  it('GET / - status 200 dan pesan server online', async () => {
-    if (!app) throw new Error('App was not initialized');
-
-    const res = await request(app.getHttpServer()).get('/');
-
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({ status: 'ok', message: 'Aumo API Server Online 🚀' });
-  });
-
-  it('HEAD / - status 200 dengan body kosong (ping)', async () => {
-    if (!app) throw new Error('App was not initialized');
-
-    const res = await request(app.getHttpServer()).head('/');
-
-    expect(res.status).toBe(200);
-    expect(res.text ?? '').toBe('');
-  });
-
-  it('GET /health - status 200 dan timestamp valid', async () => {
-    if (!app) throw new Error('App was not initialized');
-
-    const res = await request(app.getHttpServer()).get('/health');
-
-    expect(res.status).toBe(200);
-    expect(res.body.status).toBe('pass');
-    expect(Number.isNaN(Date.parse(res.body.timestamp))).toBe(false);
-  });
+    it('GET /health - 503 saat database gagal', async () => {
+        db.execute.mockRejectedValueOnce(new Error('koneksi putus'));
+        const res = await request(app.getHttpServer()).get('/health');
+        expect(res.status).toBe(503);
+        expect(res.body).toMatchObject({
+            status: 'offline',
+            database: 'error',
+            message: 'koneksi putus',
+        });
+    });
 });

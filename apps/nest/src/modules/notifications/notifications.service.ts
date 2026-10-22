@@ -1,34 +1,53 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { and, desc, eq } from 'drizzle-orm';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { notifications } from '../../db/schema/notifications.js';
+import { InjectDrizzle } from '../drizzle/drizzle.decorator.js';
 import { QueryNotificationDto } from './notifications.schemas.js';
 import { NotificationDto } from './notifications.types.js';
 
 @Injectable()
 export class NotificationsService {
+    constructor(@InjectDrizzle() private readonly db: NodePgDatabase) { }
+
     async findMyNotifications(
         userId: string,
         query: QueryNotificationDto,
     ): Promise<NotificationDto[]> {
-        return [
-            {
-                id: '123e4567-e89b-12d3-a456-426614174000',
-                title: 'Notifikasi Sistem',
-                message: 'Selamat datang di aplikasi',
-                type: 'INFO',
-                isRead: false,
-                targetUrl: '/dashboard',
-                createdAt: new Date(),
-            },
-        ];
+        const rows = await this.db
+            .select()
+            .from(notifications)
+            .where(eq(notifications.userId, userId))
+            .orderBy(desc(notifications.createdAt))
+            .limit(query.limit);
+
+        return rows.map((n) => ({
+            id: n.id,
+            title: n.title,
+            message: n.message,
+            type: n.type,
+            isRead: n.isRead,
+            targetUrl: n.targetUrl ?? null,
+            createdAt: n.createdAt.toISOString(),
+        }));
     }
 
     async markAsRead(userId: string, id: string): Promise<void> {
-        if (id === 'not-found') {
-            throw new NotFoundException({
-                success: false,
-                message: 'Notifikasi tidak ditemukan',
-            });
+        const updated = await this.db
+            .update(notifications)
+            .set({ isRead: true })
+            .where(and(eq(notifications.id, id), eq(notifications.userId, userId)))
+            .returning({ id: notifications.id });
+
+        if (updated.length === 0) {
+            throw new NotFoundException('Notifikasi tidak ditemukan');
         }
     }
 
-    async markAllAsRead(userId: string): Promise<void> { }
+    async markAllAsRead(userId: string): Promise<void> {
+        await this.db
+            .update(notifications)
+            .set({ isRead: true })
+            .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+    }
 }

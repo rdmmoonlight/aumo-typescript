@@ -1,5 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { Public } from '../../common/decorators/public.decorator.js';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import { GetKursQueryDto, getKursQuerySchema } from './home.schemas.js';
 import { HomeService } from './home.service.js';
 import { KursResponse, MarketIndicatorsResponse } from './home.types.js';
@@ -10,9 +11,8 @@ export class HomeController {
 
     @Get('kurs')
     @Public()
-    async getKurs(@Query() query: GetKursQueryDto): Promise<KursResponse> {
-        const parsedQuery = getKursQuerySchema.parse(query);
-        const data = await this.homeService.getKurs(parsedQuery);
+    async getKurs(@Query(new ZodValidationPipe(getKursQuerySchema)) query: GetKursQueryDto): Promise<KursResponse> {
+        const data = await this.homeService.getKurs(query);
 
         return {
             success: true,
