@@ -16,6 +16,10 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 FROM node:24-alpine AS builder-nest
 WORKDIR /app
 RUN npm install -g pnpm@12.14.0
+
+# Matikan pemblokiran build scripts pnpm
+ENV PNPM_CONFIG_IGNORE_BUILDS=false
+
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/nest/package.json apps/nest/
 COPY apps/api/package.json apps/api/
@@ -32,7 +36,11 @@ RUN pnpm --filter @app/nest deploy --prod /app/pruned
 FROM node:24-alpine AS builder-web
 WORKDIR /app
 RUN npm install -g pnpm@12.14.0
-ENV NEXT_PUBLIC_API_URL=/api
+
+# Matikan pemblokiran build scripts pnpm & set env API
+ENV PNPM_CONFIG_IGNORE_BUILDS=false \
+    NEXT_PUBLIC_API_URL=/api
+
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/next/package.json apps/next/
 COPY libs/contracts/package.json libs/contracts/
