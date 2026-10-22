@@ -3,9 +3,6 @@
   "version": "5.0.0",
   "private": true,
   "type": "module",
-  "allowScripts": {
-    "unrs-resolver": true
-  },
   "imports": {
     "#/*": "./src/*",
     "@/*": "./src/*"
@@ -70,5 +67,10 @@
   },
   "engines": {
     "node": ">=24.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "unrs-resolver"
+    ]
   }
 }
