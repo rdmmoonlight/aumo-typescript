@@ -41,5 +41,10 @@
   "packageManager": "pnpm@12.14.0",
   "dependencies": {
     "@app/cli": "link:tools/cli"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "unrs-resolver"
+    ]
   }
 }
