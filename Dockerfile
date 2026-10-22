@@ -36,18 +36,17 @@ RUN pnpm --filter @app/nest deploy --prod /app/pruned
 FROM node:24-alpine AS builder-web
 WORKDIR /app
 RUN npm install -g pnpm@12.14.0
-
-# Matikan pemblokiran build scripts pnpm & set env API
-ENV PNPM_CONFIG_IGNORE_BUILDS=false \
-    NEXT_PUBLIC_API_URL=/api
-
+ENV NEXT_PUBLIC_API_URL=/api
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/next/package.json apps/next/
 COPY libs/contracts/package.json libs/contracts/
 COPY libs/logger/package.json libs/logger/
 COPY libs/sdk/package.json libs/sdk/
+
+# Menggunakan --no-frozen-lockfile agar pnpm v10 tidak memblokir unrs-resolver
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile --filter "@app/next..."
+    pnpm install --no-frozen-lockfile --filter "@app/next..."
+
 COPY . .
 RUN --mount=type=cache,id=nextjs,target=/app/apps/next/.next/cache \
     pnpm --filter "@app/next..." build
