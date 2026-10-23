@@ -32,7 +32,7 @@
 # STAGE 3: Build Next.js (SSG / Static Export)
 FROM node:24-alpine AS builder-web
 WORKDIR /app
-RUN npm install -g pnpm@12.14.0
+RUN corepack enable && corepack prepare pnpm@latest --activate
 ENV NEXT_PUBLIC_API_URL=/api
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
