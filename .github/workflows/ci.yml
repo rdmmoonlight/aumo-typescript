@@ -38,7 +38,7 @@ jobs:
         with:
           commit_message: "chore(ci): auto-fix lint, formatting, and update lockfile [skip ci]"
           branch: ${{ github.head_ref || github.ref_name }}
-          file_pattern: "*.ts *.js *.tsx *.jsx *.json *.md *.css pnpm-lock.yaml"
+          file_pattern: "."
 
       - name: Check Remaining Lint Errors
         run: pnpm run lint
