@@ -7,7 +7,6 @@ import type {
   CreatePeriodValues,
   PeriodItem,
 } from "@/app/(authenticated)/periods/types";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -31,15 +30,9 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import {
-  AlertTriangle,
-  Calendar,
-  EyeOff,
-  Loader2,
-  Plus,
-  X,
-} from "lucide-react";
+import { Calendar, EyeOff, Loader2, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 export default function PeriodsPage() {
   const [periods, setPeriods] = useState<PeriodItem[]>([]);
@@ -51,8 +44,6 @@ export default function PeriodsPage() {
   const [isCreating, setIsCreating] = useState<boolean>(false);
 
   const [viewMode, setViewMode] = useState<"list" | "create">("list");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [selectingId, setSelectingId] = useState<number | null>(null);
   const [closingId, setClosingId] = useState<number | null>(null);
 
@@ -95,7 +86,7 @@ export default function PeriodsPage() {
         }
       }
     } catch {
-      setErrorMessage("Gagal memuat data periode.");
+      toast.error("Gagal memuat data periode.");
     } finally {
       setIsLoading(false);
     }
@@ -155,7 +146,6 @@ export default function PeriodsPage() {
   );
 
   const handleSelectPeriod = async (p: PeriodItem) => {
-    setErrorMessage(null);
     setSelectingId(p.id);
     try {
       const result = await store.dispatch(
@@ -164,18 +154,17 @@ export default function PeriodsPage() {
       if ("error" in result) {
         throw result.error;
       }
-      setSuccessMessage(`Now viewing: ${p.periodName}`);
+      toast.success(`Now viewing: ${p.periodName}`);
       await fetchPeriods();
     } catch (err) {
       const error = err as ApiError;
-      setErrorMessage(error?.data?.message || "Gagal memilih periode.");
+      toast.error(error?.data?.message || "Gagal memilih periode.");
     } finally {
       setSelectingId(null);
     }
   };
 
   const handleClearSelection = async () => {
-    setErrorMessage(null);
     setIsClearing(true);
     try {
       const result = await store.dispatch(
@@ -184,11 +173,11 @@ export default function PeriodsPage() {
       if ("error" in result) {
         throw result.error;
       }
-      setSuccessMessage("No period selected.");
+      toast.success("No period selected.");
       await fetchPeriods();
     } catch (err) {
       const error = err as ApiError;
-      setErrorMessage(
+      toast.error(
         error?.data?.message || "Gagal menghapus pilihan periode.",
       );
     } finally {
@@ -198,7 +187,6 @@ export default function PeriodsPage() {
 
   const handleClosePeriod = async (p: PeriodItem) => {
     if (!confirm(`Close ${p.periodName}? This will lock all entries.`)) return;
-    setErrorMessage(null);
     setClosingId(p.id);
     try {
       const result = await store.dispatch(
@@ -207,18 +195,17 @@ export default function PeriodsPage() {
       if ("error" in result) {
         throw result.error;
       }
-      setSuccessMessage(`${p.periodName} closed successfully.`);
+      toast.success(`${p.periodName} closed successfully.`);
       await fetchPeriods();
     } catch (err) {
       const error = err as ApiError;
-      setErrorMessage(error?.data?.message || "Failed to close period.");
+      toast.error(error?.data?.message || "Failed to close period.");
     } finally {
       setClosingId(null);
     }
   };
 
   const handleCreateSubmit = async (values?: CreatePeriodValues) => {
-    setErrorMessage(null);
     const currentSetupMode = values?.setupMode ?? setupMode;
     const currentMonth = values?.month ?? month;
     const currentYear = values?.year ?? year;
@@ -230,14 +217,14 @@ export default function PeriodsPage() {
       currentSetupMode === "LoadExisting" &&
       (!currentCashAccId || !currentBankAccId || !currentRetainedId)
     ) {
-      setErrorMessage("Select Cash, Bank, and Retained Earnings accounts.");
+      toast.error("Select Cash, Bank, and Retained Earnings accounts.");
       return;
     }
     if (
       currentSetupMode === "LoadExisting" &&
       currentCashAccId === currentBankAccId
     ) {
-      setErrorMessage("Cash and Bank Account cannot be the same account.");
+      toast.error("Cash and Bank Account cannot be the same account.");
       return;
     }
 
@@ -301,12 +288,12 @@ export default function PeriodsPage() {
         throw result.error;
       }
 
-      setSuccessMessage("Period opened successfully.");
+      toast.success("Period opened successfully.");
       setViewMode("list");
       await fetchPeriods();
     } catch (err) {
       const error = err as ApiError;
-      setErrorMessage(error?.data?.message || "Failed to create period.");
+      toast.error(error?.data?.message || "Failed to create period.");
     } finally {
       setIsCreating(false);
     }
@@ -332,40 +319,6 @@ export default function PeriodsPage() {
 
   return (
     <div className="space-y-6 max-w-5xl">
-      {errorMessage && (
-        <Alert
-          variant="destructive"
-          className="flex justify-between items-center py-2 bg-red-950/50 border-red-900/50 text-red-200"
-        >
-          <AlertDescription className="flex items-center gap-2 text-xs">
-            <AlertTriangle size={16} /> {errorMessage}
-          </AlertDescription>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 text-red-200 hover:bg-red-900/30"
-            onClick={() => setErrorMessage(null)}
-          >
-            <X size={14} />
-          </Button>
-        </Alert>
-      )}
-      {successMessage && (
-        <Alert className="bg-white/[0.06] border-white/10 text-white flex justify-between items-center py-2">
-          <AlertDescription className="text-xs">
-            {successMessage}
-          </AlertDescription>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 hover:bg-white/10 text-white"
-            onClick={() => setSuccessMessage(null)}
-          >
-            <X size={14} />
-          </Button>
-        </Alert>
-      )}
-
       {viewMode === "list" ? (
         <Card className="bg-[#151519] border-white/[0.07]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
