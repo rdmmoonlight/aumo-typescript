@@ -4,6 +4,13 @@
     "projectType": "application",
     "sourceRoot": "apps/next",
     "targets": {
+        "lint": {
+          "executor": "@nx/eslint:lint",
+          "outputs": ["{options.outputFile}"],
+          "options": {
+            "lintFilePatterns": ["apps/next/**/*.{ts,tsx,js,jsx}"]
+          }
+        },
         "build": {
             "executor": "nx:run-commands",
             "outputs": [
