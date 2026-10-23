@@ -35,19 +35,22 @@ FROM node:24-alpine AS builder-web
 WORKDIR /app
 RUN npm install -g pnpm@12.14.0
 ENV NEXT_PUBLIC_API_URL=/api
+
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/next/package.json apps/next/
 COPY libs/contracts/package.json libs/contracts/
 COPY libs/logger/package.json libs/logger/
 COPY libs/sdk/package.json libs/sdk/
 
-# Menggunakan --ignore-scripts agar script prepare (seperti nx-dotnet) tidak memicu error
+# 1. Menggunakan --ignore-scripts agar prepare script tidak berjalan saat install
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --no-frozen-lockfile --ignore-scripts --filter "@app/next..."
 
 COPY . .
-RUN --mount=type=cache,id=nextjs,target=/app/apps/next/.next/cache \
-    pnpm --filter "@app/next..." build
+
+# 2. Menambahkan flag --config.enable-pre-post-scripts=false agar pnpm tidak mengeksekusi prepare/prebuild script
+# 3. Melepas --mount=type=cache pada folder .next/cache agar tidak lock saat rimraf / clean berjalan
+RUN pnpm --config.enable-pre-post-scripts=false --filter "@app/next..." build
 
 # --- BACKEND ISOLATION (DISABLED) ---
 # STAGE 4: Build .NET
@@ -58,6 +61,7 @@ RUN --mount=type=cache,id=nextjs,target=/app/apps/next/.next/cache \
 #     dotnet publish Aumo.Accounting.Api/Aumo.Accounting.Api.csproj \
 #     -c Release \
 #     -r linux-musl-x64 \
+#     --self-contained true \
 #     -p:PublishTrimmed=true \
 #     -p:InvariantGlobalization=true \
 #     -o /out
@@ -65,7 +69,6 @@ RUN --mount=type=cache,id=nextjs,target=/app/apps/next/.next/cache \
 
 # STAGE 5: Final image (Web Only)
 FROM node:24-alpine AS runner
-# Lepas supervisor karena hanya Nginx yang dijalankan
 RUN apk add --no-cache nginx
 
 ENV NODE_ENV=production \
