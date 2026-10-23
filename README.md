@@ -1,1 +1,1 @@
-# aumo_typescript
+# aumo-typescript

@@ -39,3 +39,11 @@ dist/
 # Abaikan file konfigurasi utama yang berisi kredensial asli
 dotnet/**/appsettings.json
 dotnet/**/appsettings.Development.json
+
+.next/
+out/
+build/
+dist/
+
+*.tsbuildinfo
+next-env.d.ts

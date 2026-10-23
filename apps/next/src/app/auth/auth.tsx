@@ -13,7 +13,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { baseApi } from "@/lib/apiClient";
 import { store } from "@/lib/store";
-import { authApi } from "@/lib/store/auth/authApi";
+import {
+  authApi,
+  useGoogleLoginMutation,
+  useLoginMutation,
+  useRegisterMutation,
+} from "@/lib/store/auth/authApi";
 import { loginSchema, registerSchema } from "@/lib/validations/auth";
 
 // ===== TYPES =====
@@ -118,6 +123,10 @@ function AuthFormInner({
   const searchParams = useSearchParams();
   const dispatch = useDispatch();
 
+  const [registerMutation] = useRegisterMutation();
+  const [loginMutation] = useLoginMutation();
+  const [googleLoginMutation] = useGoogleLoginMutation();
+
   const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [showPass, setShowPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
@@ -145,7 +154,6 @@ function AuthFormInner({
 
   const keepMeValue = watch("keepMe");
 
-  // Cek profil user saat pertama kali dimuat
   useEffect(() => {
     let isMounted = true;
 
@@ -216,20 +224,17 @@ function AuthFormInner({
     setIsPending(true);
 
     try {
-      // Reset cache RTK Query
       dispatch(baseApi.util.resetApiState());
 
       if (mode === "register") {
-        // Executing Register Mutation
-        const registerResult = await store.dispatch(
-          authApi.endpoints.register.initiate({
-            fullName: values.fullName || "",
-            email: values.email,
-            password: values.password,
-            confirmPassword: values.confirmPassword,
-            isMobileClient: false,
-          }),
-        );
+        // T8: Trigger Mutation Register
+        const registerResult = await registerMutation({
+          fullName: values.fullName || "",
+          email: values.email,
+          password: values.password,
+          confirmPassword: values.confirmPassword,
+          isMobileClient: false,
+        });
 
         if ("error" in registerResult) {
           const errorData = registerResult.error as any;
@@ -241,19 +246,15 @@ function AuthFormInner({
           return;
         }
 
-        // Auto Login setelah registrasi berhasil
-        const loginResult = await store.dispatch(
-          authApi.endpoints.login.initiate({
-            email: values.email,
-            password: values.password,
-            rememberMe: false,
-            isMobileClient: false,
-          }),
-        );
+        // Auto-login setelah register berhasil (Go tidak mengembalikan cookie di register)
+        const loginResult = await loginMutation({
+          email: values.email,
+          password: values.password,
+          rememberMe: false,
+          isMobileClient: false,
+        });
 
         if ("error" in loginResult) {
-          // Jika backend tidak langsung mengembalikan session login pada register,
-          // alihkan pengguna ke tampilan login
           setMode("login");
           reset({ email: values.email, password: "" });
           return;
@@ -262,14 +263,12 @@ function AuthFormInner({
         handleRedirectOrSuccess();
       } else {
         // Executing Login Mutation
-        const result = await store.dispatch(
-          authApi.endpoints.login.initiate({
-            email: values.email,
-            password: values.password,
-            rememberMe: values.keepMe ?? false,
-            isMobileClient: false,
-          }),
-        );
+        const result = await loginMutation({
+          email: values.email,
+          password: values.password,
+          rememberMe: values.keepMe ?? false,
+          isMobileClient: false,
+        });
 
         if ("error" in result) {
           const errorData = result.error as any;
@@ -305,12 +304,10 @@ function AuthFormInner({
     try {
       dispatch(baseApi.util.resetApiState());
 
-      const result = await store.dispatch(
-        authApi.endpoints.googleLogin.initiate({
-          idToken,
-          isMobileClient: false,
-        }),
-      );
+      const result = await googleLoginMutation({
+        idToken,
+        isMobileClient: false,
+      });
 
       if ("error" in result) {
         const errorData = result.error as any;

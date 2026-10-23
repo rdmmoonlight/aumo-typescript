@@ -59,30 +59,6 @@ export const settingsApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Settings"],
     }),
-
-    // GET /settings/guardian/dashboard
-    getGuardianDashboard: builder.query<unknown, void>({
-      query: () => "/settings/guardian/dashboard",
-      providesTags: ["Settings"],
-    }),
-
-    // POST /settings/guardian/revoke-session/{sessionId}
-    revokeSessionById: builder.mutation<unknown, RevokeSessionArg>({
-      query: ({ sessionId }) => ({
-        url: `/settings/guardian/revoke-session/${sessionId}`,
-        method: "POST",
-      }),
-      invalidatesTags: ["Settings"],
-    }),
-
-    // POST /settings/guardian/revoke-all-sessions
-    revokeAllSessions: builder.mutation<unknown, void>({
-      query: () => ({
-        url: "/settings/guardian/revoke-all-sessions",
-        method: "POST",
-      }),
-      invalidatesTags: ["Settings"],
-    }),
   }),
   overrideExisting: false,
 });

@@ -3,31 +3,42 @@ import type { NextConfig } from "next";
 const isDev = process.env.NODE_ENV === "development";
 
 const nextConfig: NextConfig = {
-  // Mengaktifkan Next.js Static Export untuk Production Build
   output: "export",
-
-  // Trailing slash konsisten untuk kebutuhan Nginx static routing
   trailingSlash: false,
-
-  // Menonaktifkan optimasi gambar bawaan Server Next.js
   images: {
     unoptimized: true,
   },
 
-  // Rewrites hanya aktif saat mode development (`next dev`)
   ...(isDev && {
     async rewrites() {
-      // Menggunakan fallback URL jika NEXT_PUBLIC_API_URL tidak terdefinisi
-      const backendTarget =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-
-      // Memastikan trailing slash pada backendTarget dibersihkan agar tidak double slash
-      const cleanTarget = backendTarget.replace(/\/$/, "");
+      const AUTH_TARGET = process.env.AUTH_API_URL || "http://localhost:8080";
+      const ACCOUNTING_TARGET = process.env.ACCOUNTING_API_URL || "http://localhost:5100";
+      const DEFAULT_TARGET = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
       return [
         {
+          source: "/api/auth/:path*",
+          destination: `${AUTH_TARGET.replace(/\/$/, "")}/api/auth/:path*`,
+        },
+        {
+          source: "/api/periods/:path*",
+          destination: `${ACCOUNTING_TARGET.replace(/\/$/, "")}/api/periods/:path*`,
+        },
+        {
+          source: "/api/chart-of-accounts/:path*",
+          destination: `${ACCOUNTING_TARGET.replace(/\/$/, "")}/api/chart-of-accounts/:path*`,
+        },
+        {
+          source: "/api/reports/:path*",
+          destination: `${ACCOUNTING_TARGET.replace(/\/$/, "")}/api/reports/:path*`,
+        },
+        {
+          source: "/api/summary/:path*",
+          destination: `${ACCOUNTING_TARGET.replace(/\/$/, "")}/api/summary/:path*`,
+        },
+        {
           source: "/api/:path*",
-          destination: `${cleanTarget}/api/:path*`,
+          destination: `${DEFAULT_TARGET.replace(/\/$/, "")}/api/:path*`,
         },
       ];
     },

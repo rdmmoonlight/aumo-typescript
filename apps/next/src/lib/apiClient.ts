@@ -16,8 +16,8 @@ function getCookie(name: string): string | undefined {
 }
 
 function getBackendTarget(): string {
-  // Ambil URL Backend dari environment variable Next.js
-  return process.env.NEXT_PUBLIC_API_URL || "";
+  // Ambil URL Backend dari NEXT_PUBLIC_API_URL dengan default "/api"
+  return process.env.NEXT_PUBLIC_API_URL || "/api";
 }
 
 const BASE_URL = getBackendTarget();
@@ -106,19 +106,16 @@ const baseQueryWithReauth: BaseQueryFn<
     );
   }
 
-  // Penanganan Unauthenticated (401) di sisi client
   if (
     result.error &&
     result.error.status === 401 &&
     typeof window !== "undefined"
   ) {
     const currentPath = window.location.pathname;
-
-    // Cegah loop jika sedang berada di halaman login/auth
     if (!currentPath.startsWith("/auth") && !isRedirecting) {
       isRedirecting = true;
       window.location.replace(
-        `/auth?redirectTo=${encodeURIComponent(currentPath)}`,
+        `/auth/login?redirectTo=${encodeURIComponent(currentPath)}`
       );
     }
   }
@@ -131,7 +128,7 @@ export const baseApi = createApi({
   baseQuery: baseQueryWithReauth,
   refetchOnFocus: false,
   refetchOnReconnect: false,
-  refetchOnMountOrArgChange: false, // Disabilitas otomatis refetch pada mount untuk cegah loop
+  refetchOnMountOrArgChange: false,
   keepUnusedDataFor: 300,
   tagTypes: [
     "Auth",

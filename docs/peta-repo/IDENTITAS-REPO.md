@@ -6,7 +6,7 @@
 
 | Atribut | Nilai |
 | --- | --- |
-| Nama repo | `aumo-typescript` (judul README: `aumo_typescript`) |
+| Nama repo | `aumo-typescript` |
 | Nama paket root | `auts` (versi 1.0.0, private) |
 | Pemilik | `rdmmoonlight` |
 | URL | <https://github.com/rdmmoonlight/aumo-typescript> |

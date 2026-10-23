@@ -37,10 +37,10 @@ import {
   Lock,
   Save,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { SubmitHandler, useFieldArray, useForm } from "react-hook-form";
-import Link from "next/link";
 import { z } from "zod";
 
 export default function JournalEntryContent() {
@@ -153,9 +153,9 @@ export default function JournalEntryContent() {
             typeof raw === "string"
               ? raw
               : raw.transactionNumber ||
-                raw.nextTransactionNumber ||
-                raw.data ||
-                "";
+              raw.nextTransactionNumber ||
+              raw.data ||
+              "";
           setNextTxNumber(txNo);
         }
       } catch (err) {
@@ -349,8 +349,8 @@ export default function JournalEntryContent() {
           const err: any = result.error;
           setApiError(
             err?.data?.message ||
-              err?.message ||
-              "Failed to update journal entry",
+            err?.message ||
+            "Failed to update journal entry",
           );
         }
       } else {
@@ -372,8 +372,8 @@ export default function JournalEntryContent() {
           const err: any = result.error;
           setApiError(
             err?.data?.message ||
-              err?.message ||
-              "Failed to post journal entry",
+            err?.message ||
+            "Failed to post journal entry",
           );
         }
       }
