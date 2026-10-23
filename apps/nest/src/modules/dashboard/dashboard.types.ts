@@ -62,7 +62,7 @@ export interface DashboardData {
 
     expenseAccountsList: ExpenseBreakdown[];
     chartTrend: TrendPoint[];
-    recentEntries: any[];
+    recentEntries: unknown[];
 }
 
 export type DashboardResponse = ApiResponse<DashboardData>;

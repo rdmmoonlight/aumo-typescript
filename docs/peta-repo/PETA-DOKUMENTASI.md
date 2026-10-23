@@ -43,6 +43,6 @@ Satu pintu untuk menemukan seluruh dokumentasi repo. Status: **Aktif** = berlaku
 | [`CONTRIBUTING.md`](../../CONTRIBUTING.md) | 2026-10-19 | 2026-10-19 | Panduan kontribusi |
 | [`MAINTAINERS.md`](../../MAINTAINERS.md) | 2026-10-19 | 2026-10-19 | Panduan maintainer |
 
-Changelog paket: `apps/api/CHANGELOG.md`, `apps/analog/CHANGELOG.md`, `libs/contracts/CHANGELOG.md`, `libs/sdk/CHANGELOG.md`.
+Changelog paket: `apps/api/CHANGELOG.md`, `apps/analog/CHANGELOG.md`.
 
 Catatan: dokumentasi milik folder terkunci (misalnya `apps/nest/docs/`) tidak diindeks di sini.

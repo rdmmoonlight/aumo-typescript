@@ -106,7 +106,6 @@ Cakupan: 154 berkas terlacak, tidak termasuk `pnpm-lock.yaml` (dihasilkan otomat
 | Berkas | Dibuat | Diperbarui | Fungsi |
 | --- | --- | --- | --- |
 | `libs/contracts/CHANGELOG.md` | 2026-10-20 | 2026-10-20 | Changelog paket (dibuat Changesets) |
-| `libs/contracts/package.json` | 2026-10-19 | 2026-10-20 | Paket @app/contracts |
 | `libs/contracts/src/auth.schema.ts` | 2026-10-20 | 2026-10-20 | Skema Zod auth |
 | `libs/contracts/src/auth.ts` | 2026-10-20 | 2026-10-20 | Tipe auth |
 | `libs/contracts/src/index.ts` | 2026-10-19 | 2026-10-20 | Ekspor seluruh kontrak |
@@ -123,15 +122,6 @@ Cakupan: 154 berkas terlacak, tidak termasuk `pnpm-lock.yaml` (dihasilkan otomat
 | `libs/logger/package.json` | 2026-10-18 | 2026-10-19 | Paket @app/logger |
 | `libs/logger/src/index.ts` | 2026-10-19 | 2026-10-19 | Logger Pino terstruktur |
 | `libs/logger/tsconfig.json` | 2026-10-18 | 2026-10-19 | TypeScript config logger |
-
-## libs/sdk
-
-| Berkas | Dibuat | Diperbarui | Fungsi |
-| --- | --- | --- | --- |
-| `libs/sdk/CHANGELOG.md` | 2026-10-20 | 2026-10-20 | Changelog paket (dibuat Changesets) |
-| `libs/sdk/package.json` | 2026-10-19 | 2026-10-20 | Paket @app/sdk |
-| `libs/sdk/src/index.ts` | 2026-10-19 | 2026-10-18 | SDK klien API |
-| `libs/sdk/tsconfig.json` | 2026-10-18 | 2026-10-18 | TypeScript config sdk |
 
 ## native/core_engine
 

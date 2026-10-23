@@ -42,9 +42,7 @@ Monorepo polyglot untuk aplikasi akuntansi Aumo: auth, API, backend akuntansi, f
 
 | Paket | Lokasi | Versi | Status |
 | --- | --- | --- | --- |
-| `@app/contracts` | `libs/contracts` | 1.2.0 | Aktif (skema Zod) |
 | `@app/logger` | `libs/logger` | 1.0.0 | Aktif |
-| `@app/sdk` | `libs/sdk` | 1.0.2 | Aktif |
 | `@app/cli` | `tools/cli` | 1.0.0 | Aktif |
 | `@app/analog` | `apps/analog` | 7.0.0 | Digantikan `apps/next` (ADR 0011) |
 | `@app/nest` | `apps/nest` | - | Terkunci (under construction) |

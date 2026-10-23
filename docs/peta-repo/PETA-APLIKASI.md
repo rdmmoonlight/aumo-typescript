@@ -30,7 +30,6 @@ Seluruh proses dijalankan `supervisord.conf` dalam satu kontainer (program: ngin
 | API tiruan | `apps/api` | TypeScript | Hanya tes tiruan, rencana dihapus | Usang |
 | Kontrak | `libs/contracts` | TypeScript (Zod) | Sumber tunggal skema data | Aktif |
 | Logger | `libs/logger` | TypeScript (Pino) | Log terstruktur | Aktif |
-| SDK | `libs/sdk` | TypeScript | Klien API | Aktif |
 | Android | `android/` | Kotlin | Klien mobile, kontrak User | Aktif |
 | Native | `native/` | Rust, C++ | `core_engine`, `workers`, `cpp_calc` | Aktif |
 | CLI | `tools/cli` | JavaScript | Alat internal | Aktif |

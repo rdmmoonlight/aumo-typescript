@@ -22,7 +22,6 @@
 # COPY apps/nest/package.json apps/nest/
 # COPY libs/contracts/package.json libs/contracts/
 # COPY libs/logger/package.json libs/logger/
-# COPY libs/sdk/package.json libs/sdk/
 # RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 #     pnpm install --frozen-lockfile --filter "@app/nest..."
 # COPY . .
@@ -38,9 +37,7 @@ ENV NEXT_PUBLIC_API_URL=/api
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/next/package.json apps/next/
-COPY libs/contracts/package.json libs/contracts/
 COPY libs/logger/package.json libs/logger/
-COPY libs/sdk/package.json libs/sdk/
 
 # 1. Menggunakan --ignore-scripts agar prepare script tidak berjalan saat install
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
