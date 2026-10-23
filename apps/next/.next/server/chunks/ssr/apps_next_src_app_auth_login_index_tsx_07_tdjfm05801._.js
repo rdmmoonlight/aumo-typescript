@@ -1,3 +1,0 @@
-module.exports=[98061,a=>{"use strict";var b=a.i(78928),c=a.i(70423),d=a.i(65443);a.s(["default",0,function({initialMode:a="login",onSuccess:e}){let f=(0,b.jsx)(d.default,{initialMode:a,onSuccess:e});return e?f:(0,b.jsx)(c.u,{clientId:d.GOOGLE_CLIENT_ID,children:(0,b.jsx)("main",{className:"flex min-h-screen items-center justify-center p-4 bg-zinc-50",children:f})})}])}];
-
-//# sourceMappingURL=apps_next_src_app_auth_login_index_tsx_07_tdjfm05801._.js.map
