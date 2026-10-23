@@ -1,6 +1,8 @@
 packages:
   - 'apps/*'
   - 'libs/*'
+  - 'packages/*'
+  - 'tools/*'
 
 allowBuilds:
   bcrypt: true
