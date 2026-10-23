@@ -82,6 +82,7 @@
     },
     "pnpm": {
         "onlyBuiltDependencies": [
+            "@nx-dotnet/core",
             "unrs-resolver"
         ]
     }
