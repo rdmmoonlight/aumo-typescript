@@ -1,5 +1,6 @@
 import { ReduxProvider } from "@/components/redux-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from 'sonner';
 import "@/styles/index.css";
 
 export default async function RootLayout({
@@ -13,7 +14,10 @@ export default async function RootLayout({
         className={` min-h-screen bg-background text-foreground text-sm antialiased selection:bg-primary selection:text-primary-foreground`}
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <ReduxProvider>{children}</ReduxProvider>
+          <ReduxProvider>
+            {children}
+            <Toaster position="bottom-right" richColors />
+          </ReduxProvider>
         </ThemeProvider>
       </body>
     </html>
