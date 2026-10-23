@@ -18,28 +18,12 @@ import { useRouter } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import {
   Card,
-  Metric,
   Text,
-  AreaChart,
-  BarList,
   Flex,
-  BadgeDelta,
+  Badge,
+  List,
+  ListItem,
 } from "@tremor/react";
-
-const chartData = [
-  { date: "Jan", Revenue: 12200 },
-  { date: "Feb", Revenue: 18500 },
-  { date: "Mar", Revenue: 16300 },
-  { date: "Apr", Revenue: 24400 },
-  { date: "Mei", Revenue: 19800 },
-  { date: "Jun", Revenue: 28450 },
-];
-
-const opsData = [
-  { name: "Revenues & Expenses", value: 420 },
-  { name: "Tracking", value: 310 },
-  { name: "Finance & Costings", value: 280 },
-];
 
 export default function LandingPage(): React.JSX.Element {
   const router = useRouter();
@@ -112,55 +96,45 @@ export default function LandingPage(): React.JSX.Element {
             <br /> organized.
           </h1>
           <p className="mt-6 max-w-sm text-sm leading-6 text-zinc-400">
-            Matte, tenang, tanpa distraksi. Dibuat untuk produksi, bukan
-            pameran.
+            Matte, tenang, tanpa distraksi. Dibuat untuk produksi, bukan pameran.
           </p>
 
-          {/* TREMOR PREVIEW */}
-          <div className="mt-10 grid gap-3">
-            <div className="grid grid-cols-2 gap-3">
-              <Card className="bg-zinc-900 !ring-0 border border-zinc-800 rounded-xl">
-                <Text className="text-zinc-500 text-xs">Total Revenue</Text>
-                <Metric className="text-white text-xl mt-1">Rp 284.5M</Metric>
-                <Flex className="mt-3">
-                  <Text className="text-xs text-zinc-500">vs last month</Text>
-                  <BadgeDelta deltaType="moderateIncrease" size="xs" className="bg-zinc-800 text-zinc-200 ring-0">
-                    12.4%
-                  </BadgeDelta>
-                </Flex>
-              </Card>
-              <Card className="bg-zinc-900 !ring-0 border border-zinc-800 rounded-xl">
-                <Text className="text-zinc-500 text-xs">Active Ops</Text>
-                <Metric className="text-white text-xl mt-1">1,010</Metric>
-                <div className="mt-3">
-                  <BarList
-                    data={opsData}
-                    color="white"
-                    className="text-white [&_span]:text-zinc-300"
-                  />
-                </div>
-              </Card>
-            </div>
-
-            <Card className="bg-zinc-900 !ring-0 border border-zinc-800 rounded-xl">
-              <Flex>
-                <Text className="text-zinc-400 text-xs">Revenue Trend</Text>
-                <Text className="text-zinc-500 text-xs font-mono">JAN - JUN 2026</Text>
+          {/* TREMOR - Informasi yang sudah ada jadi kotak */}
+          <Card className="mt-10 bg-zinc-900 border border-zinc-800 !ring-0 rounded-xl p-0 overflow-hidden">
+            <div className="p-4 border-b border-zinc-800">
+              <Flex justifyContent="between" alignItems="center">
+                <Text className="text- tracking-[0.2em] text-zinc-500 uppercase">
+                  Core Modules
+                </Text>
+                <Badge size="xs" color="zinc" className="bg-zinc-800 text-zinc-400 ring-0 border border-zinc-700">
+                  3 SYSTEMS
+                </Badge>
               </Flex>
-              <AreaChart
-                className="h-28 mt-4"
-                data={chartData}
-                index="date"
-                categories={["Revenue"]}
-                colors={["zinc-400"]}
-                showYAxis={false}
-                showGridLines={false}
-                showLegend={false}
-                curveType="monotone"
-                showAnimation
-              />
-            </Card>
-          </div>
+            </div>
+            <List className="mt-0">
+              <ListItem className="border-zinc-800 py-4 px-4 hover:bg-zinc-800/50 transition">
+                <Flex justifyContent="start" className="gap-4">
+                  <span className="font-mono text-xs text-zinc-500">01</span>
+                  <Text className="text-sm text-white font-medium">Revenues & Expenses</Text>
+                </Flex>
+                <Badge size="xs" className="bg-white text-black ring-0">Active</Badge>
+              </ListItem>
+              <ListItem className="border-zinc-800 py-4 px-4 hover:bg-zinc-800/50 transition">
+                <Flex justifyContent="start" className="gap-4">
+                  <span className="font-mono text-xs text-zinc-500">02</span>
+                  <Text className="text-sm text-white font-medium">Tracking</Text>
+                </Flex>
+                <Text className="text-xs text-zinc-500">Realtime</Text>
+              </ListItem>
+              <ListItem className="border-zinc-800 border-b-0 py-4 px-4 hover:bg-zinc-800/50 transition">
+                <Flex justifyContent="start" className="gap-4">
+                  <span className="font-mono text-xs text-zinc-500">03</span>
+                  <Text className="text-sm text-white font-medium">Finance & Costings</Text>
+                </Flex>
+                <Text className="text-xs text-zinc-500">Secure</Text>
+              </ListItem>
+            </List>
+          </Card>
         </div>
 
         <div className="hidden justify-between font-mono text-xs text-zinc-500 lg:flex">
@@ -171,39 +145,40 @@ export default function LandingPage(): React.JSX.Element {
 
       {/* RIGHT */}
       <div className="flex flex-col items-center justify-center gap-6 bg-black p-6 lg:p-12">
-        <div className="max-w-sm text-center">
-          <h2 className="text-2xl font-semibold tracking-tight">
-            Selamat Datang
-          </h2>
-          <p className="mt-2 text-sm text-zinc-400">
-            Silakan masuk atau buat akun baru untuk mengakses dashboard.
-          </p>
-        </div>
+        <Card className="w-full max-w-sm bg-zinc-950 border border-zinc-800 !ring-0 rounded-2xl p-6">
+          <div className="text-center">
+            <Badge size="xs" color="zinc" className="mb-3 bg-zinc-900 text-zinc-400 ring-1 ring-zinc-800">
+              AUMO ACCESS
+            </Badge>
+            <h2 className="text-xl font-semibold tracking-tight text-white">
+              Selamat Datang
+            </h2>
+            <Text className="mt-2 text-sm text-zinc-400">
+              Silakan masuk atau buat akun baru untuk mengakses dashboard.
+            </Text>
+          </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-sm">
-          <Button
-            disabled={checkingAuth}
-            onClick={() => handleOpenModal("login")}
-            className="flex-1 w-full h-12 flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white text-sm font-medium text-black hover:bg-zinc-200 disabled:opacity-50"
-          >
-            {checkingAuth ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Lock className="w-4 h-4" />
-            )}
-            <span>{checkingAuth ? "Checking..." : "Sign In"}</span>
-            {!checkingAuth && <ArrowRight className="w-4 h-4" />}
-          </Button>
-          <Button
-            disabled={checkingAuth}
-            onClick={() => handleOpenModal("register")}
-            variant="outline"
-            className="flex-1 w-full h-12 flex items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 text-sm font-medium text-white hover:bg-zinc-800 hover:text-white disabled:opacity-50"
-          >
-            <UserPlus className="w-4 h-4" />
-            <span>Register</span>
-          </Button>
-        </div>
+          <div className="mt-6 flex flex-col sm:flex-row items-center gap-3 w-full">
+            <Button
+              disabled={checkingAuth}
+              onClick={() => handleOpenModal("login")}
+              className="flex-1 w-full h-11 flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white text-sm font-medium text-black hover:bg-zinc-200 disabled:opacity-50"
+            >
+              {checkingAuth ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+              <span>{checkingAuth ? "Checking..." : "Sign In"}</span>
+              {!checkingAuth && <ArrowRight className="w-4 h-4" />}
+            </Button>
+            <Button
+              disabled={checkingAuth}
+              onClick={() => handleOpenModal("register")}
+              variant="outline"
+              className="flex-1 w-full h-11 flex items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 text-sm font-medium text-white hover:bg-zinc-800 hover:text-white disabled:opacity-50"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Register</span>
+            </Button>
+          </div>
+        </Card>
 
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent className="border-zinc-800 bg-zinc-950 text-white sm:max-w-md p-0 overflow-hidden">
@@ -218,10 +193,7 @@ export default function LandingPage(): React.JSX.Element {
                   {authMode === "login" ? (
                     <LoginPage initialMode="login" onSuccess={handleSuccess} />
                   ) : (
-                    <RegisterPage
-                      initialMode="register"
-                      onSuccess={handleSuccess}
-                    />
+                    <RegisterPage initialMode="register" onSuccess={handleSuccess} />
                   )}
                 </Suspense>
               </GoogleOAuthProvider>
