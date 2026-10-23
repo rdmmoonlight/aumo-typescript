@@ -16,27 +16,46 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { ArrowRight, Loader2, Lock, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import {
+  Card,
+  Metric,
+  Text,
+  AreaChart,
+  BarList,
+  Flex,
+  BadgeDelta,
+} from "@tremor/react";
+
+const chartData = [
+  { date: "Jan", Revenue: 12200 },
+  { date: "Feb", Revenue: 18500 },
+  { date: "Mar", Revenue: 16300 },
+  { date: "Apr", Revenue: 24400 },
+  { date: "Mei", Revenue: 19800 },
+  { date: "Jun", Revenue: 28450 },
+];
+
+const opsData = [
+  { name: "Revenues & Expenses", value: 420 },
+  { name: "Tracking", value: 310 },
+  { name: "Finance & Costings", value: 280 },
+];
 
 export default function LandingPage(): React.JSX.Element {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
-
-  // State pengganti RTK Query Hook
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     document.title = "Aumo Finance | Operations, neatly organized.";
-
-    // Cek auth status secara langsung menembak /auth/me via store.dispatch
     async function checkAuthStatus() {
       try {
         setCheckingAuth(true);
         const result = await store.dispatch(
-          authApi.endpoints.getProfile.initiate(),
+          authApi.endpoints.getProfile.initiate()
         );
-
         if (result.isSuccess && result.data?.success) {
           setIsAuthenticated(true);
           router.replace("/home");
@@ -49,7 +68,6 @@ export default function LandingPage(): React.JSX.Element {
         setCheckingAuth(false);
       }
     }
-
     checkAuthStatus();
   }, [router]);
 
@@ -86,6 +104,7 @@ export default function LandingPage(): React.JSX.Element {
             AUMO FINANCE
           </span>
         </div>
+
         <div className="mt-12 lg:mt-0">
           <h1 className="max-w-lg text-5xl font-semibold leading-[0.95] tracking-[-0.03em]">
             Operations,
@@ -96,21 +115,54 @@ export default function LandingPage(): React.JSX.Element {
             Matte, tenang, tanpa distraksi. Dibuat untuk produksi, bukan
             pameran.
           </p>
-          <div className="mt-12 border-t border-zinc-800">
-            <div className="flex justify-between border-b border-zinc-800 py-4 text-xs">
-              <span className="font-mono text-zinc-500">01</span>
-              <span>Revenues & Expenses</span>
+
+          {/* TREMOR PREVIEW */}
+          <div className="mt-10 grid gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              <Card className="bg-zinc-900 !ring-0 border border-zinc-800 rounded-xl">
+                <Text className="text-zinc-500 text-xs">Total Revenue</Text>
+                <Metric className="text-white text-xl mt-1">Rp 284.5M</Metric>
+                <Flex className="mt-3">
+                  <Text className="text-xs text-zinc-500">vs last month</Text>
+                  <BadgeDelta deltaType="moderateIncrease" size="xs" className="bg-zinc-800 text-zinc-200 ring-0">
+                    12.4%
+                  </BadgeDelta>
+                </Flex>
+              </Card>
+              <Card className="bg-zinc-900 !ring-0 border border-zinc-800 rounded-xl">
+                <Text className="text-zinc-500 text-xs">Active Ops</Text>
+                <Metric className="text-white text-xl mt-1">1,010</Metric>
+                <div className="mt-3">
+                  <BarList
+                    data={opsData}
+                    color="white"
+                    className="text-white [&_span]:text-zinc-300"
+                  />
+                </div>
+              </Card>
             </div>
-            <div className="flex justify-between border-b border-zinc-800 py-4 text-xs">
-              <span className="font-mono text-zinc-500">02</span>
-              <span>Tracking</span>
-            </div>
-            <div className="flex justify-between border-b border-zinc-800 py-4 text-xs">
-              <span className="font-mono text-zinc-500">03</span>
-              <span>Finance & Costings</span>
-            </div>
+
+            <Card className="bg-zinc-900 !ring-0 border border-zinc-800 rounded-xl">
+              <Flex>
+                <Text className="text-zinc-400 text-xs">Revenue Trend</Text>
+                <Text className="text-zinc-500 text-xs font-mono">JAN - JUN 2026</Text>
+              </Flex>
+              <AreaChart
+                className="h-28 mt-4"
+                data={chartData}
+                index="date"
+                categories={["Revenue"]}
+                colors={["zinc-400"]}
+                showYAxis={false}
+                showGridLines={false}
+                showLegend={false}
+                curveType="monotone"
+                showAnimation
+              />
+            </Card>
           </div>
         </div>
+
         <div className="hidden justify-between font-mono text-xs text-zinc-500 lg:flex">
           <span>© rdmmoonlight 2026</span>
           <span>COOKIE AUTH • AUMO SYSTEM</span>
