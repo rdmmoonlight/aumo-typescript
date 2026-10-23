@@ -10,7 +10,9 @@
         "^production"
       ],
       "outputs": [
-        "{projectRoot}/dist"
+        "{projectRoot}/dist",
+        "{projectRoot}/out",
+        "{projectRoot}/.next"
       ]
     },
     "typecheck": {
@@ -36,13 +38,12 @@
     ],
     "production": [
       "default",
-      "!{projectRoot}/**/*.spec.ts"
+      "!{projectRoot}/**/*.spec.ts",
+      "!{projectRoot}/**/*.test.ts"
     ],
     "sharedGlobals": []
   },
-  "analytics": true,
+  "analytics": false,
   "nxCloudId": "6ad6f18766884a87ccf4e54f",
-  "plugins": [
-    "@nx-dotnet/core"
-  ]
+  "plugins": []
 }
