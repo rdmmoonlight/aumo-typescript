@@ -1,7 +1,3 @@
-// <copyright file="GatewayHeaderHandler.cs" company="PlaceholderCompany">
-// Copyright (c) PlaceholderCompany. All rights reserved.
-// </copyright>
-
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
@@ -9,34 +5,21 @@ using Microsoft.Extensions.Options;
 
 namespace Aumo.Accounting.Api.Authentication;
 
-/// <summary>
-/// Opsi skema autentikasi yang membaca identitas pengguna dari header gateway.
-/// </summary>
 public class GatewayHeaderOptions : AuthenticationSchemeOptions
 {
-    /// <summary>
-    /// Nama skema autentikasi.
-    /// </summary>
     public const string SchemeName = "GatewayHeader";
-
-    /// <summary>
-    /// Nama header yang diisi Nginx setelah <c>auth_request</c> ke layanan auth berhasil.
-    /// </summary>
     public const string UserIdHeader = "X-User-Id";
+    public static readonly HashSet<string> PublicPaths = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "/health",
+        "/reference",
+        "/openapi/v1.json",
+        "/openapi/v1.yaml",
+    };
 }
 
-/// <summary>
-/// Handler autentikasi yang mempercayai header <c>X-User-Id</c> dari Nginx.
-/// Kestrel hanya mendengarkan loopback, sehingga header dari luar tidak pernah sampai.
-/// </summary>
 public class GatewayHeaderHandler : AuthenticationHandler<GatewayHeaderOptions>
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="GatewayHeaderHandler"/> class.
-    /// </summary>
-    /// <param name="options">Opsi skema.</param>
-    /// <param name="logger">Pabrik logger.</param>
-    /// <param name="encoder">Encoder URL.</param>
     public GatewayHeaderHandler(
         IOptionsMonitor<GatewayHeaderOptions> options,
         ILoggerFactory logger,
@@ -45,9 +28,14 @@ public class GatewayHeaderHandler : AuthenticationHandler<GatewayHeaderOptions>
     {
     }
 
-    /// <inheritdoc/>
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
+        // Bypass rute publik agar tidak menghasilkan AuthenticateResult.Fail jika header X-User-Id absen
+        if (GatewayHeaderOptions.PublicPaths.Contains(this.Request.Path.Value ?? string.Empty))
+        {
+            return Task.FromResult(AuthenticateResult.NoResult());
+        }
+
         if (!this.Request.Headers.TryGetValue(GatewayHeaderOptions.UserIdHeader, out var userIdHeader)
             || string.IsNullOrWhiteSpace(userIdHeader))
         {
@@ -73,7 +61,12 @@ public class GatewayHeaderHandler : AuthenticationHandler<GatewayHeaderOptions>
         this.Response.StatusCode = StatusCodes.Status401Unauthorized;
         this.Response.ContentType = "application/json";
 
-        var payload = new { success = false, message = "Unauthorized" };
+        var payload = new
+        {
+            success = false,
+            message = "Unauthorized",
+            error = "Missing or invalid gateway authentication header",
+        };
 
         await this.Response.WriteAsJsonAsync(payload);
     }

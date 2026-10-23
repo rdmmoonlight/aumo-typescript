@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-# Build context: root repo. Standalone Web (Next.js Static Export) via Nginx
+# Build context: root repo. Standalone Web (Next.js Static Export) + .NET API via Nginx
 
 # --- BACKEND ISOLATION (DISABLED) ---
 # STAGE 1: Build Go Auth
@@ -49,24 +49,23 @@ COPY . .
 # 3. Melepas --mount=type=cache pada folder .next/cache agar tidak lock saat rimraf / clean berjalan
 RUN pnpm --config.enable-pre-post-scripts=false --filter "@app/next..." build
 
-# --- BACKEND ISOLATION (DISABLED) ---
 # STAGE 4: Build .NET
-# FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS builder-dotnet
-# WORKDIR /src
-# COPY dotnet/ ./
-# RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
-#     dotnet publish Aumo.Accounting.Api/Aumo.Accounting.Api.csproj \
-#     -c Release \
-#     -r linux-musl-x64 \
-#     --self-contained true \
-#     -p:PublishTrimmed=true \
-#     -p:InvariantGlobalization=true \
-#     -o /out
-# ------------------------------------
+FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS builder-dotnet
+WORKDIR /src
+COPY dotnet/ ./
+RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
+    dotnet publish Aumo.Accounting.Api/Aumo.Accounting.Api.csproj \
+    -c Release \
+    -r linux-musl-x64 \
+    --self-contained \
+    -p:PublishTrimmed=true \
+    -p:InvariantGlobalization=true \
+    -o /out
 
-# STAGE 5: Final image (Web Only)
+# STAGE 5: Final image
 FROM node:24-alpine AS runner
-RUN apk add --no-cache nginx
+# Tambahkan libstdc++ dan libgcc yang dibutuhkan oleh runtime Native AOT / Self-Contained .NET di Alpine
+RUN apk add --no-cache nginx libstdc++ libgcc
 
 ENV NODE_ENV=production \
     ENV=production
@@ -78,9 +77,9 @@ WORKDIR /app
 # COPY --from=builder-nest /app/pruned/node_modules /app/nest/node_modules
 # COPY --from=builder-nest /app/apps/nest/dist /app/nest/dist
 # COPY --from=builder-nest /app/apps/nest/package.json /app/nest/package.json
-# COPY --from=builder-dotnet /out /app/dotnet
 # ------------------------------------
 
+COPY --from=builder-dotnet /out /app/dotnet
 COPY --from=builder-web /app/apps/next/out /usr/share/nginx/html
 
 COPY nginx.conf /etc/nginx/templates/gateway.conf

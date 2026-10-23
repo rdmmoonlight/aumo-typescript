@@ -29,7 +29,7 @@ namespace Aumo.Accounting.Api.Controllers.Reports;
 /// Controller API untuk mengelola Journal.
 /// </summary>
 [ApiController]
-[Route("api/reports/journals")]
+[Route("/reports/journals")]
 [Authorize]
 
 

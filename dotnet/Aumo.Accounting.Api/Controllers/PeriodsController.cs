@@ -19,7 +19,7 @@ using Microsoft.EntityFrameworkCore;
 /// </summary>
 
 [ApiController]
-[Route("api/periods")]
+[Route("/periods")]
 [Authorize]
 
 public class PeriodsController : ControllerBase

@@ -213,12 +213,12 @@ Urutan salin mengikuti arah ketergantungan: model → helper → validator → s
 
 ### Fase 8 — Gateway, Docker, dan Render
 
-- [ ] `nginx.conf`: tambah satu blok untuk `^~ /api/reports/`, `^~ /api/periods`, dan `^~ /api/chart-of-accounts` **sebelum** `/api/`. Isinya `auth_request /_validate`, `X-User-Id`, `rewrite ^/api/(.*) /$1 break;`, `proxy_pass http://127.0.0.1:5100;`, preflight `OPTIONS` ditangani seperti blok Nest.
-- [ ] Rute publik: `/api/accounting/health`, `/api/accounting/reference`, `/api/accounting/openapi.json` tanpa `auth_request` (di-rewrite ke `/health`, `/reference`, `/openapi/v1.json` di .NET).
-- [ ] Alias sementara `/api/summary` → `/reports/summary`.
-- [ ] `Dockerfile`: tahap baru `builder-dotnet` (`mcr.microsoft.com/dotnet/sdk:10.0-alpine`, `dotnet publish -c Release -r linux-musl-x64 --self-contained -p:PublishTrimmed=true -p:InvariantGlobalization=true`). Salin hasilnya ke image akhir, tambahkan `apk add libstdc++ libgcc`.
-- [ ] `supervisord.conf`: tambah `[program:dotnet-accounting]` dengan `ASPNETCORE_URLS=http://127.0.0.1:5100`.
-- [ ] `render.yaml`: tambah `dotnet/**` ke `buildFilter`. Env `DATABASE_URL` yang sama dipakai bersama.
+- [x] `nginx.conf`: tambah satu blok untuk `^~ /api/reports/`, `^~ /api/periods`, dan `^~ /api/chart-of-accounts` **sebelum** `/api/`. Isinya `auth_request /_validate`, `X-User-Id`, `rewrite ^/api/(.*) /$1 break;`, `proxy_pass http://127.0.0.1:5100;`, preflight `OPTIONS` ditangani seperti blok Nest.
+- [x] Rute publik: `/api/accounting/health`, `/api/accounting/reference`, `/api/accounting/openapi.json` tanpa `auth_request` (di-rewrite ke `/health`, `/reference`, `/openapi/v1.json` di .NET).
+- [x] Alias sementara `/api/summary` → `/reports/summary`.
+- [x] `Dockerfile`: tahap baru `builder-dotnet` (`mcr.microsoft.com/dotnet/sdk:10.0-alpine`, `dotnet publish -c Release -r linux-musl-x64 --self-contained -p:PublishTrimmed=true -p:InvariantGlobalization=true`). Salin hasilnya ke image akhir, tambahkan `apk add libstdc++ libgcc`.
+- [x] `supervisord.conf`: tambah `[program:dotnet-accounting]` dengan `ASPNETCORE_URLS=http://127.0.0.1:5100`.
+- [x] `render.yaml`: tambah `dotnet/**` ke `buildFilter`. Env `DATABASE_URL` yang sama dipakai bersama.
 - [ ] **Keluaran:** satu image berisi Nginx, Go, Nest, dan .NET. **Selesai bila:** `/api/accounting/health` membalas 200 di Render.
 
 ### Fase 9 — Cutover (tanpa penghapusan)

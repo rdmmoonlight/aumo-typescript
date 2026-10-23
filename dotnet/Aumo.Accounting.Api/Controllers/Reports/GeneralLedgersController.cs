@@ -15,7 +15,7 @@ using Microsoft.AspNetCore.Mvc;
 /// </summary>
 
 [ApiController]
-[Route("api/reports/general-ledgers")]
+[Route("/reports/general-ledgers")]
 [Authorize]
 
 public class GeneralLedgersController : ControllerBase
