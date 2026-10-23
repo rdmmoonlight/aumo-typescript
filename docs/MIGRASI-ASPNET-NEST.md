@@ -26,6 +26,7 @@
 | `README.md`, `Note.txt` | Ringkasan prinsip ada di bagian 8 | dokumen ini |
 
 > **Catatan cakupan (keputusan pemilik repo).**
+>
 > - `CoreController` (`/api/core/salam`, GET dan POST), `RustCoreService`, `CoreControllerTests`, dan `axum/` **tidak diduplikasi.** Di sumber semuanya *dead code*: tidak dipakai klien mana pun. Tidak ada modul `core` di Nest.
 > - `guardian/*` di `SettingsController` (3 endpoint) beserta tabel `login_activities`, `user_sessions`, `security_settings`, `trusted_devices`, `recovery_codes` **tidak diduplikasi.**
 > - Akibatnya cakupan endpoint turun dari 26 menjadi **21** (26 − 2 `core` − 3 `guardian`). Pemilik tiap endpoint tertulis di ADR 0010.
@@ -186,7 +187,7 @@ apps/nest/src/test/<nama>.test.ts
 
 ### Fase 8 — Kontrak dan Tes
 
-- [ ] Bentuk respons semua modul masuk `libs/contracts` (Zod) dan diselaraskan dengan Rust, C#, dan Kotlin bila berubah (ADR 0004).
+- [x] Bentuk respons semua modul masuk `libs/contracts` (Zod) dan diselaraskan dengan Rust, C#, dan Kotlin bila berubah (ADR 0004).
 - [ ] Tes unit dan integrasi per modul. Mock Redis dan S3 seperti `src/test/setup.ts`.
 - [ ] Tes paritas respons terhadap backend lama untuk endpoint pada data yang sama.
 - [ ] **Keluaran:** CI memvalidasi semua modul baru. **Selesai bila:** `pnpm nx run-many -t lint typecheck test build` hijau.

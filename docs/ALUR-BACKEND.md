@@ -37,7 +37,7 @@ export type Payment = z.infer<typeof PaymentSchema>;
 
 Pilih *tech stack* backend yang sesuai dengan kebutuhan fitur:
 
-* **Node.js / Express / NestJS (`apps/api`):** Untuk fitur API umum atau integrasi cepat.
+* **NestJS (`apps/nest`):** Untuk fitur API umum atau integrasi cepat.
 * **Go Service (`services/auth` atau `services/<nama-service>`):** Untuk service berkinerja tinggi, concurrency tinggi, atau otentikasi.
 * **.NET / C# (`dotnet/`):** Untuk arsitektur enterprise atau modul transaksi keuangan/ledger.
 * **Rust (`native/`):** Untuk *core engine* algoritma/komputasi berat.
@@ -55,30 +55,16 @@ pnpm run generate
 
 1. **Logging:** Gunakan **Pino** (untuk Node.js) atau modul logging standar masing-masing bahasa. Jangan gunakan `console.log`.
 2. **Otentikasi:**
+
 * Jalankan Go Auth Service (`pnpm run auth:dev`).
 * **Web:** Gunakan HTTP-only Cookie (`auth_session`).
 * **Mobile/Client:** Sertakan Bearer Token di header `Authorization`.
-
-
 
 ---
 
 #### Step 4: Buat Integration Test
 
 Tulis pengujian menggunakan **Vitest + Supertest** (Node.js) atau pengujian bawaan bahasa target (Go `go test`, .NET `dotnet test`, Rust `cargo test`).
-
-```ts
-// Example: apps/api/src/payment.test.ts
-import { describe, it, expect } from 'vitest';
-import request from 'supertest';
-
-describe('POST /payments', () => {
-  it('harus memvalidasi payload sesuai Zod contract', async () => {
-    // Test logic...
-  });
-});
-
-```
 
 ---
 

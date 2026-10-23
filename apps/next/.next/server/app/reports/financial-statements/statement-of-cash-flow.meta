@@ -37,13 +37,5 @@
         }
       }
     }
-  },
-  "routeCache": {
-    "key": "/route-cache/APP_PAGE/7efe4962c035a593ca42162901a2fd3c710a7c607776c06e054d3f24e650105e/$/reports/financial-statements/statement-of-cash-flow",
-    "owner": {
-      "kind": "APP_PAGE",
-      "sourceRoute": "/(authenticated)/reports/financial-statements/statement-of-cash-flow/page"
-    },
-    "isFallback": false
   }
 }

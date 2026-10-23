@@ -18,13 +18,7 @@
   "onMatchHeaders": [],
   "rewrites": {
     "beforeFiles": [],
-    "afterFiles": [
-      {
-        "source": "/api/:path*",
-        "destination": "https://aumonext-api.onrender.com/api/:path*",
-        "regex": "^/api(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
-      }
-    ],
+    "afterFiles": [],
     "fallback": []
   },
   "dynamicRoutes": [],

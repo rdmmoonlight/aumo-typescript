@@ -1,37 +1,37 @@
 import type { NextConfig } from "next";
 
-const isExport = process.env.NODE_ENV === "production";
+const isDev = process.env.NODE_ENV === "development";
 
 const nextConfig: NextConfig = {
-  // Wajib untuk mengaktifkan Next.js Static Export
+  // Mengaktifkan Next.js Static Export untuk Production Build
   output: "export",
 
-  // Opsional: Memastikan trailing slash konsisten dengan Nginx try_files ($uri.html / $uri/index.html)
+  // Trailing slash konsisten untuk kebutuhan Nginx static routing
   trailingSlash: false,
 
-  // Menonaktifkan optimasi gambar bawaan Next.js Server (karena butuh Node.js server)
+  // Menonaktifkan optimasi gambar bawaan Server Next.js
   images: {
     unoptimized: true,
   },
 
-  // Rewrites hanya aktif saat 'next dev' (Local Development tanpa Nginx)
-  ...(isExport
-    ? {}
-    : {
-      async rewrites() {
-        const backendTarget =
-          process.env.NEXT_PUBLIC_WEB_API_URL ||
-          process.env.WEB_API_URL ||
-          "http://localhost:5000";
+  // Rewrites hanya aktif saat mode development (`next dev`)
+  ...(isDev && {
+    async rewrites() {
+      // Menggunakan fallback URL jika NEXT_PUBLIC_API_URL tidak terdefinisi
+      const backendTarget =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
-        return [
-          {
-            source: "/api/:path*",
-            destination: `${backendTarget}/api/:path*`,
-          },
-        ];
-      },
-    }),
+      // Memastikan trailing slash pada backendTarget dibersihkan agar tidak double slash
+      const cleanTarget = backendTarget.replace(/\/$/, "");
+
+      return [
+        {
+          source: "/api/:path*",
+          destination: `${cleanTarget}/api/:path*`,
+        },
+      ];
+    },
+  }),
 };
 
 export default nextConfig;

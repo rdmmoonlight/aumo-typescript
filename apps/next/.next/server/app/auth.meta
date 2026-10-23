@@ -22,13 +22,5 @@
         }
       }
     }
-  },
-  "routeCache": {
-    "key": "/route-cache/APP_PAGE/4227697197147303d9772f4d4b3dfc57e87378774d898d8ff12cea5c7845c3e2/$/auth",
-    "owner": {
-      "kind": "APP_PAGE",
-      "sourceRoute": "/auth/page"
-    },
-    "isFallback": false
   }
 }

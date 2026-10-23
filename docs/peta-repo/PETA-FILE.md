@@ -69,15 +69,6 @@ Cakupan: 154 berkas terlacak, tidak termasuk `pnpm-lock.yaml` (dihasilkan otomat
 | `android/gradle.properties` | 2026-10-18 | 2026-10-18 | Properti Gradle Android |
 | `android/settings.gradle.kts` | 2026-10-18 | 2026-10-18 | Pengaturan proyek Gradle Android |
 
-## apps/api
-
-| Berkas | Dibuat | Diperbarui | Fungsi |
-| --- | --- | --- | --- |
-| `apps/api/CHANGELOG.md` | 2026-10-20 | 2026-10-20 | Changelog @app/api |
-| `apps/api/package.json` | 2026-10-18 | 2026-10-20 | Paket @app/api (rencana dihapus, ADR 0011) |
-| `apps/api/src/app.test.ts` | 2026-10-19 | 2026-10-18 | Tes tiruan, tanpa kode produksi |
-| `apps/api/tsconfig.json` | 2026-10-18 | 2026-10-20 | TypeScript config @app/api |
-
 ## docs
 
 | Berkas | Dibuat | Diperbarui | Fungsi |

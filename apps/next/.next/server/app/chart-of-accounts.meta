@@ -27,13 +27,5 @@
         }
       }
     }
-  },
-  "routeCache": {
-    "key": "/route-cache/APP_PAGE/1956b2e10405eac61afa20b011668ed37da1c06aead1b47f8ce70eb45b439a60/$/chart-of-accounts",
-    "owner": {
-      "kind": "APP_PAGE",
-      "sourceRoute": "/(authenticated)/chart-of-accounts/page"
-    },
-    "isFallback": false
   }
 }

@@ -19,7 +19,7 @@
         "lint:fix": "eslint . --fix",
         "format": "prettier --write .",
         "db:generate": "drizzle-kit generate",
-        "db:migrate": "tsx src/db/migrate.ts",
+        "db:migrate": "drizzle-kit migrate",
         "db:push": "drizzle-kit push",
         "db:pull": "drizzle-kit pull",
         "db:studio": "drizzle-kit studio"
@@ -81,8 +81,8 @@
         "node": ">=24.0.0"
     },
     "pnpm": {
-    "onlyBuiltDependencies": [
-      "unrs-resolver"
-    ]
+        "onlyBuiltDependencies": [
+            "unrs-resolver"
+        ]
     }
 }

@@ -27,13 +27,5 @@
         }
       }
     }
-  },
-  "routeCache": {
-    "key": "/route-cache/APP_PAGE/b4079e9fa9767d0f5a8a78594f7e5b12cf11bc447f8f4207e0ea7b9068ee6e80/$/ai-assistant",
-    "owner": {
-      "kind": "APP_PAGE",
-      "sourceRoute": "/(authenticated)/ai-assistant/page"
-    },
-    "isFallback": false
   }
 }

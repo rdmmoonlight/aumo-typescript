@@ -18,6 +18,7 @@ import { loginSchema, registerSchema } from "@/lib/validations/auth";
 
 // ===== TYPES =====
 export type AuthFormData = {
+  fullName?: string;
   email: string;
   password: string;
   confirmPassword?: string;
@@ -134,6 +135,7 @@ function AuthFormInner({
   } = useForm<AuthFormData>({
     resolver: zodResolver(mode === "login" ? loginSchema : registerSchema),
     defaultValues: {
+      fullName: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -192,11 +194,21 @@ function AuthFormInner({
     setMode(newMode);
     const saved = localStorage.getItem("aumo_saved_email");
     reset({
+      fullName: "",
       email: newMode === "login" && saved ? saved : "",
       password: "",
       confirmPassword: "",
       keepMe: newMode === "login" && !!saved,
     });
+  };
+
+  const handleRedirectOrSuccess = () => {
+    if (onSuccess) {
+      onSuccess();
+    } else {
+      const target = searchParams.get("redirectTo") || "/home";
+      window.location.replace(target);
+    }
   };
 
   const onSubmit: SubmitHandler<AuthFormData> = async (values) => {
@@ -207,42 +219,80 @@ function AuthFormInner({
       // Reset cache RTK Query
       dispatch(baseApi.util.resetApiState());
 
-      // Panggil endpoint /auth/login via initiate
-      const result = await store.dispatch(
-        authApi.endpoints.login.initiate({
-          email: values.email,
-          password: values.password,
-          rememberMe: values.keepMe ?? false,
-          isMobileClient: false,
-        }),
-      );
+      if (mode === "register") {
+        // Executing Register Mutation
+        const registerResult = await store.dispatch(
+          authApi.endpoints.register.initiate({
+            fullName: values.fullName || "",
+            email: values.email,
+            password: values.password,
+            confirmPassword: values.confirmPassword,
+            isMobileClient: false,
+          }),
+        );
 
-      if ("error" in result) {
-        const errorData = result.error as any;
-        const msg =
-          errorData?.data?.message ||
-          errorData?.data?.title ||
-          (errorData?.status === "FETCH_ERROR"
-            ? "Gagal terhubung ke server backend."
-            : "Email atau password salah.");
-        setApiErr(msg);
-        return;
-      }
+        if ("error" in registerResult) {
+          const errorData = registerResult.error as any;
+          const msg =
+            errorData?.data?.message ||
+            errorData?.data?.errors?.[0] ||
+            "Pendaftaran gagal. Silakan coba lagi.";
+          setApiErr(msg);
+          return;
+        }
 
-      if (values.keepMe) {
-        localStorage.setItem("aumo_saved_email", values.email);
+        // Auto Login setelah registrasi berhasil
+        const loginResult = await store.dispatch(
+          authApi.endpoints.login.initiate({
+            email: values.email,
+            password: values.password,
+            rememberMe: false,
+            isMobileClient: false,
+          }),
+        );
+
+        if ("error" in loginResult) {
+          // Jika backend tidak langsung mengembalikan session login pada register,
+          // alihkan pengguna ke tampilan login
+          setMode("login");
+          reset({ email: values.email, password: "" });
+          return;
+        }
+
+        handleRedirectOrSuccess();
       } else {
-        localStorage.removeItem("aumo_saved_email");
-      }
+        // Executing Login Mutation
+        const result = await store.dispatch(
+          authApi.endpoints.login.initiate({
+            email: values.email,
+            password: values.password,
+            rememberMe: values.keepMe ?? false,
+            isMobileClient: false,
+          }),
+        );
 
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        const target = searchParams.get("redirectTo") || "/home";
-        window.location.replace(target);
+        if ("error" in result) {
+          const errorData = result.error as any;
+          const msg =
+            errorData?.data?.message ||
+            errorData?.data?.title ||
+            (errorData?.status === "FETCH_ERROR"
+              ? "Gagal terhubung ke server backend."
+              : "Email atau password salah.");
+          setApiErr(msg);
+          return;
+        }
+
+        if (values.keepMe) {
+          localStorage.setItem("aumo_saved_email", values.email);
+        } else {
+          localStorage.removeItem("aumo_saved_email");
+        }
+
+        handleRedirectOrSuccess();
       }
     } catch {
-      setApiErr("Terjadi kesalahan sistem saat mencoba masuk.");
+      setApiErr("Terjadi kesalahan sistem saat memproses permintaan.");
     } finally {
       setIsPending(false);
     }
@@ -268,12 +318,7 @@ function AuthFormInner({
         return;
       }
 
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        const target = searchParams.get("redirectTo") || "/home";
-        window.location.replace(target);
-      }
+      handleRedirectOrSuccess();
     } catch {
       setApiErr("Gagal verifikasi Google.");
     } finally {
@@ -311,6 +356,24 @@ function AuthFormInner({
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
+        {mode === "register" && (
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold uppercase">
+              Nama Lengkap
+            </Label>
+            <Input
+              {...register("fullName")}
+              placeholder="Nama Anda"
+              className="h-11 rounded-xl bg-zinc-50"
+            />
+            {errors.fullName && (
+              <p className="text-xs text-red-600">
+                {errors.fullName.message}
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="space-y-1.5">
           <Label className="text-xs font-semibold uppercase">Email</Label>
           <Input

@@ -17,7 +17,7 @@ function getCookie(name: string): string | undefined {
 
 function getBackendTarget(): string {
   // Ambil URL Backend dari environment variable Next.js
-  return process.env.NEXT_PUBLIC_WEB_API_URL || "";
+  return process.env.NEXT_PUBLIC_API_URL || "";
 }
 
 const BASE_URL = getBackendTarget();

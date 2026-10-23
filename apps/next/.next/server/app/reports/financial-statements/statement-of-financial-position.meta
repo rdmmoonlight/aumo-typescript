@@ -37,13 +37,5 @@
         }
       }
     }
-  },
-  "routeCache": {
-    "key": "/route-cache/APP_PAGE/8d24e5c8034c3aa7dd08baa85a9ff33e6b4528cca823628718e533c5bc75ac0c/$/reports/financial-statements/statement-of-financial-position",
-    "owner": {
-      "kind": "APP_PAGE",
-      "sourceRoute": "/(authenticated)/reports/financial-statements/statement-of-financial-position/page"
-    },
-    "isFallback": false
   }
 }

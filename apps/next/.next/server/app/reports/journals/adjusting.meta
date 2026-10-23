@@ -37,13 +37,5 @@
         }
       }
     }
-  },
-  "routeCache": {
-    "key": "/route-cache/APP_PAGE/2ae57aacb88695bca7440cea38bc1252504b7dcfd7cb9898f815c5b9bd951220/$/reports/journals/adjusting",
-    "owner": {
-      "kind": "APP_PAGE",
-      "sourceRoute": "/(authenticated)/reports/journals/adjusting/page"
-    },
-    "isFallback": false
   }
 }

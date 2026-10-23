@@ -1,3 +1,3 @@
-module.exports=[36147,a=>{"use strict";var b=a.i(61198),c=a.i(32062),d=a.i(32650),e=a.i(65443);a.s(["default",0,function(){return(0,b.jsx)(c.u,{clientId:e.GOOGLE_CLIENT_ID,children:(0,b.jsx)("main",{className:"flex min-h-screen items-center justify-center p-4 bg-zinc-50",children:(0,b.jsx)(d.Suspense,{fallback:(0,b.jsx)(e.AuthFormSkeleton,{}),children:(0,b.jsx)(e.default,{initialMode:"login"})})})})}])}];
+module.exports=[36147,a=>{"use strict";var b=a.i(78928),c=a.i(70423),d=a.i(80405),e=a.i(65443);a.s(["default",0,function(){return(0,b.jsx)(c.u,{clientId:e.GOOGLE_CLIENT_ID,children:(0,b.jsx)("main",{className:"flex min-h-screen items-center justify-center p-4 bg-zinc-50",children:(0,b.jsx)(d.Suspense,{fallback:(0,b.jsx)(e.AuthFormSkeleton,{}),children:(0,b.jsx)(e.default,{initialMode:"login"})})})})}])}];
 
 //# sourceMappingURL=apps_next_src_app_auth_page_tsx_044gkruwlegqo._.js.map

@@ -32,13 +32,5 @@
         }
       }
     }
-  },
-  "routeCache": {
-    "key": "/route-cache/APP_PAGE/e0875145b81baf1be1e3ba6ccbbf4d925e6a076a6e764c31843eee4df57e2add/$/reports/worksheet",
-    "owner": {
-      "kind": "APP_PAGE",
-      "sourceRoute": "/(authenticated)/reports/worksheet/page"
-    },
-    "isFallback": false
   }
 }

@@ -37,13 +37,5 @@
         }
       }
     }
-  },
-  "routeCache": {
-    "key": "/route-cache/APP_PAGE/5902721ca1a4a71adaf80339f952b16398ecde8c2b10b9d6394224572c57e66d/$/reports/general-ledgers/permanent",
-    "owner": {
-      "kind": "APP_PAGE",
-      "sourceRoute": "/(authenticated)/reports/general-ledgers/permanent/page"
-    },
-    "isFallback": false
   }
 }

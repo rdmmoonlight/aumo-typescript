@@ -1,6 +1,7 @@
 # Peta Migrasi: `/nest` (aumo-finance) → `apps/nest` (aumo_typescript)
 
 > Status: **PEMETAAN SAJA.** Dokumen ini tidak memindahkan atau mengubah kode apa pun.
+          **Clear pada 09.39 23-10-26**
 > Sumber: `github.com/rdmmoonlight/aumo-finance`, folder `/nest` (NestJS 11 + Better Auth + Drizzle).
 > Tujuan: `github.com/rdmmoonlight/aumo_typescript` (monorepo pnpm + Nx).
 
@@ -11,7 +12,6 @@
 | Pos | Keputusan |
 | --- | --- |
 | Folder tujuan | `apps/nest`, nama paket `@app/nest` (cocok dengan `pnpm-workspace.yaml`: `apps/*`) |
-| `apps/api` (tes mock) | Tetap. Bukan bagian migrasi ini |
 | `services/auth` (Go) | **Titik keputusan Fase 1.** Better Auth di Nest dan layanan auth Go (ADR 0006) tumpang tindih. Tidak ada yang dihapus sebelum ADR baru |
 | Node | Naik ke **24** (syarat `engines` Nest). Berdampak ke 4 workflow |
 | pnpm | Tetap `9.15.9` (`packageManager`). Lockfile Nest tidak dipakai, dibuat ulang di lockfile root |
@@ -62,7 +62,7 @@
 - [x] `tsconfig.json` root: `exclude` ditambah `apps/nest`.
 - [x] `vitest.config.ts` root: `exclude` ditambah `apps/nest/**`.
 - [x] `eslint.config.mjs` root: `ignores` ditambah `apps/nest/**`.
-- [x] Skrip root `lint`, `typecheck`, `test` → `nx run-many -t <target>`; tambah target `lint`, `typecheck`, `test` di `apps/api` dan `libs/*` agar tetap tercakup.
+- [x] Skrip root `lint`, `typecheck`, `test` → `nx run-many -t <target>`; tambah target `lint`, `typecheck`, `test` di `libs/*` agar tetap tercakup.
 - [x] **Keluaran:** CI hijau di Node 24. **Selesai bila:** 3 workflow lolos tanpa perubahan fungsional.
 
 ### Fase 3 — Salin Kode ke `apps/nest`
@@ -90,10 +90,10 @@
 
 ### Fase 6 — Database & Migrasi Drizzle
 
-- [ ] Migrasi tetap di `apps/nest/drizzle/`. Pilih satu sumber skema: `src/db/schema/` (dipakai `drizzle.config.ts`); `drizzle/schema.ts` dan `drizzle/relations.ts` adalah artefak `db:pull`, tandai atau hapus.
-- [ ] Migrasi ke Neon dijalankan manual (`db:migrate`), **bukan** dari CI.
-- [ ] Cocokkan nama tabel/kolom dengan skema backend yang berlaku (PascalCase vs `snake_case` dari `casing`) sebelum menyentuh data produksi.
-- [ ] **Keluaran:** panduan migrasi singkat. **Selesai bila:** `db:generate` tidak menghasilkan diff pada skema yang ada.
+- [x] Migrasi tetap di `apps/nest/drizzle/`. Pilih satu sumber skema: `src/db/schema/` (dipakai `drizzle.config.ts`); `drizzle/schema.ts` dan `drizzle/relations.ts` adalah artefak `db:pull`, tandai atau hapus.
+- [x] Migrasi ke Neon dijalankan manual (`db:migrate`), **bukan** dari CI.
+- [x] Cocokkan nama tabel/kolom dengan skema backend yang berlaku (PascalCase vs `snake_case` dari `casing`) sebelum menyentuh data produksi.
+- [x] **Keluaran:** panduan migrasi singkat. **Selesai bila:** `db:generate` tidak menghasilkan diff pada skema yang ada.
 
 ### Fase 7 — Selaraskan Libs Bersama
 
@@ -109,7 +109,7 @@
 - [x] `apps/nest/Dockerfile.dockerignore` (BuildKit membacanya) atau `.dockerignore` di root.
 - [x] `render.yaml` di root: 1 service per aplikasi, `dockerfilePath` dan `dockerContext` eksplisit, `buildFilter` per service.
 - [x] Pin pnpm ke versi `packageManager` (jangan `pnpm@latest` seperti Dockerfile lama).
-- [ ] **Keluaran:** image Nest terbangun dan `/health` merespons 200. **Selesai bila:** deploy Render pertama sukses.
+- [x] **Keluaran:** image Nest terbangun dan `/health` merespons 200. **Selesai bila:** deploy Render pertama sukses.
 
 ### Fase 9 — Cutover & Pembersihan
 

@@ -37,13 +37,5 @@
         }
       }
     }
-  },
-  "routeCache": {
-    "key": "/route-cache/APP_PAGE/b9230086b3c940da439efda031b990fd43269115cdb7596ad50fac2085a70d2c/$/reports/trial-balances/post-closing",
-    "owner": {
-      "kind": "APP_PAGE",
-      "sourceRoute": "/(authenticated)/reports/trial-balances/post-closing/page"
-    },
-    "isFallback": false
   }
 }

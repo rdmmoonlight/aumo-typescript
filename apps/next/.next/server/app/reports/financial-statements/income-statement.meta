@@ -37,13 +37,5 @@
         }
       }
     }
-  },
-  "routeCache": {
-    "key": "/route-cache/APP_PAGE/965d91fe2ce2e966a2ec52613a962b10ea49a16d598756326fa31103497f0440/$/reports/financial-statements/income-statement",
-    "owner": {
-      "kind": "APP_PAGE",
-      "sourceRoute": "/(authenticated)/reports/financial-statements/income-statement/page"
-    },
-    "isFallback": false
   }
 }

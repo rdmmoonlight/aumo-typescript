@@ -22,7 +22,6 @@ ENV PNPM_CONFIG_IGNORE_BUILDS=false
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/nest/package.json apps/nest/
-COPY apps/api/package.json apps/api/
 COPY libs/contracts/package.json libs/contracts/
 COPY libs/logger/package.json libs/logger/
 COPY libs/sdk/package.json libs/sdk/

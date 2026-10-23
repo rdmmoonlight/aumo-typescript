@@ -1,3 +1,0 @@
-(()=>{"use strict";module.exports=[27968,a=>{var b=a.i(38234);let c={name:"circle-check",size:24,node:[["circle",{cx:"12",cy:"12",r:"10",key:"1mglay"}],["path",{d:"m16 9-5.5 5.5L8 12",key:"xofnsj"}]],aliases:["check-circle-2"]};c.node;let d=(0,b.f)(c);a.s(["f",0,d],27968)},52070,a=>{a.s(["f",0,function(a){return a.map(a=>{let b=a.netBalance??a.amount??0,c=a.debit??0,d=a.credit??0;return void 0===a.debit&&void 0===a.credit&&(a.normalBalanceIsDebit?(c=b>=0?b:0,d=b<0?Math.abs(b):0):(d=b>=0?b:0,c=b<0?Math.abs(b):0)),{...a,debit:c,credit:d}})}])}]})();
-
-//# sourceMappingURL=apps_next_20md6vngokcr6._.js.map

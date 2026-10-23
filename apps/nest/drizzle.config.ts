@@ -1,24 +1,20 @@
 import dotenv from 'dotenv';
 import { defineConfig } from 'drizzle-kit';
-import path from 'node:path';
+import { resolve } from 'node:path';
 
-// Muat .env baik dari folder apps/nest maupun dari root repo
-dotenv.config({ path: path.resolve(__dirname, '.env') });
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+// Load .env dari folder apps/nest
+dotenv.config({ path: resolve(__dirname, '.env') });
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('❌ DATABASE_URL tidak ditemukan di environment variables!');
+if (!process.env.DIRECT_URL) {
+  throw new Error('❌ DIRECT_URL tidak ditemukan di environment variables!');
 }
 
 export default defineConfig({
   dialect: 'postgresql',
-  schema: ['./src/db/schema/index.ts'],
-  out: './drizzle',
+  schema: './src/db/schema/index.ts', // Targetkan file index schema
+  out: './src/db/schema',              // Folder output hasil file SQL migrasi
   dbCredentials: {
-    url: process.env.DATABASE_URL,
-    ssl: {
-      rejectUnauthorized: false,
-    },
+    url: process.env.DIRECT_URL,
   },
   strict: true,
   verbose: true,

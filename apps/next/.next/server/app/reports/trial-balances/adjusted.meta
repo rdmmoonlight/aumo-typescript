@@ -37,13 +37,5 @@
         }
       }
     }
-  },
-  "routeCache": {
-    "key": "/route-cache/APP_PAGE/a3e27b05b7583e016fd51013dd14ba942b8ff40dec2210347694ae31ff54d28e/$/reports/trial-balances/adjusted",
-    "owner": {
-      "kind": "APP_PAGE",
-      "sourceRoute": "/(authenticated)/reports/trial-balances/adjusted/page"
-    },
-    "isFallback": false
   }
 }

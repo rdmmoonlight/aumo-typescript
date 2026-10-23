@@ -37,13 +37,5 @@
         }
       }
     }
-  },
-  "routeCache": {
-    "key": "/route-cache/APP_PAGE/89a9dc0ab8cedd350e6b96af5fd9f84e1e4e3810dce424941de0608594384db6/$/reports/journals/general",
-    "owner": {
-      "kind": "APP_PAGE",
-      "sourceRoute": "/(authenticated)/reports/journals/general/page"
-    },
-    "isFallback": false
   }
 }
