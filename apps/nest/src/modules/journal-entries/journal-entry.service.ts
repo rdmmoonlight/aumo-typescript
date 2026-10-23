@@ -1,89 +1,121 @@
+import { Injectable } from '@nestjs/common';
+import { and, asc, count, desc, eq, ilike, isNotNull, max, ne, sql } from 'drizzle-orm';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { AppError, ValidationMessagesError } from '../../lib/errors.js';
+import { formatDotNetDate } from '../../common/utils/dotnet-date.js';
+import { chartOfAccounts } from '../../db/schema/chart-of-accounts.js';
+import { generalJournal } from '../../db/schema/general-journal.js';
+import { periods } from '../../db/schema/periods.js';
+import { transactionCounters } from '../../db/schema/transaction-counters.js';
+import { InjectDrizzle } from '../drizzle/drizzle.decorator.js';
+import { JournalEntryInput, JournalLineInput } from './journal-entry.schemas.js';
 import {
-    BadRequestException,
-    Injectable,
-    NotFoundException,
-} from '@nestjs/common';
-import { and, count, desc, eq, ilike, max, sql } from 'drizzle-orm';
-import { db } from '../../db/connection';
-import { chartOfAccounts } from '../../db/schema/chart-of-accounts';
-import { generalJournals } from '../../db/schema/general-journals';
-import { periods } from '../../db/schema/periods';
-import {
-    CreateJournalEntryDto,
-    JournalEntryLineInput,
-    UpdateJournalEntryDto,
-} from './journal-entry.schemas.js';
-import { JournalEntryDto } from './journal-entry.types.js';
+    effectiveLines,
+    ENTRY_DATE_MESSAGE,
+    isValidJournalTypeOrEmpty,
+    JOURNAL_TYPE_MESSAGE,
+    validateJournalEntry,
+} from './journal-entry.validation.js';
+import { CreateJournalEntryResponse, JournalEntryDto, MessageResponse } from './journal-entry.types.js';
 
-type ClosedPeriod = { startDate: Date; endDate: Date; isClosed: boolean };
+const POSTED = 'Posted';
+const MAX_SEQUENCE = 9999;
 
-function isDateLocked(date: Date, closedPeriods: ClosedPeriod[]): boolean {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    return closedPeriods.some((p) => {
-        if (!p.isClosed) return false;
-        const start = new Date(p.startDate);
-        const end = new Date(p.endDate);
-        start.setHours(0, 0, 0, 0);
-        end.setHours(23, 59, 59, 999);
-        return d >= start && d <= end;
-    });
+type Row = typeof generalJournal.$inferSelect;
+type ClosedPeriod = { startDate: Date; endDate: Date };
+
+/** Setara PeriodLock.IsDateLocked: tanggal berada di rentang periode yang sudah ditutup. */
+export function isDateLocked(date: Date, closedPeriods: ClosedPeriod[]): boolean {
+    const time = date.getTime();
+    return closedPeriods.some((p) => time >= p.startDate.getTime() && time <= p.endDate.getTime());
 }
 
-function buildTransactionNumber(
-    journalType: string,
-    entryDate: Date,
-    sequence: number,
-): string {
-    const prefixMap: Record<string, string> = {
-        General: 'JE',
-        Sales: 'SJ',
-        Purchase: 'PJ',
-        Cash: 'CE',
-        Bank: 'BE',
-    };
-    const prefix = prefixMap[journalType] ?? 'JE';
-    const yyyy = entryDate.getFullYear();
-    const mm = String(entryDate.getMonth() + 1).padStart(2, '0');
-    return `${prefix}-${yyyy}${mm}-${String(sequence).padStart(4, '0')}`;
+/** Setara TransactionNumberService: AJ untuk Adjusting, selain itu GJ; kunci = prefix + yyMM. */
+export function counterKeyFor(journalType: string, entryDate: Date): string {
+    const prefix = journalType === 'Adjusting' ? 'AJ' : 'GJ';
+    const yy = String(entryDate.getUTCFullYear() % 100).padStart(2, '0');
+    const mm = String(entryDate.getUTCMonth() + 1).padStart(2, '0');
+    return `${prefix}${yy}${mm}`;
 }
+
+function formatSequence(counterKey: string, sequence: number): string {
+    return `${counterKey}${String(sequence).padStart(4, '0')}`;
+}
+
+const toAmount = (n: number): string => n.toFixed(2);
 
 @Injectable()
 export class JournalEntryService {
-    async findOne(userId: string, journalEntryId: number): Promise<JournalEntryDto> {
-        const rows = await db
-            .select()
-            .from(generalJournals)
-            .where(
-                and(
-                    eq(generalJournals.journalEntryId, journalEntryId),
-                    eq(generalJournals.userId, userId),
-                ),
-            )
-            .orderBy(generalJournals.lineOrder);
+    constructor(@InjectDrizzle() private readonly db: NodePgDatabase) { }
 
-        if (rows.length === 0) {
-            throw new NotFoundException({
-                success: false,
-                message: 'Journal entry tidak ditemukan.',
-            });
-        }
-
-        const closedPeriods = await db
-            .select()
+    private async closedPeriods(userId: string): Promise<ClosedPeriod[]> {
+        return this.db
+            .select({ startDate: periods.startDate, endDate: periods.endDate })
             .from(periods)
             .where(and(eq(periods.userId, userId), eq(periods.isClosed, true)));
+    }
 
-        const isLocked = isDateLocked(rows[0].entryDate, closedPeriods as any);
+    private async rowsOf(userId: string, journalEntryId: number): Promise<Row[]> {
+        return this.db
+            .select()
+            .from(generalJournal)
+            .where(and(eq(generalJournal.journalEntryId, journalEntryId), eq(generalJournal.userId, userId)))
+            .orderBy(asc(generalJournal.lineOrder));
+    }
 
+    private async assertAccountsValid(userId: string, lines: JournalLineInput[]): Promise<void> {
+        const valid = await this.db
+            .select({ id: chartOfAccounts.id })
+            .from(chartOfAccounts)
+            .where(and(eq(chartOfAccounts.userId, userId), eq(chartOfAccounts.isActive, true)));
+        const ids = new Set(valid.map((a) => a.id));
+        if (lines.some((l) => !ids.has(l.accountId))) {
+            throw new AppError('One or more selected accounts are invalid or inactive.', 400);
+        }
+    }
+
+    private buildRows(
+        journalEntryId: number,
+        userId: string,
+        transactionNumber: string,
+        journalType: string,
+        entryDate: Date,
+        createdAt: Date,
+        updatedAt: Date | null,
+        lines: JournalLineInput[],
+        status: string,
+    ): (typeof generalJournal.$inferInsert)[] {
+        return lines.map((l, index) => ({
+            journalEntryId,
+            userId,
+            transactionNumber,
+            journalType,
+            entryDate,
+            createdAt,
+            updatedAt,
+            status,
+            accountId: l.accountId,
+            lineDescription: l.lineDescription,
+            debit: toAmount(l.debit),
+            credit: toAmount(l.credit),
+            lineOrder: index,
+        }));
+    }
+
+    async findOne(userId: string, id: number): Promise<JournalEntryDto> {
+        const rows = await this.rowsOf(userId, id);
+        if (rows.length === 0) throw new AppError('Journal entry not found.', 404);
+
+        const first = rows[0];
+        const locked = isDateLocked(first.entryDate, await this.closedPeriods(userId));
         return {
-            id: rows[0].journalEntryId,
-            transactionNumber: rows[0].transactionNumber,
-            journalType: rows[0].journalType,
-            entryDate: rows[0].entryDate,
-            createdAt: rows[0].createdAt,
-            updatedAt: rows[0].updatedAt,
-            isLocked,
+            id: first.journalEntryId,
+            transactionNumber: first.transactionNumber,
+            journalType: first.journalType,
+            entryDate: formatDotNetDate(first.entryDate),
+            createdAt: formatDotNetDate(first.createdAt),
+            updatedAt: first.updatedAt ? formatDotNetDate(first.updatedAt) : null,
+            isLocked: locked,
             lines: rows.map((l) => ({
                 id: l.lineId,
                 accountId: l.accountId,
@@ -95,140 +127,161 @@ export class JournalEntryService {
         };
     }
 
-    async create(userId: string, dto: CreateJournalEntryDto) {
-        const effectiveLines = dto.lines.filter(
-            (l) => l.accountId !== 0 && (l.debit !== 0 || l.credit !== 0),
-        );
-        await this.assertAccountsValid(userId, effectiveLines);
+    async create(userId: string, input: JournalEntryInput): Promise<CreateJournalEntryResponse> {
+        const errors = validateJournalEntry(input);
+        if (errors.length > 0) throw new ValidationMessagesError(errors);
 
-        const closedPeriods = await db
-            .select()
-            .from(periods)
-            .where(and(eq(periods.userId, userId), eq(periods.isClosed, true)));
+        const lines = effectiveLines(input.lines ?? []);
+        await this.assertAccountsValid(userId, lines);
 
-        if (isDateLocked(dto.entryDate, closedPeriods as any)) {
-            throw new BadRequestException({
-                success: false,
-                message: 'Tanggal ini berada dalam periode akuntansi yang sudah ditutup.',
-            });
+        if (isDateLocked(input.entryDate, await this.closedPeriods(userId))) {
+            throw new AppError(
+                'This date falls within a closed accounting period. Choose a date in an open period.',
+                400,
+            );
         }
 
-        const journalType = dto.journalType?.trim() || 'General';
-        const transactionNumber = await this.generateTransactionNumber(
-            userId, journalType, dto.entryDate,
-        );
-        const entryDate = new Date(dto.entryDate);
-        const createdAt = dto.createdAt ? new Date(dto.createdAt) : new Date();
+        const journalType = input.journalType.trim() === '' ? 'General' : input.journalType;
+        const transactionNumber = await this.generateTransactionNumber(userId, journalType, input.entryDate);
+        const createdAt = input.clientTimestamp ?? new Date();
         const journalEntryId = await this.nextJournalEntryId();
 
-        const rowsToInsert = this.buildRows(
-            journalEntryId, userId, transactionNumber, journalType,
-            entryDate, createdAt, null, effectiveLines,
+        await this.db.insert(generalJournal).values(
+            this.buildRows(journalEntryId, userId, transactionNumber, journalType, input.entryDate, createdAt, null, lines, POSTED),
         );
 
-        await db.insert(generalJournals).values(rowsToInsert as any);
-        return { entryId: journalEntryId, transactionNumber };
+        return {
+            success: true,
+            message: `Journal entry ${transactionNumber} has been posted.`,
+            entryId: journalEntryId,
+            transactionNumber,
+        };
     }
 
-    async update(userId: string, journalEntryId: number, dto: UpdateJournalEntryDto) {
-        const existingRows = await db.select().from(generalJournals)
-            .where(and(eq(generalJournals.journalEntryId, journalEntryId), eq(generalJournals.userId, userId)));
-        if (existingRows.length === 0) throw new NotFoundException({ success: false, message: 'Journal entry tidak ditemukan.' });
+    async update(userId: string, id: number, input: JournalEntryInput): Promise<MessageResponse> {
+        const errors = validateJournalEntry(input);
+        if (errors.length > 0) throw new ValidationMessagesError(errors);
 
-        const header = existingRows[0];
-        const closedPeriods = await db.select().from(periods)
-            .where(and(eq(periods.userId, userId), eq(periods.isClosed, true)));
+        const existing = await this.rowsOf(userId, id);
+        if (existing.length === 0) throw new AppError('Journal entry not found.', 404);
+        const header = existing[0];
 
-        if (isDateLocked(header.entryDate, closedPeriods as any) || isDateLocked(dto.entryDate, closedPeriods as any)) {
-            throw new BadRequestException({
-                success: false,
-                message: `Journal entry ${header.transactionNumber} berada dalam periode tertutup dan tidak bisa dimodifikasi.`,
-            });
+        const closed = await this.closedPeriods(userId);
+        if (isDateLocked(header.entryDate, closed) || isDateLocked(input.entryDate, closed)) {
+            throw new AppError(
+                `Journal entry ${header.transactionNumber} falls within a closed period and cannot be modified.`,
+                400,
+            );
         }
 
-        const effectiveLines = dto.lines.filter(l => l.accountId !== 0 && (l.debit !== 0 || l.credit !== 0));
-        await this.assertAccountsValid(userId, effectiveLines);
+        const lines = effectiveLines(input.lines ?? []);
+        await this.assertAccountsValid(userId, lines);
 
-        const journalType = dto.journalType?.trim() || header.journalType;
-        const entryDate = new Date(dto.entryDate);
-        const updatedAt = dto.updatedAt ? new Date(dto.updatedAt) : new Date();
+        const journalType = input.journalType.trim() === '' ? header.journalType : input.journalType;
+        const updatedAt = input.clientTimestamp ?? new Date();
+        const newRows = this.buildRows(
+            header.journalEntryId, userId, header.transactionNumber, journalType, input.entryDate,
+            header.createdAt, updatedAt, lines, header.status ?? POSTED,
+        );
 
-        const newRows = this.buildRows(header.journalEntryId, userId, header.transactionNumber, journalType, entryDate, header.createdAt, updatedAt, effectiveLines, header.status);
-
-        await db.transaction(async (tx) => {
-            await tx.delete(generalJournals).where(and(eq(generalJournals.journalEntryId, journalEntryId), eq(generalJournals.userId, userId)));
-            await tx.insert(generalJournals).values(newRows as any);
+        // Hapus baris lama dan tambah baris baru dalam satu transaksi (seperti satu SaveChanges di sumber).
+        await this.db.transaction(async (tx) => {
+            await tx
+                .delete(generalJournal)
+                .where(and(eq(generalJournal.journalEntryId, id), eq(generalJournal.userId, userId)));
+            await tx.insert(generalJournal).values(newRows);
         });
-        return { transactionNumber: header.transactionNumber };
+
+        return { success: true, message: `Journal entry ${header.transactionNumber} updated successfully.` };
     }
 
-    async delete(userId: string, journalEntryId: number) {
-        const rows = await db.select().from(generalJournals)
-            .where(and(eq(generalJournals.journalEntryId, journalEntryId), eq(generalJournals.userId, userId)));
-        if (rows.length === 0) throw new NotFoundException({ success: false, message: 'Journal entry tidak ditemukan.' });
+    async remove(userId: string, id: number): Promise<MessageResponse> {
+        const rows = await this.rowsOf(userId, id);
+        if (rows.length === 0) throw new AppError('Journal entry not found.', 404);
 
-        const closedPeriods = await db.select().from(periods).where(and(eq(periods.userId, userId), eq(periods.isClosed, true)));
-        if (isDateLocked(rows[0].entryDate, closedPeriods as any)) {
-            throw new BadRequestException({ success: false, message: 'Tidak dapat menghapus transaksi dalam periode akuntansi yang tertutup.' });
+        if (isDateLocked(rows[0].entryDate, await this.closedPeriods(userId))) {
+            throw new AppError('Cannot delete transactions in closed accounting periods.', 400);
         }
-        const transactionNumber = rows[0].transactionNumber;
-        await db.delete(generalJournals).where(and(eq(generalJournals.journalEntryId, journalEntryId), eq(generalJournals.userId, userId)));
-        return { transactionNumber };
+
+        await this.db
+            .delete(generalJournal)
+            .where(and(eq(generalJournal.journalEntryId, id), eq(generalJournal.userId, userId)));
+        return { success: true, message: `Journal entry ${rows[0].transactionNumber} deleted successfully.` };
     }
 
     async searchDescriptions(userId: string, q: string): Promise<string[]> {
-        if (!q || q.trim().length < 2) return [];
-        const rows = await db.select({
-            description: generalJournals.lineDescription,
-            cnt: count(),
-            maxId: max(generalJournals.lineId),
-        }).from(generalJournals)
-            .where(and(eq(generalJournals.userId, userId), sql`${generalJournals.lineDescription} IS NOT NULL AND ${generalJournals.lineDescription} != ''`, ilike(generalJournals.lineDescription, `%${q.trim()}%`)))
-            .groupBy(generalJournals.lineDescription)
-            .orderBy(desc(count()), desc(max(generalJournals.lineId)))
+        const keyword = q.trim();
+        if (keyword.length < 2) return [];
+
+        const rows = await this.db
+            .select({ description: generalJournal.lineDescription })
+            .from(generalJournal)
+            .where(
+                and(
+                    eq(generalJournal.userId, userId),
+                    isNotNull(generalJournal.lineDescription),
+                    ne(generalJournal.lineDescription, ''),
+                    ilike(generalJournal.lineDescription, `%${keyword}%`),
+                ),
+            )
+            .groupBy(generalJournal.lineDescription)
+            .orderBy(desc(count()), desc(max(generalJournal.lineId)))
             .limit(8);
-        return rows.map((r) => r.description!).filter(Boolean);
+        return rows.map((r) => r.description as string);
     }
 
-    async peekNextNumber(userId: string, journalType: string, entryDate: Date): Promise<string> {
-        const type = journalType?.trim() || 'General';
-        const date = entryDate ?? new Date();
-        const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-        const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
-        const result = await db.select({ cnt: count() }).from(generalJournals)
-            .where(and(eq(generalJournals.userId, userId), eq(generalJournals.journalType, type), sql`${generalJournals.entryDate} >= ${startOfMonth} AND ${generalJournals.entryDate} <= ${endOfMonth}`));
-        const seq = (result[0]?.cnt ?? 0) + 1;
-        return buildTransactionNumber(type, date, seq);
-    }
-
-    private async assertAccountsValid(userId: string, lines: JournalEntryLineInput[]) {
-        const accountIds = [...new Set(lines.map((l) => l.accountId))];
-        const valid = await db.select({ id: chartOfAccounts.id }).from(chartOfAccounts)
-            .where(and(eq(chartOfAccounts.userId, userId), eq(chartOfAccounts.isActive, true)));
-        const validSet = new Set(valid.map((v) => v.id));
-        if (accountIds.some((id) => !validSet.has(id))) {
-            throw new BadRequestException({ success: false, message: 'Satu atau lebih akun tidak valid atau tidak aktif.' });
+    /** Setara PeekNextAsync: tidak menaikkan counter. */
+    async peekNextTransactionNumber(
+        userId: string,
+        journalType: string | undefined,
+        entryDate: Date | undefined,
+    ): Promise<string> {
+        if (!isValidJournalTypeOrEmpty(journalType)) {
+            throw new ValidationMessagesError([JOURNAL_TYPE_MESSAGE]);
         }
+        const type = journalType === undefined || journalType.trim() === '' ? 'General' : journalType;
+        const date = entryDate ?? startOfTodayUtc();
+        const time = date.getTime();
+        if (!(time >= Date.UTC(2000, 0, 1) && time <= Date.UTC(2100, 11, 31))) {
+            throw new ValidationMessagesError([ENTRY_DATE_MESSAGE]);
+        }
+
+        const key = counterKeyFor(type, date);
+        const [row] = await this.db
+            .select({ lastSequence: transactionCounters.lastSequence })
+            .from(transactionCounters)
+            .where(and(eq(transactionCounters.userId, userId), eq(transactionCounters.counterKey, key)))
+            .limit(1);
+        return formatSequence(key, (row?.lastSequence ?? 0) + 1);
+    }
+
+    /** Setara GenerateAsync: upsert atomik pada counter, lalu ambil nomor urut. */
+    private async generateTransactionNumber(userId: string, journalType: string, entryDate: Date): Promise<string> {
+        const key = counterKeyFor(journalType, entryDate);
+        const [row] = await this.db
+            .insert(transactionCounters)
+            .values({ userId, counterKey: key, lastSequence: 1 })
+            .onConflictDoUpdate({
+                target: [transactionCounters.userId, transactionCounters.counterKey],
+                set: { lastSequence: sql`${transactionCounters.lastSequence} + 1` },
+            })
+            .returning({ lastSequence: transactionCounters.lastSequence });
+
+        if (row.lastSequence > MAX_SEQUENCE) {
+            throw new Error(`Transaction number sequence for ${key} has reached its ${MAX_SEQUENCE} capacity.`);
+        }
+        return formatSequence(key, row.lastSequence);
     }
 
     private async nextJournalEntryId(): Promise<number> {
-        const result = await db.select({ maxId: max(generalJournals.journalEntryId) }).from(generalJournals);
-        return (result[0]?.maxId ?? 0) + 1;
+        const result = await this.db.execute<{ value: number }>(
+            sql`SELECT nextval('general_journal_journal_entry_id_seq')::int AS value`,
+        );
+        return Number(result.rows[0].value);
     }
+}
 
-    private async generateTransactionNumber(userId: string, journalType: string, entryDate: Date): Promise<string> {
-        return this.peekNextNumber(userId, journalType, entryDate);
-    }
-
-    private buildRows(journalEntryId: number, userId: string, transactionNumber: string, journalType: string, entryDate: Date, createdAt: Date, updatedAt: Date | null, lines: JournalEntryLineInput[], status = 'Posted') {
-        return lines.map((l, idx) => ({
-            journalEntryId, userId, transactionNumber, journalType, entryDate, createdAt, updatedAt,
-            accountId: l.accountId,
-            lineDescription: l.lineDescription ?? null,
-            debit: String(l.debit ?? 0),
-            credit: String(l.credit ?? 0),
-            lineOrder: l.lineOrder ?? idx,
-            status,
-        }));
-    }
+function startOfTodayUtc(): Date {
+    const now = new Date();
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 }

@@ -20,7 +20,7 @@ export class DrizzleModule {
                             connectionString,
                         });
 
-                        return drizzle(pool);
+                        return drizzle(pool, { casing: 'snake_case' });
                     },
                 },
             ],

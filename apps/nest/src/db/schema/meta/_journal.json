@@ -1,1 +1,13 @@
-{"version":"7","dialect":"postgresql","entries":[]}
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792724026365,
+      "tag": "0000_fase5_akuntansi_dan_notifikasi",
+      "breakpoints": true
+    }
+  ]
+}

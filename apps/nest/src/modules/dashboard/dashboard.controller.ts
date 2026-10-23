@@ -1,24 +1,18 @@
 import { Controller, Get, Headers, Query } from '@nestjs/common';
-import { queryDashboardSchema } from './dashboard.schemas.js';
+import { parseDashboardPeriod } from './dashboard.schemas.js';
 import { DashboardService } from './dashboard.service.js';
 import { DashboardResponse } from './dashboard.types.js';
 
+/** Setara DashboardController sumber: GET /dashboard?period=monthly|annual. */
 @Controller('dashboard')
 export class DashboardController {
     constructor(private readonly dashboardService: DashboardService) { }
 
     @Get()
-    async getDashboardData(
+    getDashboard(
         @Headers('x-user-id') userId: string,
-        @Query() query: unknown,
+        @Query('period') period?: string,
     ): Promise<DashboardResponse> {
-        const parsed = queryDashboardSchema.parse(query);
-        const data = await this.dashboardService.getDashboardData(userId, parsed);
-
-        return {
-            success: true,
-            message: 'Dashboard berhasil diambil',
-            data,
-        };
+        return this.dashboardService.getDashboard(userId, parseDashboardPeriod(period));
     }
 }

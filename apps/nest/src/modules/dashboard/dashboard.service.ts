@@ -1,228 +1,205 @@
 import { Injectable } from '@nestjs/common';
-import { and, eq, gte, inArray, lte } from 'drizzle-orm';
-import { db } from '../../db'; // sesuaikan path db drizzle kamu
-import { accountingPeriods, chartOfAccounts, generalJournals } from '../../db/schema';
-import { QueryDashboardDto } from './dashboard.schemas.js';
-import { CashAccountBreakdown, DashboardData, ExpenseBreakdown, TrendPoint } from './dashboard.types.js';
+import { and, asc, eq, lte } from 'drizzle-orm';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { chartOfAccounts } from '../../db/schema/chart-of-accounts.js';
+import { generalJournal } from '../../db/schema/general-journal.js';
+import { periods } from '../../db/schema/periods.js';
+import { InjectDrizzle } from '../drizzle/drizzle.decorator.js';
+import { DashboardPeriod } from './dashboard.schemas.js';
+import { CashAccountItem, DashboardResponse, ExpenseAccountItem, TrendPoint } from './dashboard.types.js';
 
-type JournalLine = { accountId: string; debit: string | number; credit: string | number; entryDate: Date };
+type Line = { accountId: number; debit: number; credit: number; entryDate: Date };
+
+const INCOME_TYPES = ['OperatingIncome', 'Income', 'Revenue'];
+const EXPENSE_TYPES = ['OperatingExpenses', 'Expense', 'Expenses'];
+const LIABILITY_TYPES = ['Liabilities', 'Liability'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** Hitung dalam sen (bilangan bulat) agar jumlah desimal tepat seperti decimal di .NET. */
+const cents = (value: string | number): number => Math.round(Number(value) * 100);
+const fromCents = (value: number): number => value / 100;
+
+const sumBy = <T>(items: T[], pick: (item: T) => number): number =>
+    items.reduce((sum, item) => sum + pick(item), 0);
+
+/** Setara pengecekan Contains("Bank"/"Rekening", IgnoreCase) di sumber. */
+export function isBankAccount(name: string): boolean {
+    return /bank|rekening/i.test(name);
+}
 
 @Injectable()
 export class DashboardService {
-    private toNumber(v: string | number): number {
-        return typeof v === 'string' ? parseFloat(v) : v ?? 0;
+    constructor(@InjectDrizzle() private readonly db: NodePgDatabase) { }
+
+    /** Setara SelectedPeriodHelper.GetSelectedPeriodAsync. */
+    private async selectedPeriod(userId: string) {
+        const [period] = await this.db
+            .select()
+            .from(periods)
+            .where(and(eq(periods.userId, userId), eq(periods.isSelected, true)))
+            .limit(1);
+        return period ?? null;
     }
 
-    private isBankAccount(name: string): boolean {
-        return /bank|rekening/i.test(name);
+    private async linesBetween(userId: string, from: Date | null, to: Date): Promise<Line[]> {
+        const rows = await this.db
+            .select({
+                accountId: generalJournal.accountId,
+                debit: generalJournal.debit,
+                credit: generalJournal.credit,
+                entryDate: generalJournal.entryDate,
+            })
+            .from(generalJournal)
+            .where(and(eq(generalJournal.userId, userId), lte(generalJournal.entryDate, to)));
+        return rows
+            .filter((r) => from === null || r.entryDate.getTime() >= from.getTime())
+            .map((r) => ({
+                accountId: r.accountId,
+                debit: cents(r.debit),
+                credit: cents(r.credit),
+                entryDate: r.entryDate,
+            }));
     }
 
-    private async getSelectedPeriod(userId: string) {
-        // Setara SelectedPeriodHelper.GetSelectedPeriodAsync
-        const period = await db.query.accountingPeriods.findFirst({
-            where: and(eq(accountingPeriods.userId, userId), eq(accountingPeriods.isSelected, true)),
-            orderBy: (p, { desc }) => [desc(p.startDate)],
-        });
+    async getDashboard(userId: string, period: DashboardPeriod): Promise<DashboardResponse> {
+        const active = await this.selectedPeriod(userId);
+        const now = new Date();
 
-        if (period) return period;
+        const year = active ? active.startDate.getUTCFullYear() : now.getUTCFullYear();
+        const monthlyStart = active
+            ? active.startDate
+            : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+        const monthlyEnd = active
+            ? active.endDate
+            : new Date(Date.UTC(monthlyStart.getUTCFullYear(), monthlyStart.getUTCMonth() + 1, 0, 23, 59, 59));
+        const annualStart = new Date(Date.UTC(year, 0, 1));
+        const annualEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59));
 
-        // fallback: periode terbaru
-        return await db.query.accountingPeriods.findFirst({
-            where: eq(accountingPeriods.userId, userId),
-            orderBy: (p, { desc }) => [desc(p.startDate)],
-        });
-    }
+        const isAnnual = period === 'annual';
+        const reqEnd = isAnnual ? annualEnd : monthlyEnd;
+        const displayName = isAnnual ? `Annual ${year}` : (active?.periodName ?? 'Current Period');
 
-    private buildCashBreakdown(
-        lines: JournalLine[],
-        accounts: { id: string; referenceNumber: string | null; accountName: string }[],
-    ): CashAccountBreakdown[] {
-        return accounts.map((a) => {
-            const bal = lines
-                .filter((l) => l.accountId === a.id)
-                .reduce((sum, l) => sum + (this.toNumber(l.debit) - this.toNumber(l.credit)), 0);
-            return {
+        const [monthlyLines, annualLines, cumulativeLines] = await Promise.all([
+            this.linesBetween(userId, monthlyStart, monthlyEnd),
+            this.linesBetween(userId, annualStart, annualEnd),
+            this.linesBetween(userId, null, reqEnd),
+        ]);
+        const periodLines = isAnnual ? annualLines : monthlyLines;
+
+        const accounts = await this.db
+            .select()
+            .from(chartOfAccounts)
+            .where(and(eq(chartOfAccounts.userId, userId), eq(chartOfAccounts.isActive, true)))
+            .orderBy(asc(chartOfAccounts.referenceNumber));
+
+        // 1. Kas dan bank
+        const cashAccounts = accounts.filter((a) => a.role === 'CashAndEquivalents');
+        const cashBreakdown = (lines: Line[]): CashAccountItem[] =>
+            cashAccounts.map((a) => ({
                 accountId: a.id,
                 referenceNumber: a.referenceNumber,
                 accountName: a.accountName,
-                balance: bal,
-                isBank: this.isBankAccount(a.accountName),
+                balance: fromCents(sumBy(lines.filter((l) => l.accountId === a.id), (l) => l.debit - l.credit)),
+                isBank: isBankAccount(a.accountName),
+            }));
+        const monthlyCash = cashBreakdown(monthlyLines);
+        const annualCash = cashBreakdown(annualLines);
+        const cumulativeCash = cashBreakdown(cumulativeLines);
+
+        const total = (items: CashAccountItem[], bank?: boolean): number =>
+            fromCents(
+                sumBy(
+                    items.filter((x) => bank === undefined || x.isBank === bank),
+                    (x) => cents(x.balance),
+                ),
+            );
+
+        const totalCashOnHandMonthly = total(monthlyCash, false);
+        const totalBankBalanceMonthly = total(monthlyCash, true);
+        const totalAssetsMonthly = total(monthlyCash);
+        const totalCashOnHandAnnual = total(annualCash, false);
+        const totalBankBalanceAnnual = total(annualCash, true);
+        const totalAssetsAnnual = total(annualCash);
+
+        // 2. Pendapatan dan beban (cakupan periode terpilih)
+        const incomeIds = new Set(accounts.filter((a) => INCOME_TYPES.includes(a.type)).map((a) => a.id));
+        const expenseAccounts = accounts.filter((a) => EXPENSE_TYPES.includes(a.type));
+        const expenseIds = new Set(expenseAccounts.map((a) => a.id));
+
+        const revenueOf = (lines: Line[]): number =>
+            sumBy(lines.filter((l) => incomeIds.has(l.accountId)), (l) => l.credit - l.debit);
+        const expenseOf = (lines: Line[]): number =>
+            sumBy(lines.filter((l) => expenseIds.has(l.accountId)), (l) => l.debit - l.credit);
+
+        const totalIncome = revenueOf(periodLines);
+        const expenseBreakdown: ExpenseAccountItem[] = expenseAccounts
+            .map((a) => ({
+                accountId: a.id,
+                referenceNumber: a.referenceNumber,
+                accountName: a.accountName,
+                balance: sumBy(periodLines.filter((l) => l.accountId === a.id), (l) => l.debit - l.credit),
+            }))
+            .filter((a) => a.balance !== 0);
+        const totalExpense = sumBy(
+            expenseBreakdown.filter((x) => x.balance > 0),
+            (x) => x.balance,
+        );
+        const expenseList = expenseBreakdown.map((x) => ({ ...x, balance: fromCents(x.balance) }));
+
+        // 3. Kewajiban dan ekuitas
+        const liabilityIds = new Set(accounts.filter((a) => LIABILITY_TYPES.includes(a.type)).map((a) => a.id));
+        const equityIds = new Set(accounts.filter((a) => a.type === 'Equity').map((a) => a.id));
+        const creditMinusDebit = (lines: Line[], ids: Set<number>): number =>
+            fromCents(sumBy(lines.filter((l) => ids.has(l.accountId)), (l) => l.credit - l.debit));
+
+        const totalLiabilitiesMonthly = creditMinusDebit(monthlyLines, liabilityIds);
+        const totalLiabilitiesAnnual = creditMinusDebit(annualLines, liabilityIds);
+
+        // 4. Tren grafik
+        const point = (label: string, lines: Line[]): TrendPoint => {
+            const revenue = revenueOf(lines);
+            const expense = expenseOf(lines);
+            return {
+                label,
+                revenue: fromCents(revenue),
+                expense: fromCents(expense),
+                net: fromCents(revenue - expense),
             };
-        });
-    }
-
-    async getDashboardData(userId: string, query: QueryDashboardDto): Promise<DashboardData> {
-        const period = query.period ?? 'monthly';
-        const activePeriod = await this.getSelectedPeriod(userId);
-
-        const now = new Date();
-        const year = activePeriod?.startDate ? new Date(activePeriod.startDate).getUTCFullYear() : now.getUTCFullYear();
-
-        const monthlyStart = activePeriod?.startDate
-            ? new Date(activePeriod.startDate)
-            : new Date(Date.UTC(year, now.getUTCMonth(), 1, 0, 0, 0));
-
-        const monthlyEnd = activePeriod?.endDate
-            ? new Date(activePeriod.endDate)
-            : new Date(Date.UTC(year, now.getUTCMonth() + 1, 0, 23, 59, 59, 999));
-
-        const annualStart = new Date(Date.UTC(year, 0, 1, 0, 0, 0));
-        const annualEnd = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
-
-        const isAnnual = period.toLowerCase() === 'annual';
-        const reqEnd = isAnnual ? annualEnd : monthlyEnd;
-        const displayPeriodName = isAnnual ? `Annual ${year}` : activePeriod?.periodName ?? 'Current Period';
-
-        // Scope per tab - REAL bukan kumulatif
-        const [monthlyLines, annualLines, cumulativeLines] = await Promise.all([
-            db.select({
-                accountId: generalJournals.accountId,
-                debit: generalJournals.debit,
-                credit: generalJournals.credit,
-                entryDate: generalJournals.entryDate,
-            })
-                .from(generalJournals)
-                .where(and(eq(generalJournals.userId, userId), gte(generalJournals.entryDate, monthlyStart), lte(generalJournals.entryDate, monthlyEnd))) as any,
-
-            db.select({
-                accountId: generalJournals.accountId,
-                debit: generalJournals.debit,
-                credit: generalJournals.credit,
-                entryDate: generalJournals.entryDate,
-            })
-                .from(generalJournals)
-                .where(and(eq(generalJournals.userId, userId), gte(generalJournals.entryDate, annualStart), lte(generalJournals.entryDate, annualEnd))) as any,
-
-            db.select({
-                accountId: generalJournals.accountId,
-                debit: generalJournals.debit,
-                credit: generalJournals.credit,
-            })
-                .from(generalJournals)
-                .where(and(eq(generalJournals.userId, userId), lte(generalJournals.entryDate, reqEnd))) as any,
-        ]);
-
-        const periodLines = isAnnual ? annualLines : (monthlyLines as any);
-
-        // 1. KAS & BANK
-        const cashBankAccounts = await db
-            .select({ id: chartOfAccounts.id, referenceNumber: chartOfAccounts.referenceNumber, accountName: chartOfAccounts.accountName })
-            .from(chartOfAccounts)
-            .where(and(eq(chartOfAccounts.userId, userId), eq(chartOfAccounts.isActive, true), eq(chartOfAccounts.role, 'CashAndEquivalents')) as any)
-            .orderBy(chartOfAccounts.referenceNumber);
-
-        const monthlyCashBreakdown = this.buildCashBreakdown(monthlyLines as any, cashBankAccounts);
-        const annualCashBreakdown = this.buildCashBreakdown(annualLines as any, cashBankAccounts);
-        const cumulativeCashBreakdown = this.buildCashBreakdown(cumulativeLines as any, cashBankAccounts);
-
-        const totalCashOnHandMonthly = monthlyCashBreakdown.filter(x => !x.isBank).reduce((s, x) => s + x.balance, 0);
-        const totalBankBalanceMonthly = monthlyCashBreakdown.filter(x => x.isBank).reduce((s, x) => s + x.balance, 0);
-        const totalAssetsMonthly = monthlyCashBreakdown.reduce((s, x) => s + x.balance, 0);
-
-        const totalCashOnHandAnnual = annualCashBreakdown.filter(x => !x.isBank).reduce((s, x) => s + x.balance, 0);
-        const totalBankBalanceAnnual = annualCashBreakdown.filter(x => x.isBank).reduce((s, x) => s + x.balance, 0);
-        const totalAssetsAnnual = annualCashBreakdown.reduce((s, x) => s + x.balance, 0);
-
-        const totalCashOnHand = isAnnual ? totalCashOnHandAnnual : totalCashOnHandMonthly;
-        const totalBankBalance = isAnnual ? totalBankBalanceAnnual : totalBankBalanceMonthly;
-        const totalAssets = isAnnual ? totalAssetsAnnual : totalAssetsMonthly;
-
-        // 2. PENDAPATAN & BEBAN
-        const incomeTypes = ['OperatingIncome', 'Income', 'Revenue'];
-        const incomeAccounts = await db.select({ id: chartOfAccounts.id }).from(chartOfAccounts)
-            .where(and(eq(chartOfAccounts.userId, userId), eq(chartOfAccounts.isActive, true), inArray(chartOfAccounts.type, incomeTypes)) as any);
-        const incomeIds = incomeAccounts.map(a => a.id);
-
-        const totalIncome = periodLines
-            .filter((l: any) => incomeIds.includes(l.accountId))
-            .reduce((s: number, l: any) => s + (this.toNumber(l.credit) - this.toNumber(l.debit)), 0);
-
-        const expenseTypes = ['OperatingExpenses', 'Expense', 'Expenses'];
-        const expenseAccountsMeta = await db
-            .select({ id: chartOfAccounts.id, referenceNumber: chartOfAccounts.referenceNumber, accountName: chartOfAccounts.accountName })
-            .from(chartOfAccounts)
-            .where(and(eq(chartOfAccounts.userId, userId), eq(chartOfAccounts.isActive, true), inArray(chartOfAccounts.type, expenseTypes)) as any)
-            .orderBy(chartOfAccounts.referenceNumber);
-
-        const expenseBreakdown: ExpenseBreakdown[] = expenseAccountsMeta
-            .map((a) => {
-                const bal = periodLines
-                    .filter((l: any) => l.accountId === a.id)
-                    .reduce((s: number, l: any) => s + (this.toNumber(l.debit) - this.toNumber(l.credit)), 0);
-                return { accountId: a.id, referenceNumber: a.referenceNumber, accountName: a.accountName, balance: bal };
-            })
-            .filter(a => a.balance !== 0);
-
-        const totalExpense = expenseBreakdown.filter(x => x.balance > 0).reduce((s, x) => s + x.balance, 0);
-        const netIncome = totalIncome - totalExpense;
-
-        // 3. LIABILITIES & EQUITY
-        const liabilityTypes = ['Liabilities', 'Liability'];
-        const liabilityAccounts = await db.select({ id: chartOfAccounts.id }).from(chartOfAccounts)
-            .where(and(eq(chartOfAccounts.userId, userId), eq(chartOfAccounts.isActive, true), inArray(chartOfAccounts.type, liabilityTypes)) as any);
-        const liabilityIds = liabilityAccounts.map(a => a.id);
-
-        const calcLiab = (lines: any[]) => lines.filter(l => liabilityIds.includes(l.accountId))
-            .reduce((s, l) => s + (this.toNumber(l.credit) - this.toNumber(l.debit)), 0);
-
-        const totalLiabilitiesMonthly = calcLiab(monthlyLines as any);
-        const totalLiabilitiesAnnual = calcLiab(annualLines as any);
-        const totalLiabilities = isAnnual ? totalLiabilitiesAnnual : totalLiabilitiesMonthly;
-        const totalLiabilitiesCumulative = calcLiab(cumulativeLines as any);
-
-        const equityAccounts = await db.select({ id: chartOfAccounts.id }).from(chartOfAccounts)
-            .where(and(eq(chartOfAccounts.userId, userId), eq(chartOfAccounts.isActive, true), eq(chartOfAccounts.type, 'Equity')) as any);
-        const equityIds = equityAccounts.map(a => a.id);
-        const totalEquity = cumulativeLines.filter(l => equityIds.includes(l.accountId))
-            .reduce((s, l: any) => s + (this.toNumber(l.credit) - this.toNumber(l.debit)), 0);
-
-        // 4. CHARTJS TREND - setara CultureInfo.InvariantCulture
-        let chartTrend: TrendPoint[] = [];
+        };
+        let chartTrend: TrendPoint[];
         if (isAnnual) {
-            chartTrend = Array.from({ length: 12 }, (_, i) => {
-                const m = i + 1;
-                const monthLines = (periodLines as any).filter((l: any) => new Date(l.entryDate).getUTCMonth() + 1 === m);
-                const rev = monthLines.filter((l: any) => incomeIds.includes(l.accountId)).reduce((s: number, l: any) => s + (this.toNumber(l.credit) - this.toNumber(l.debit)), 0);
-                const exp = monthLines.filter((l: any) => expenseAccountsMeta.map(e => e.id).includes(l.accountId)).reduce((s: number, l: any) => s + (this.toNumber(l.debit) - this.toNumber(l.credit)), 0);
-                return {
-                    label: new Date(Date.UTC(2000, m - 1, 1)).toLocaleString('en-US', { month: 'short' }), // Jan, Feb...
-                    revenue: rev,
-                    expense: exp,
-                    net: rev - exp,
-                };
-            });
+            chartTrend = MONTHS.map((label, i) =>
+                point(label, periodLines.filter((l) => l.entryDate.getUTCMonth() === i)),
+            );
         } else {
-            const grouped = new Map<string, any[]>();
-            (periodLines as any).forEach((l: any) => {
-                const key = new Date(l.entryDate).toISOString().slice(0, 10);
-                if (!grouped.has(key)) grouped.set(key, []);
-                grouped.get(key)!.push(l);
-            });
-            chartTrend = Array.from(grouped.entries())
-                .sort((a, b) => a[0].localeCompare(b[0]))
-                .map(([dateStr, g]) => {
-                    const rev = g.filter((l: any) => incomeIds.includes(l.accountId)).reduce((s: number, l: any) => s + (this.toNumber(l.credit) - this.toNumber(l.debit)), 0);
-                    const exp = g.filter((l: any) => expenseAccountsMeta.map(e => e.id).includes(l.accountId)).reduce((s: number, l: any) => s + (this.toNumber(l.debit) - this.toNumber(l.credit)), 0);
-                    const d = new Date(dateStr);
-                    return {
-                        label: d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }), // 05 Jan
-                        revenue: rev,
-                        expense: exp,
-                        net: rev - exp,
-                    };
+            const byDay = new Map<number, Line[]>();
+            for (const line of periodLines) {
+                const day = Date.UTC(
+                    line.entryDate.getUTCFullYear(),
+                    line.entryDate.getUTCMonth(),
+                    line.entryDate.getUTCDate(),
+                );
+                byDay.set(day, [...(byDay.get(day) ?? []), line]);
+            }
+            chartTrend = [...byDay.entries()]
+                .sort(([a], [b]) => a - b)
+                .map(([day, lines]) => {
+                    const d = new Date(day);
+                    const label = `${String(d.getUTCDate()).padStart(2, '0')} ${MONTHS[d.getUTCMonth()]}`;
+                    return point(label, lines);
                 });
         }
 
+        const activeCash = isAnnual ? annualCash : monthlyCash;
         return {
-            hasPeriodSelected: !!activePeriod,
-            selectedPeriodName: displayPeriodName,
-            isPeriodClosed: activePeriod?.isClosed ?? false,
-
-            totalAssets,
-            totalCashOnHand,
-            totalBankBalance,
-            totalLiabilities,
-
+            success: true,
+            hasPeriodSelected: active !== null,
+            selectedPeriodName: displayName,
+            isPeriodClosed: active?.isClosed ?? false,
+            totalAssets: isAnnual ? totalAssetsAnnual : totalAssetsMonthly,
+            totalCashOnHand: isAnnual ? totalCashOnHandAnnual : totalCashOnHandMonthly,
+            totalBankBalance: isAnnual ? totalBankBalanceAnnual : totalBankBalanceMonthly,
+            totalLiabilities: isAnnual ? totalLiabilitiesAnnual : totalLiabilitiesMonthly,
             totalAssetsMonthly,
             totalAssetsAnnual,
             totalCashOnHandMonthly,
@@ -231,25 +208,21 @@ export class DashboardService {
             totalBankBalanceAnnual,
             totalLiabilitiesMonthly,
             totalLiabilitiesAnnual,
-
-            totalAssetsCumulative: cumulativeCashBreakdown.reduce((s, x) => s + x.balance, 0),
-            totalCashOnHandCumulative: cumulativeCashBreakdown.filter(x => !x.isBank).reduce((s, x) => s + x.balance, 0),
-            totalBankBalanceCumulative: cumulativeCashBreakdown.filter(x => x.isBank).reduce((s, x) => s + x.balance, 0),
-            totalLiabilitiesCumulative,
-
-            totalEquity,
-            totalRevenue: totalIncome,
-            totalExpenses: totalExpense,
-            netIncome,
-
-            cashAccounts: (isAnnual ? annualCashBreakdown : monthlyCashBreakdown).filter(x => !x.isBank),
-            bankAccounts: (isAnnual ? annualCashBreakdown : monthlyCashBreakdown).filter(x => x.isBank),
-            cashAccountsMonthly: monthlyCashBreakdown.filter(x => !x.isBank),
-            bankAccountsMonthly: monthlyCashBreakdown.filter(x => x.isBank),
-            cashAccountsAnnual: annualCashBreakdown.filter(x => !x.isBank),
-            bankAccountsAnnual: annualCashBreakdown.filter(x => x.isBank),
-
-            expenseAccountsList: expenseBreakdown,
+            totalAssetsCumulative: total(cumulativeCash),
+            totalCashOnHandCumulative: total(cumulativeCash, false),
+            totalBankBalanceCumulative: total(cumulativeCash, true),
+            totalLiabilitiesCumulative: creditMinusDebit(cumulativeLines, liabilityIds),
+            totalEquity: creditMinusDebit(cumulativeLines, equityIds),
+            totalRevenue: fromCents(totalIncome),
+            totalExpenses: fromCents(totalExpense),
+            netIncome: fromCents(totalIncome - totalExpense),
+            cashAccounts: activeCash.filter((x) => !x.isBank),
+            bankAccounts: activeCash.filter((x) => x.isBank),
+            cashAccountsMonthly: monthlyCash.filter((x) => !x.isBank),
+            bankAccountsMonthly: monthlyCash.filter((x) => x.isBank),
+            cashAccountsAnnual: annualCash.filter((x) => !x.isBank),
+            bankAccountsAnnual: annualCash.filter((x) => x.isBank),
+            expenseAccountsList: expenseList,
             chartTrend,
             recentEntries: [],
         };

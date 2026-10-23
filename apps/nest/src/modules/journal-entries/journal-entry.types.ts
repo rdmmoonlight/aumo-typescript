@@ -1,5 +1,4 @@
-import { ApiResponse } from '../../common/types/api-response.type.js';
-
+/** Bentuk JSON sama dengan JournalEntryController sumber (camelCase). */
 export interface JournalEntryLineDto {
     id: number;
     accountId: number;
@@ -8,14 +7,36 @@ export interface JournalEntryLineDto {
     credit: number;
     lineOrder: number;
 }
+
 export interface JournalEntryDto {
-    id: number; // journalEntryId
+    id: number;
     transactionNumber: string;
     journalType: string;
-    entryDate: Date;
-    createdAt: Date;
-    updatedAt: Date | null;
+    entryDate: string;
+    createdAt: string;
+    updatedAt: string | null;
     isLocked: boolean;
     lines: JournalEntryLineDto[];
 }
-export type JournalEntryResponse = ApiResponse<JournalEntryDto>;
+
+export interface GetJournalEntryResponse {
+    success: true;
+    entry: JournalEntryDto;
+}
+
+export interface CreateJournalEntryResponse {
+    success: true;
+    message: string;
+    entryId: number;
+    transactionNumber: string;
+}
+
+export interface MessageResponse {
+    success: true;
+    message: string;
+}
+
+export interface NextTransactionNumberResponse {
+    success: true;
+    transactionNumber: string;
+}

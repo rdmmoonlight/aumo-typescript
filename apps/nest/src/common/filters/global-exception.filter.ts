@@ -1,6 +1,6 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { AppError, ValidationError } from '../../lib/errors.js';
+import { AppError, ValidationError, ValidationMessagesError } from '../../lib/errors.js';
 
 const loggerModulePath: string = '@app/logger';
 const { logger } = await import(loggerModulePath);
@@ -8,7 +8,7 @@ const { logger } = await import(loggerModulePath);
 interface ErrorBody {
   success: false;
   message: string;
-  errors?: Record<string, string[]>;
+  errors?: Record<string, string[]> | string[];
 }
 
 function httpExceptionMessage(exception: HttpException): string {
@@ -36,6 +36,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     let body: ErrorBody = { success: false, message: 'Terjadi kesalahan pada server' };
 
     if (exception instanceof ValidationError) {
+      status = exception.statusCode;
+      body = { success: false, message: exception.message, errors: exception.errors };
+    } else if (exception instanceof ValidationMessagesError) {
       status = exception.statusCode;
       body = { success: false, message: exception.message, errors: exception.errors };
     } else if (exception instanceof AppError) {

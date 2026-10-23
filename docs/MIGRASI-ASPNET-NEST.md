@@ -95,7 +95,7 @@ Service pendukung: sekitar 2.400 baris (`Dashboard`, `Home`, `JournalEntries`, `
 
 | Tabel | Status | Dipakai oleh |
 | --- | --- | --- |
-| `chart_of_accounts`, `general_journal`, `periods`, `transaction_counters` | Sudah ada | `dashboard`, `journal-entries`, `tools` |
+| `chart_of_accounts`, `general_journal`, `periods`, `transaction_counters` | **Ditambahkan di Fase 5** (snake_case, migrasi `0000`). Tabel EF di Neon masih PascalCase dan perlu disalin (Fase 9) | `dashboard`, `journal-entries`, `tools` |
 | `notifications` | **Baru** | `notifications` |
 | `login_activities`, `user_sessions`, `security_settings`, `trusted_devices`, `recovery_codes` | **Tidak dibuat.** Guardian tidak diduplikasi | - |
 | `general_ledger_*` | Dibahas di dokumen akuntansi (Fase 5) | `dotnet/` |
@@ -128,7 +128,7 @@ apps/nest/src/db/schema/<tabel>.ts   # hanya bila tabel baru
 apps/nest/src/test/<nama>.test.ts
 ```
 
-`app.module.ts` saat ini hanya mengimpor `HealthModule` dan `PeriodsModule`. Setiap modul baru didaftarkan di sana.
+`app.module.ts` mengimpor semua modul. Setiap modul baru didaftarkan di sana.
 
 ## 6. Fase Duplikasi (9 Fase)
 
@@ -152,7 +152,7 @@ apps/nest/src/test/<nama>.test.ts
 - [x] Tambah tabel `notifications`. Tabel guardian (`login_activities`, `user_sessions`, `security_settings`, `trusted_devices`, `recovery_codes`) tidak dibuat karena guardian tidak diduplikasi.
 - [x] Cocokkan nama tabel dan kolom dengan Neon nyata sebelum `db:generate`.
 - [x] Migrasi dijalankan manual (`db:migrate`) di Neon, **bukan** dari CI.
-- [x] **Keluaran:** migrasi baru di `apps/nest/drizzle/`. **Selesai bila:** `db:generate` tidak menghasilkan diff lanjutan.
+- [x] **Keluaran:** migrasi baru di `apps/nest/src/db/schema/` (sebelumnya `apps/nest/drizzle/`). **Selesai bila:** `db:generate` tidak menghasilkan diff lanjutan.
 
 ### Fase 4 — Modul Ringan dan Publik
 
@@ -168,8 +168,15 @@ apps/nest/src/test/<nama>.test.ts
 
 - [x] `dashboard`: query Drizzle atas `chart_of_accounts`, `general_journal`, periode terpilih.
 - [x] `journal-entries`: `GET {id}`, `POST create`, `PUT edit/{id}`, `DELETE delete/{id}`, `GET search-descriptions`, `GET next-transaction-number`.
-- [ ] **Tes paritas:** satu set fixture jurnal dijalankan terhadap backend .NET lama dan modul Nest. Hasil (nomor transaksi, penolakan pada periode terkunci) harus identik.
-- [ ] **Keluaran:** 7 endpoint aktif. **Selesai bila:** tes paritas hijau.
+- [x] **Tes paritas:** satu set fixture jurnal (45 langkah) di `apps/nest/src/test/fixtures/journal-parity.ts`, dijalankan lewat HTTP terhadap modul Nest dan PostgreSQL nyata (`journal-parity.test.ts`). Hasil acuan (nomor transaksi, penolakan periode terkunci, pesan galat) ditetapkan dari kode .NET sumber, lalu dikunci dengan uji mutasi. Menjalankan fixture yang sama terhadap instance .NET hidup belum dilakukan (sandbox tanpa akses NuGet); dijadwalkan di Fase 9.
+- [x] **Keluaran:** 7 endpoint aktif (`dashboard` 1, `journal-entries` 6). **Selesai bila:** tes paritas hijau. (74 tes Fase 5 lulus: 17 unit, 45 paritas jurnal, 12 dashboard.)
+
+Catatan Fase 5:
+- Draf sebelumnya (`dashboard`, `journal-entries`) tidak sesuai sumber: skema tidak ada, nomor transaksi memakai format `JE-yyyymm-0001` (aslinya `GJ`/`AJ` + `yyMM` + 4 digit dari `transaction_counters`), dan 28 galat typecheck. Keduanya ditulis ulang dari `JournalEntryController`, `TransactionNumberService`, `PeriodLock`, `JournalEntryValidatorBase`, dan `DashboardController`.
+- Skema Drizzle ditambahkan: `chart_of_accounts`, `general_journal` (+ sequence `general_journal_journal_entry_id_seq`), `periods`, `transaction_counters`. Migrasi `apps/nest/src/db/schema/0000_*.sql` (folder keluaran `drizzle.config.ts` saat ini) juga memuat `notifications` (menutup celah Fase 3).
+- Tes integrasi butuh `TEST_DATABASE_URL`; tanpa itu dilewati. CI menyediakan PostgreSQL 16.
+- Dashboard memakai bentuk `DashboardController` (id akun berupa angka), bukan DTO `DashboardService` yang tidak dipakai di sumber.
+- Selisih kecil yang diketahui: angka desimal dikirim sebagai angka JSON biasa (`100000`, bukan `100000.00` seperti decimal .NET). Nilainya sama.
 
 ### Fase 6 — Tools (Impor Jurnal)
 
@@ -197,7 +204,8 @@ apps/nest/src/test/<nama>.test.ts
 - [x] `nginx.conf`: `location ^~ /api/avatars/` publik (tanpa `auth_request`); `/api/settings/{profile,change-password,delete-account}` → Go; naikkan `client_max_body_size` untuk impor Excel (misalnya `10m`), hanya pada `location` Tools.
 - [x] `render.yaml`: tambah env untuk S3 (`AWS_ENDPOINT_URL_S3`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `S3_BUCKET`) sebagai `sync: false`.
 - [ ] Uji asap: login (Go) → dashboard → buat jurnal → impor Excel → notifikasi → unggah avatar → cabut sesi.
-- [ ] Bandingkan angka dan respons dengan backend aumo-finance pada data yang sama.
+- [ ] Bandingkan angka dan respons dengan backend aumo-finance pada data yang sama. Termasuk menjalankan fixture `journal-parity.ts` terhadap instance .NET hidup.
+- [ ] Salin data tabel EF PascalCase ke tabel Drizzle (`chart_of_accounts`, `general_journal`, `periods`, `transaction_counters`, `notifications`), lalu set `general_journal_journal_entry_id_seq` ke `MAX(journal_entry_id)` dan pastikan `transaction_counters` mengikuti nomor terakhir.
 - [ ] Perbarui ADR 0010 menjadi *Accepted*, tambah changeset.
 - [ ] **Tidak ada** penghapusan di aumo-finance.
 - [ ] **Keluaran:** seluruh isi `/backend` memiliki padanan di aumo-typescript. **Selesai bila:**  endpoint Nest dan endpoint .NET lolos uji asap.
@@ -212,6 +220,7 @@ apps/nest/src/test/<nama>.test.ts
 | `change-password` dan `delete-account` pindah ke Go | Perubahan di layanan di luar `apps/nest` | Dicatat sebagai pekerjaan Go di Fase 7 |
 | Impor Excel besar | Memori Nest di container bersama (512 MB, 4 proses) | Batas ukuran berkas dan jumlah baris, pemrosesan berbasis transaksi |
 | Skema tabel baru tidak cocok dengan Neon | Query gagal | Cocokkan dengan Neon nyata di Fase 3 |
+| Neon berisi tabel EF PascalCase (`"GeneralJournal"`, `"ChartOfAccounts"`, `"Periods"`, `"TransactionCounters"`, `"Notifications"`), sedangkan Drizzle memakai `snake_case` | Nest membaca tabel kosong; counter nomor transaksi mulai dari 1 sehingga nomor bisa bentrok dengan data lama | Salin data lama (`INSERT ... SELECT`) dan set sequence/counter sebelum cutover (Fase 9) |
 | `exceljs` memperbesar image | Build Docker lebih lama | Dihitung di Fase 2, bukan di akhir |
 
 ## 8. Prinsip dari `Note.txt` dan `README.md` Sumber

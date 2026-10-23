@@ -1,38 +1,35 @@
-import { ApiResponse } from '../../common/types/api-response.type.js';
-
-export interface CashAccountBreakdown {
-    accountId: string;
-    referenceNumber: string | null;
+/** Bentuk JSON sama dengan DashboardController sumber (accountId dan referenceNumber berupa angka). */
+export interface CashAccountItem {
+    accountId: number;
+    referenceNumber: number;
     accountName: string;
     balance: number;
     isBank: boolean;
 }
 
-export interface ExpenseBreakdown {
-    accountId: string;
-    referenceNumber: string | null;
+export interface ExpenseAccountItem {
+    accountId: number;
+    referenceNumber: number;
     accountName: string;
     balance: number;
 }
 
 export interface TrendPoint {
-    label: string; // MMM atau dd MMM
+    label: string;
     revenue: number;
     expense: number;
     net: number;
 }
 
-export interface DashboardData {
+export interface DashboardResponse {
+    success: true;
     hasPeriodSelected: boolean;
     selectedPeriodName: string;
     isPeriodClosed: boolean;
-
-    // REAL per tab (dipakai FE)
     totalAssets: number;
     totalCashOnHand: number;
     totalBankBalance: number;
     totalLiabilities: number;
-
     totalAssetsMonthly: number;
     totalAssetsAnnual: number;
     totalCashOnHandMonthly: number;
@@ -41,28 +38,21 @@ export interface DashboardData {
     totalBankBalanceAnnual: number;
     totalLiabilitiesMonthly: number;
     totalLiabilitiesAnnual: number;
-
-    // Kumulatif
     totalAssetsCumulative: number;
     totalCashOnHandCumulative: number;
     totalBankBalanceCumulative: number;
     totalLiabilitiesCumulative: number;
-
     totalEquity: number;
     totalRevenue: number;
     totalExpenses: number;
     netIncome: number;
-
-    cashAccounts: CashAccountBreakdown[];
-    bankAccounts: CashAccountBreakdown[];
-    cashAccountsMonthly: CashAccountBreakdown[];
-    bankAccountsMonthly: CashAccountBreakdown[];
-    cashAccountsAnnual: CashAccountBreakdown[];
-    bankAccountsAnnual: CashAccountBreakdown[];
-
-    expenseAccountsList: ExpenseBreakdown[];
+    cashAccounts: CashAccountItem[];
+    bankAccounts: CashAccountItem[];
+    cashAccountsMonthly: CashAccountItem[];
+    bankAccountsMonthly: CashAccountItem[];
+    cashAccountsAnnual: CashAccountItem[];
+    bankAccountsAnnual: CashAccountItem[];
+    expenseAccountsList: ExpenseAccountItem[];
     chartTrend: TrendPoint[];
-    recentEntries: unknown[];
+    recentEntries: never[];
 }
-
-export type DashboardResponse = ApiResponse<DashboardData>;

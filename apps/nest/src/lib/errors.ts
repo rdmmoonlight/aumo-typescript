@@ -41,3 +41,18 @@ export class ValidationError extends AppError {
 }
 
 export default AppError;
+
+/**
+ * 400 dengan daftar pesan validasi (bentuk sama dengan ValidationResult.ToErrorResponse sumber):
+ * { success: false, message: <pesan pertama>, errors: string[] }
+ */
+export class ValidationMessagesError extends AppError {
+  public readonly errors: string[];
+
+  constructor(errors: string[]) {
+    super(errors[0] ?? 'Validation failed.', 400);
+    this.name = 'ValidationMessagesError';
+    this.errors = errors;
+    Object.setPrototypeOf(this, ValidationMessagesError.prototype);
+  }
+}
