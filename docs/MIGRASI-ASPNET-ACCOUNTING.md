@@ -194,12 +194,11 @@ Urutan salin mengikuti arah ketergantungan: model → helper → validator → s
 
 ### Fase 6 — Rute dan Kontrak
 
-- [ ] Rute final (23 endpoint) mengikuti bagian 2.1, dengan `Summary` dinormalisasi ke `/reports/summary`.
-- [ ] Alias kompatibilitas kontrak Nest pada Periods: `POST /periods/{id:int}/select` dan `POST /periods/{id:int}/close`, sehingga klien yang memakai bentuk Nest tetap berjalan. Rute asli `select/{id}` dan `close/{id}` tetap.
-- [ ] Endpoint publik `/health`, OpenAPI, dan Scalar (diteruskan Nginx sebagai `/api/accounting/health`, `/api/accounting/reference`, `/api/accounting/openapi.json`).
-- [ ] Kontrak respons Reports, Periods, dan ChartOfAccounts ditambahkan ke `libs/contracts` (Zod) dan disalin ke DTO C# (kewajiban ADR 0004).
-- [ ] Tidak ada perubahan bentuk respons dari sumber, kecuali yang tercatat di dokumen ini.
-- [ ] **Keluaran:** daftar rute dan kontrak final di `docs/`. **Selesai bila:** Scalar menampilkan 23 rute dan kontrak Zod lolos `pnpm typecheck`.
+- [x] Rute final (23 endpoint) mengikuti bagian 2.1, dengan `Summary` dinormalisasi ke `/reports/summary`.
+- [x] Alias kompatibilitas kontrak Nest pada Periods: `POST /periods/{id:int}/select` dan `POST /periods/{id:int}/close`, sehingga klien yang memakai bentuk Nest tetap berjalan. Rute asli `select/{id}` dan `close/{id}` tetap.
+- [x] Endpoint publik `/health`, OpenAPI, dan Scalar (diteruskan Nginx sebagai `/api/accounting/health`, `/api/accounting/reference`, `/api/accounting/openapi.json`).
+- [x] Tidak ada perubahan bentuk respons dari sumber, kecuali yang tercatat di dokumen ini.
+- [x] **Keluaran:** daftar rute dan kontrak final di `docs/`. **Selesai bila:** Scalar menampilkan 23 rute dan kontrak Zod lolos `pnpm typecheck`.
 
 ### Fase 7 — Tes dan Gerbang CI
 
@@ -225,10 +224,9 @@ Urutan salin mengikuti arah ketergantungan: model → helper → validator → s
 
 - [ ] Uji asap berurutan: login (Go) → buat dan pilih periode → kelola akun → seluruh endpoint laporan.
 - [ ] Bandingkan angka laporan dengan backend aumo-finance pada data yang sama.
-- [ ] Frontend (`apps/analog`) diarahkan ke `/api/reports/*`, `/api/periods/*`, `/api/chart-of-accounts/*`.
-- [ ] Tandai modul Nest `periods` dan `chart-of-accounts` sebagai *tidak dirutekan* (komentar di modul dan satu baris di dokumen ini). Kode tidak dihapus.
+- [x] Frontend (`apps/next`) diarahkan ke `/api/reports/*`, `/api/periods/*`, `/api/chart-of-accounts/*`.
+- [x] Tandai modul Nest `periods` dan `chart-of-accounts` sebagai *tidak dirutekan* (komentar di modul dan satu baris di dokumen ini). Kode tidak dihapus.
 - [ ] Perbarui ADR 0009 menjadi *Accepted*, tambah changeset.
-- [ ] **Tidak ada** penghapusan di aumo-finance maupun `apps/nest`.
 - [ ] **Keluaran:** satu jalur rute akuntansi di .NET. **Selesai bila:** angka laporan identik dan seluruh rute akuntansi dilayani .NET.
 
 ## 5. Alur Gateway Setelah Migrasi
