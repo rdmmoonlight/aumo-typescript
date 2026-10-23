@@ -69,54 +69,6 @@ Cakupan: 154 berkas terlacak, tidak termasuk `pnpm-lock.yaml` (dihasilkan otomat
 | `android/gradle.properties` | 2026-10-18 | 2026-10-18 | Properti Gradle Android |
 | `android/settings.gradle.kts` | 2026-10-18 | 2026-10-18 | Pengaturan proyek Gradle Android |
 
-## apps/analog
-
-| Berkas | Dibuat | Diperbarui | Fungsi |
-| --- | --- | --- | --- |
-| `apps/analog/.env.example` | 2026-10-20 | 2026-10-20 | Contoh variabel lingkungan |
-| `apps/analog/.gitignore` | 2026-10-20 | 2026-10-20 | Berkas aplikasi Analog |
-| `apps/analog/AGENTS.md` | 2026-10-20 | 2026-10-20 | Panduan agen AI untuk Analog |
-| `apps/analog/CHANGELOG.md` | 2026-10-20 | 2026-10-20 | Changelog paket (dibuat Changesets) |
-| `apps/analog/CLAUDE.md` | 2026-10-20 | 2026-10-20 | Panduan Claude untuk Analog |
-| `apps/analog/README.md` | 2026-10-20 | 2026-10-20 | README Analog |
-| `apps/analog/angular.json` | 2026-10-20 | 2026-10-20 | Konfigurasi Angular |
-| `apps/analog/eslint.config.js` | 2026-10-20 | 2026-10-20 | Konfigurasi proyek |
-| `apps/analog/index.html` | 2026-10-20 | 2026-10-20 | HTML induk SPA |
-| `apps/analog/package.json` | 2026-10-20 | 2026-10-20 | Konfigurasi proyek |
-| `apps/analog/public/favicon.ico` | 2026-10-20 | 2026-10-20 | Berkas aplikasi Analog |
-| `apps/analog/scripts/verify-build.mjs` | 2026-10-20 | 2026-10-20 | Verifikasi hasil build |
-| `apps/analog/src/app/app.config.ts` | 2026-10-20 | 2026-10-20 | Konfigurasi proyek |
-| `apps/analog/src/app/app.spec.ts` | 2026-10-20 | 2026-10-20 | Berkas aplikasi Analog |
-| `apps/analog/src/app/app.ts` | 2026-10-20 | 2026-10-20 | Berkas aplikasi Analog |
-| `apps/analog/src/app/components/footer.component.ts` | 2026-10-20 | 2026-10-20 | Komponen UI |
-| `apps/analog/src/app/components/sidebar.component.ts` | 2026-10-20 | 2026-10-20 | Komponen UI |
-| `apps/analog/src/app/components/top-bar.component.ts` | 2026-10-20 | 2026-10-20 | Komponen UI |
-| `apps/analog/src/app/core/config.ts` | 2026-10-20 | 2026-10-20 | Konfigurasi proyek |
-| `apps/analog/src/app/guards/auth.guard.ts` | 2026-10-20 | 2026-10-20 | Guard rute |
-| `apps/analog/src/app/interceptors/auth.interceptor.ts` | 2026-10-20 | 2026-10-20 | HTTP interceptor |
-| `apps/analog/src/app/pages/(app).page.ts` | 2026-10-20 | 2026-10-20 | Halaman/rute Analog |
-| `apps/analog/src/app/pages/(app)/home/index.page.ts` | 2026-10-20 | 2026-10-20 | Halaman/rute Analog |
-| `apps/analog/src/app/pages/(app)/periods/index.page.ts` | 2026-10-20 | 2026-10-20 | Halaman/rute Analog |
-| `apps/analog/src/app/pages/(app)/periods/periods.service.ts` | 2026-10-20 | 2026-10-20 | Halaman/rute Analog |
-| `apps/analog/src/app/pages/(auth)/(auth).page.ts` | 2026-10-20 | 2026-10-20 | Halaman/rute Analog |
-| `apps/analog/src/app/pages/(auth)/login.page.ts` | 2026-10-20 | 2026-10-20 | Halaman/rute Analog |
-| `apps/analog/src/app/pages/(auth)/register.page.ts` | 2026-10-20 | 2026-10-20 | Halaman/rute Analog |
-| `apps/analog/src/app/pages/index.page.ts` | 2026-10-20 | 2026-10-20 | Halaman/rute Analog |
-| `apps/analog/src/app/routes/index.ts` | 2026-10-20 | 2026-10-20 | Berkas aplikasi Analog |
-| `apps/analog/src/app/services/auth.service.ts` | 2026-10-20 | 2026-10-20 | Layanan |
-| `apps/analog/src/app/shared/icon.ts` | 2026-10-20 | 2026-10-20 | Berkas aplikasi Analog |
-| `apps/analog/src/app/shared/logo.ts` | 2026-10-20 | 2026-10-20 | Berkas aplikasi Analog |
-| `apps/analog/src/app/store/auth.store.ts` | 2026-10-20 | 2026-10-20 | State store |
-| `apps/analog/src/main.ts` | 2026-10-20 | 2026-10-20 | Titik masuk Angular |
-| `apps/analog/src/setup-tests.ts` | 2026-10-20 | 2026-10-20 | Berkas aplikasi Analog |
-| `apps/analog/src/styles.css` | 2026-10-20 | 2026-10-20 | Gaya global (Tailwind v4) |
-| `apps/analog/src/vite-env.d.ts` | 2026-10-20 | 2026-10-20 | Berkas aplikasi Analog |
-| `apps/analog/tsconfig.app.json` | 2026-10-20 | 2026-10-20 | Konfigurasi proyek |
-| `apps/analog/tsconfig.json` | 2026-10-20 | 2026-10-20 | Konfigurasi proyek |
-| `apps/analog/tsconfig.spec.json` | 2026-10-20 | 2026-10-20 | Konfigurasi proyek |
-| `apps/analog/vite.config.ts` | 2026-10-20 | 2026-10-20 | Konfigurasi proyek |
-| `apps/analog/vitest.config.ts` | 2026-10-20 | 2026-10-20 | Konfigurasi proyek |
-
 ## apps/api
 
 | Berkas | Dibuat | Diperbarui | Fungsi |

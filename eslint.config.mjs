@@ -15,8 +15,7 @@ export default [
       'android/**',
       'dotnet/**',
       'native/**',
-      'apps/nest/**',
-      "apps/analog"
+      'apps/nest/**'
     ],
   },
 

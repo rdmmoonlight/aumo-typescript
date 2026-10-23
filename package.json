@@ -9,12 +9,15 @@
     "build": "nx run-many -t build",
     "generate": "plop",
     "auth:dev": "go run ./services/auth/cmd/server/main.go",
-    "auth:test": "go test -v ./services/auth/..."
+    "auth:test": "go test -v ./services/auth/...",
+    "prepare": "nx g @nx-dotnet/core:restore"
   },
   "devDependencies": {
     "@analogjs/vitest-angular": "^2.8.1",
     "@changesets/cli": "^2.27.0",
     "@eslint/js": "^9.0.0",
+    "@nx-dotnet/core": "^3.0.2",
+    "@nx/js": "23.3.0",
     "@types/node": "^20.0.0",
     "@types/supertest": "^6.0.0",
     "@typescript-eslint/eslint-plugin": "^8.71.2",
@@ -42,12 +45,12 @@
   "dependencies": {
     "@app/cli": "link:tools/cli"
   },
-   "pnpm": {
+  "pnpm": {
     "onlyBuiltDependencies": [
       "unrs-resolver",
       "@swc/core",
       "esbuild",
       "bcrypt"
     ]
-   }
+  }
 }

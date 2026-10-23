@@ -5,7 +5,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['**/*.{test,spec}.ts'],
-    exclude: ['apps/nest/**', "apps/analog",
+    exclude: ['apps/nest/**', "apps/next",
       '**/node_modules/**',
       '**/dist/**',
       '**/cypress/**',

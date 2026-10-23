@@ -16,6 +16,6 @@
     "node_modules",
     "dist",
     "apps/nest",
-    "apps/analog"
+    "apps/next"
   ]
 }

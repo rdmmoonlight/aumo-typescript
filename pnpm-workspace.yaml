@@ -12,6 +12,7 @@ allowBuilds:
   "@swc/core": true
   lmdb: true
   unrs-resolver: set this to true or false
+  '@nx-dotnet/core': set this to true or false
 
 overrides:
   '@app/cli': link:tools/cli

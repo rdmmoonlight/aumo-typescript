@@ -14,7 +14,7 @@ services:
         - supervisord.conf
         - entrypoint.sh
         - apps/nest/**
-        - apps/analog/**
+        - apps/next/**
         - services/auth/**
         - dotnet/**
         - libs/**
