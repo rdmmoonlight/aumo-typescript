@@ -5,7 +5,10 @@
     "sourceRoot": "apps/next",
     "targets": {
         "lint": {
-          "executor": "@nx/eslint:lint",
+          "executor": "nx:run-commands",
+          "options": {
+            "command": "next lint",
+            "cwd": "apps/next"},
           "outputs": ["{options.outputFile}"],
           "options": {
             "lintFilePatterns": ["apps/next/**/*.{ts,tsx,js,jsx}"]
