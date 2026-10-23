@@ -16,7 +16,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          # Gunakan token default atau Personal Access Token (PAT) jika ingin memicu workflow lain
           ref: ${{ github.head_ref }}
 
       - uses: pnpm/action-setup@v4
@@ -26,8 +25,8 @@ jobs:
           node-version: 24
           cache: 'pnpm'
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Install dependencies & Update Lockfile
+        run: pnpm install --no-frozen-lockfile
 
       - name: Run Autofix (Format & Lint)
         run: |
@@ -37,9 +36,9 @@ jobs:
       - name: Commit & Push Changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore(ci): auto-fix lint and formatting issues [skip ci]"
+          commit_message: "chore(ci): auto-fix lint, formatting, and update lockfile [skip ci]"
           branch: ${{ github.head_ref || github.ref_name }}
-          file_pattern: "*.ts *.js *.tsx *.jsx *.json *.md *.css"
+          file_pattern: "*.ts *.js *.tsx *.jsx *.json *.md *.css pnpm-lock.yaml"
 
       - name: Check Remaining Lint Errors
         run: pnpm run lint
