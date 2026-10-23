@@ -1,0 +1,1 @@
+{"root":["./src/auth.schema.ts","./src/auth.ts","./src/index.ts","./src/periods.schema.ts","./src/periods.ts","./src/user.schema.ts","./src/user.ts"],"version":"5.6.3"}
