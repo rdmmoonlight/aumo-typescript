@@ -1,61 +1,37 @@
-import {
-    Body,
-    Controller,
-    Get,
-    Header,
-    Headers,
-    HttpStatus,
-    Post,
-    Res,
-} from '@nestjs/common';
-import type { Response } from 'express';
-import {
-    importJournalEntriesSchema,
-    previewJournalImportSchema,
-} from './tools.schemas.js';
+import { Body, Controller, Get, Headers, Header, HttpCode, Post, StreamableFile } from '@nestjs/common';
+import { parseJournalImportBody } from './tools.schemas.js';
 import { ToolsService } from './tools.service.js';
 import { ImportResponse, PreviewResponse } from './tools.types.js';
 
+const XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+/** Setara ToolsController sumber. Hasil dikembalikan apa adanya (tanpa pembungkus success/data). */
 @Controller('tools')
 export class ToolsController {
     constructor(private readonly toolsService: ToolsService) { }
 
     @Get('download-journal-template')
-    @Header(
-        'Content-Type',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    )
+    @Header('Content-Type', XLSX_TYPE)
     @Header('Content-Disposition', 'attachment; filename="JournalImportTemplate.xlsx"')
-    async downloadJournalTemplate(@Res() res: Response) {
-        const buffer = await this.toolsService.generateJournalTemplate();
-        res.status(HttpStatus.OK).send(buffer);
+    async downloadJournalTemplate(): Promise<StreamableFile> {
+        return new StreamableFile(await this.toolsService.generateJournalTemplate());
     }
 
     @Post('preview-journal-import')
-    async previewJournalImport(
+    @HttpCode(200)
+    previewJournalImport(
         @Headers('x-user-id') userId: string,
         @Body() body: unknown,
     ): Promise<PreviewResponse> {
-        const parsed = previewJournalImportSchema.parse(body);
-        const data = await this.toolsService.previewImport(userId, parsed as any);
-        return {
-            success: true,
-            message: 'Preview berhasil dibuat',
-            data,
-        };
+        return this.toolsService.previewImport(userId, parseJournalImportBody(body));
     }
 
     @Post('import-journal-entries')
-    async importJournalEntries(
+    @HttpCode(200)
+    importJournalEntries(
         @Headers('x-user-id') userId: string,
         @Body() body: unknown,
     ): Promise<ImportResponse> {
-        const parsed = importJournalEntriesSchema.parse(body);
-        const result = await this.toolsService.importEntries(userId, parsed as any);
-        return {
-            success: true,
-            message: result.message,
-            data: result,
-        };
+        return this.toolsService.importEntries(userId, parseJournalImportBody(body));
     }
 }

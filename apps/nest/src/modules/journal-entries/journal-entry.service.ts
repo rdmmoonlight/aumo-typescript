@@ -8,6 +8,7 @@ import { generalJournal } from '../../db/schema/general-journal.js';
 import { periods } from '../../db/schema/periods.js';
 import { transactionCounters } from '../../db/schema/transaction-counters.js';
 import { InjectDrizzle } from '../drizzle/drizzle.decorator.js';
+import { buildJournalRows, nextJournalEntryId, POSTED_STATUS } from './general-journal.writer.js';
 import { JournalEntryInput, JournalLineInput } from './journal-entry.schemas.js';
 import {
     effectiveLines,
@@ -18,7 +19,6 @@ import {
 } from './journal-entry.validation.js';
 import { CreateJournalEntryResponse, JournalEntryDto, MessageResponse } from './journal-entry.types.js';
 
-const POSTED = 'Posted';
 const MAX_SEQUENCE = 9999;
 
 type Row = typeof generalJournal.$inferSelect;
@@ -41,8 +41,6 @@ export function counterKeyFor(journalType: string, entryDate: Date): string {
 function formatSequence(counterKey: string, sequence: number): string {
     return `${counterKey}${String(sequence).padStart(4, '0')}`;
 }
-
-const toAmount = (n: number): string => n.toFixed(2);
 
 @Injectable()
 export class JournalEntryService {
@@ -72,34 +70,6 @@ export class JournalEntryService {
         if (lines.some((l) => !ids.has(l.accountId))) {
             throw new AppError('One or more selected accounts are invalid or inactive.', 400);
         }
-    }
-
-    private buildRows(
-        journalEntryId: number,
-        userId: string,
-        transactionNumber: string,
-        journalType: string,
-        entryDate: Date,
-        createdAt: Date,
-        updatedAt: Date | null,
-        lines: JournalLineInput[],
-        status: string,
-    ): (typeof generalJournal.$inferInsert)[] {
-        return lines.map((l, index) => ({
-            journalEntryId,
-            userId,
-            transactionNumber,
-            journalType,
-            entryDate,
-            createdAt,
-            updatedAt,
-            status,
-            accountId: l.accountId,
-            lineDescription: l.lineDescription,
-            debit: toAmount(l.debit),
-            credit: toAmount(l.credit),
-            lineOrder: index,
-        }));
     }
 
     async findOne(userId: string, id: number): Promise<JournalEntryDto> {
@@ -144,10 +114,13 @@ export class JournalEntryService {
         const journalType = input.journalType.trim() === '' ? 'General' : input.journalType;
         const transactionNumber = await this.generateTransactionNumber(userId, journalType, input.entryDate);
         const createdAt = input.clientTimestamp ?? new Date();
-        const journalEntryId = await this.nextJournalEntryId();
+        const journalEntryId = await nextJournalEntryId(this.db);
 
         await this.db.insert(generalJournal).values(
-            this.buildRows(journalEntryId, userId, transactionNumber, journalType, input.entryDate, createdAt, null, lines, POSTED),
+            buildJournalRows({
+                journalEntryId, userId, transactionNumber, journalType,
+                entryDate: input.entryDate, createdAt, updatedAt: null, lines,
+            }),
         );
 
         return {
@@ -179,10 +152,11 @@ export class JournalEntryService {
 
         const journalType = input.journalType.trim() === '' ? header.journalType : input.journalType;
         const updatedAt = input.clientTimestamp ?? new Date();
-        const newRows = this.buildRows(
-            header.journalEntryId, userId, header.transactionNumber, journalType, input.entryDate,
-            header.createdAt, updatedAt, lines, header.status ?? POSTED,
-        );
+        const newRows = buildJournalRows({
+            journalEntryId: header.journalEntryId, userId, transactionNumber: header.transactionNumber,
+            journalType, entryDate: input.entryDate, createdAt: header.createdAt, updatedAt, lines,
+            status: header.status ?? POSTED_STATUS,
+        });
 
         // Hapus baris lama dan tambah baris baru dalam satu transaksi (seperti satu SaveChanges di sumber).
         await this.db.transaction(async (tx) => {
@@ -271,13 +245,6 @@ export class JournalEntryService {
             throw new Error(`Transaction number sequence for ${key} has reached its ${MAX_SEQUENCE} capacity.`);
         }
         return formatSequence(key, row.lastSequence);
-    }
-
-    private async nextJournalEntryId(): Promise<number> {
-        const result = await this.db.execute<{ value: number }>(
-            sql`SELECT nextval('general_journal_journal_entry_id_seq')::int AS value`,
-        );
-        return Number(result.rows[0].value);
     }
 }
 

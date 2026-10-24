@@ -119,3 +119,66 @@ func TestOpenPostgresRejectsEmptyDSN(t *testing.T) {
 		t.Fatal("DSN kosong harus ditolak")
 	}
 }
+
+func TestPostgresProfileLifecycle(t *testing.T) {
+	pg := openTest(t)
+	ctx := context.Background()
+	u, err := pg.Create(ctx, "Ghofur", "p@example.com", "h1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	other, _ := pg.Create(ctx, "Budi", "b@example.com", "h")
+
+	name, userName, avatar := "Tri Wahyu", "Ghofur_01", "https://a.test/a.png"
+	got, err := pg.UpdateProfile(ctx, u.ID, ProfileUpdate{Name: &name, UserName: &userName, AvatarURL: &avatar, PhoneNumber: "+62812", Bio: "Akuntan"})
+	if err != nil || got.Name != name || got.UserName != userName || got.AvatarURL != avatar || got.PhoneNumber != "+62812" || got.Bio != "Akuntan" {
+		t.Fatalf("UpdateProfile: %+v err=%v", got, err)
+	}
+	// Pointer nil tidak mengubah kolom; telepon dan bio kosong menjadi NULL.
+	got, err = pg.UpdateProfile(ctx, u.ID, ProfileUpdate{})
+	if err != nil || got.Name != name || got.UserName != userName || got.AvatarURL != avatar || got.PhoneNumber != "" || got.Bio != "" {
+		t.Fatalf("UpdateProfile kosong: %+v err=%v", got, err)
+	}
+	// Username unik tanpa membedakan huruf besar-kecil.
+	dup := "ghofur_01"
+	if _, err := pg.UpdateProfile(ctx, other.ID, ProfileUpdate{UserName: &dup}); err != ErrUserNameTaken {
+		t.Fatalf("harus ErrUserNameTaken, dapat %v", err)
+	}
+	byID, err := pg.FindByID(ctx, u.ID)
+	if err != nil || byID.Email != "p@example.com" || byID.PasswordHash != "h1" {
+		t.Fatalf("FindByID: %+v err=%v", byID, err)
+	}
+	if _, err := pg.FindByID(ctx, "bukan-uuid"); err != ErrNotFound {
+		t.Fatalf("id bukan UUID harus ErrNotFound, dapat %v", err)
+	}
+	if _, err := pg.FindByID(ctx, "00000000-0000-4000-8000-000000000000"); err != ErrNotFound {
+		t.Fatalf("id tidak ada harus ErrNotFound, dapat %v", err)
+	}
+	if _, err := pg.UpdateProfile(ctx, "bukan-uuid", ProfileUpdate{}); err != ErrNotFound {
+		t.Fatalf("UpdateProfile id tidak valid harus ErrNotFound, dapat %v", err)
+	}
+}
+
+func TestPostgresUpdatePasswordAndDelete(t *testing.T) {
+	pg := openTest(t)
+	ctx := context.Background()
+	u, _ := pg.Create(ctx, "Ghofur", "d@example.com", "lama")
+	if err := pg.UpdatePasswordHash(ctx, u.ID, "baru"); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := pg.FindByEmail(ctx, "d@example.com"); got.PasswordHash != "baru" {
+		t.Fatalf("hash tidak berubah: %+v", got)
+	}
+	if err := pg.Delete(ctx, u.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pg.FindByEmail(ctx, "d@example.com"); err != ErrNotFound {
+		t.Fatalf("setelah hapus harus ErrNotFound, dapat %v", err)
+	}
+	if err := pg.Delete(ctx, u.ID); err != ErrNotFound {
+		t.Fatalf("hapus ulang harus ErrNotFound, dapat %v", err)
+	}
+	if err := pg.UpdatePasswordHash(ctx, "bukan-uuid", "x"); err != ErrNotFound {
+		t.Fatalf("id tidak valid harus ErrNotFound, dapat %v", err)
+	}
+}

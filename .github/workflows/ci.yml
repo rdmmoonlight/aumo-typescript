@@ -65,5 +65,18 @@ jobs:
         env:
           TEST_DATABASE_URL: postgres://postgres:test@localhost:5432/postgres
 
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: services/auth/go.mod
+          cache-dependency-path: services/auth/go.sum
+
+      # Tes layanan auth (Go), termasuk store PostgreSQL dan endpoint settings.
+      - name: Test (Go auth)
+        working-directory: services/auth
+        run: go test ./... -count=1
+        env:
+          TEST_DATABASE_URL: postgres://postgres:test@localhost:5432/postgres?sslmode=disable
+
       - name: Build
         run: pnpm run build

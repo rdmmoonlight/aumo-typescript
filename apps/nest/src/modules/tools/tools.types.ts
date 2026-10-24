@@ -1,92 +1,63 @@
-import { ApiResponse } from '../../common/types/api-response.type.js';
-
+/** Padanan ToolsDto.cs sumber. Properti JSON camelCase. */
 export interface JournalLineDto {
     refNumber: number;
-    accountName: string;
-    description?: string;
-    debit?: number | null;
-    credit?: number | null;
+    accountName: string | null;
+    description: string | null;
+    debit: number | null;
+    credit: number | null;
 }
 
 export interface JournalTransactionDto {
-    date: string; // yyyy-MM-dd from client, akan dipaksa ke TargetYear/Month
-    journalType: string; // GJ | AJ | General | Adjusting
-    lines: JournalLineDto[];
-    transactionNumber?: string; // generated on preview/import
+    transactionNumber: string;
+    date: string;
+    journalType: string;
+    lines: JournalLineDto[] | null;
 }
+
+export type MappingStatus = 'EXACT_MATCH' | 'UNMAPPED' | 'REALLOCATED_NAME' | 'REALLOCATED_REF' | string;
 
 export interface AccountMappingDetailDto {
     excelRef: number;
-    excelAccountName: string;
+    excelAccountName: string | null;
     mappedRef: number;
     mappedAccountName: string;
-    status: 'EXACT_MATCH' | 'REALLOCATED_NAME' | 'REALLOCATED_REF' | 'UNMAPPED';
+    status: MappingStatus;
     reason: string;
 }
 
 export interface JournalImportRequestDto {
     targetYear: number;
-    targetMonth: number; // 1-12
-    transactions: JournalTransactionDto[];
-    customMappings?: AccountMappingDetailDto[];
+    targetMonth: number;
+    transactions: JournalTransactionDto[] | null;
+    customMappings: AccountMappingDetailDto[] | null;
 }
 
-export interface PreviewSummaryDto {
-    totalUniqueAccounts: number;
-    exactMatchCount: number;
-    reallocatedCount: number;
-    unmappedCount: number;
-    isPerfectMatch: boolean;
+export interface PreviewTransaction {
+    transactionNumber: string;
+    date: string;
+    journalType: string;
+    lines: {
+        refNumber: number;
+        accountName: string;
+        description: string | null;
+        debit: number | null;
+        credit: number | null;
+    }[];
 }
 
-export interface PreviewJournalResponseDto {
-    transactions: (JournalTransactionDto & { transactionNumber: string })[];
+export interface PreviewResponse {
+    transactions: PreviewTransaction[];
     accountMappings: AccountMappingDetailDto[];
-    summary: PreviewSummaryDto;
+    summary: {
+        totalUniqueAccounts: number;
+        exactMatchCount: number;
+        reallocatedCount: number;
+        unmappedCount: number;
+        isPerfectMatch: boolean;
+    };
 }
 
-export interface ImportJournalResponseDto {
+export interface ImportResponse {
     message: string;
     importedEntriesCount: number;
-    importedTransactionNumbers?: string[];
-}
-
-export type PreviewResponse = ApiResponse<PreviewJournalResponseDto>;
-export type ImportResponse = ApiResponse<ImportJournalResponseDto>;
-
-// Internal DB-like types (mimic Drizzle / EF models)
-export interface ChartOfAccount {
-    id: string;
-    userId: string;
-    referenceNumber: number;
-    accountName: string;
-    isActive: boolean;
-}
-
-export interface TransactionCounter {
-    userId: string;
-    counterKey: string;
-    lastSequence: number;
-}
-
-export interface Period {
-    id?: string;
-    userId: string;
-    periodName: string;
-    startDate: Date;
-    endDate: Date;
-    isClosed: boolean;
-    isSelected: boolean;
-}
-
-export interface GeneralJournalRow {
-    journalEntryId: number;
-    userId: string;
-    transactionNumber: string;
-    journalType: string;
-    transactionDate: Date;
-    accountId: string;
-    description?: string;
-    debit: number;
-    credit: number;
 }

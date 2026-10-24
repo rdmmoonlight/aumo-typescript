@@ -15,6 +15,8 @@ const envSchema = z.object({
   FRONTEND_URL: z.string().url('FRONTEND_URL harus berupa URL yang valid').optional(),
   CORS_ORIGINS: z.string().optional(), // daftar origin dipisah koma
   BODY_LIMIT_BYTES: z.coerce.number().int().positive().default(1_048_576), // 1 MB,
+  // Impor jurnal (/tools): sampai 5000 transaksi, sehingga body JSON jauh lebih besar dari 1 MB.
+  TOOLS_BODY_LIMIT_BYTES: z.coerce.number().int().positive().default(10_485_760), // 10 MB (sama dengan nginx)
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
 });

@@ -85,6 +85,9 @@ func (h *Handler) Routes() http.Handler {
 	mux.HandleFunc("/auth/me", h.Me)
 	mux.HandleFunc("/auth/google-login", h.GoogleLogin)
 	mux.HandleFunc("/auth/google-callback", h.GoogleCallback)
+	mux.HandleFunc("/settings/profile", h.UpdateProfile)
+	mux.HandleFunc("/settings/change-password", h.ChangePassword)
+	mux.HandleFunc("/settings/delete-account", h.DeleteAccount)
 	return h.cors(mux)
 }
 
@@ -222,7 +225,7 @@ func (h *Handler) cors(next http.Handler) http.Handler {
 			if h.originAllowed(origin) {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
 				w.Header().Set("Access-Control-Allow-Credentials", "true")
-				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 				w.Header().Set("Access-Control-Max-Age", "86400")
 			}

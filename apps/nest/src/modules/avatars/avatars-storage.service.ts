@@ -1,4 +1,5 @@
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { Readable } from 'stream';
 import { AvatarFile } from './avatars.types.js';
@@ -41,6 +42,34 @@ export class AvatarsStorageService {
 
     get isConfigured(): boolean {
         return this.s3Client !== null;
+    }
+
+    /** Setara BuildFileName sumber: avatar_{userId}_{guid}{ext}. userId harus aman dipakai sebagai nama berkas. */
+    buildFileName(userId: string, extension: string): string {
+        const ext = extension.toLowerCase();
+        const fileName = `avatar_${userId}_${randomUUID()}${ext}`;
+        if (!FILE_NAME_PATTERN.test(fileName)) {
+            throw new Error('Nama berkas avatar tidak valid.');
+        }
+        return fileName;
+    }
+
+    /** Mengunggah avatar ke bucket. Nama berkas divalidasi ulang agar tidak bisa keluar dari prefix. */
+    async uploadAvatar(fileName: string, body: Buffer, contentType: string): Promise<void> {
+        if (!this.s3Client) {
+            throw new Error('Neon bucket belum dikonfigurasi di server.');
+        }
+        if (!FILE_NAME_PATTERN.test(fileName)) {
+            throw new Error('Nama berkas avatar tidak valid.');
+        }
+        await this.s3Client.send(
+            new PutObjectCommand({
+                Bucket: this.bucketName,
+                Key: KEY_PREFIX + fileName,
+                Body: body,
+                ContentType: contentType,
+            }),
+        );
     }
 
     async getAvatar(fileName: string): Promise<AvatarFile | null> {

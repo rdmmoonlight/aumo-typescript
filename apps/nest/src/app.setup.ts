@@ -1,5 +1,6 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { Request, Response } from 'express';
+import express from 'express';
 import helmet from 'helmet';
 import { bodyParserErrorMiddleware } from './common/middleware/body-parser-error.middleware.js';
 import { requestIdMiddleware } from './common/middleware/request-id.middleware.js';
@@ -20,6 +21,16 @@ export function configureApp(app: NestExpressApplication): void {
     .getInstance()
     ;
 
+  // Parser khusus /tools harus terpasang lebih dulu: body yang sudah terurai dilewati parser global.
+  app.use(
+    '/tools',
+    express.json({
+      limit: env.TOOLS_BODY_LIMIT_BYTES,
+      verify: (req: Request, _res: Response, buf: Buffer) => {
+        (req as Request & { rawBody?: Buffer }).rawBody = buf;
+      },
+    }),
+  );
   app.useBodyParser('json', {
     limit: env.BODY_LIMIT_BYTES,
     verify: (req: Request, _res: Response, buf: Buffer) => {

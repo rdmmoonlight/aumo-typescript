@@ -184,14 +184,38 @@ Catatan Fase 5:
 - [x] `GET download-journal-template` memakai `exceljs`. Kolom dan urutan sama dengan template sumber.
 - [x] `POST preview-journal-import` dan `POST import-journal-entries`: validasi baris, keseimbangan debit-kredit, periode, dan kode akun.
 - [x] Impor memakai transaksi database (semua baris masuk atau tidak sama sekali).
-- [ ] **Keluaran:** 3 endpoint aktif. **Selesai bila:** berkas contoh menghasilkan jurnal yang sama dengan backend lama.
+- [x] **Keluaran:** 3 endpoint aktif (`download-journal-template`, `preview-journal-import`, `import-journal-entries`). **Selesai bila:** berkas contoh menghasilkan jurnal yang sama dengan backend lama. (25 tes: 11 unit + 14 integrasi di PostgreSQL nyata; acuan hasil ditetapkan dari `ToolsController` .NET dan dikunci dengan uji mutasi. Menjalankan skenario yang sama terhadap instance .NET hidup masuk checklist Fase 9.)
+
+Catatan Fase 6:
+- Draf sebelumnya tidak memenuhi checklist: `tools.service.ts` memakai `Map` di memori (tidak menyentuh database), pembungkus respons `{success,data}` berbeda dari sumber, jenis jurnal menerima `GJ`/`AJ`, dan 2 galat lint. Ditulis ulang dari `ToolsController` dan `JournalImportRequestDtoValidator`.
+- Nomor transaksi impor memakai **5 digit** (`GJ260500001`), berbeda dari jurnal manual (4 digit). Mengikuti sumber.
+- Tanggal Excel hanya dipakai untuk harinya. Bulan dan tahun dipaksa mengikuti periode target, hari dijepit ke akhir bulan.
+- Impor berjalan dalam satu transaksi database (periode, counter, jurnal). Tes rollback membuktikan kegagalan di tengah impor tidak meninggalkan data. Baris counter dikunci (`FOR UPDATE`) agar dua impor bersamaan tidak memakai nomor yang sama.
+- Body JSON `/tools` dibatasi 10 MB (`TOOLS_BODY_LIMIT_BYTES`, sama dengan nginx), bukan 1 MB seperti rute lain. Impor 5000 transaksi tidak muat dalam 1 MB. Dependensi `express` ditambahkan langsung ke `apps/nest`.
+- **Perilaku sumber yang dipertahankan dan perlu keputusan pemilik:** (1) impor ke bulan yang periodenya sudah **ditutup** tetap berhasil (sumber tidak memeriksa `IsClosed`, sehingga `PeriodLock` dilewati); (2) baris dengan akun tidak ditemukan **dilewati diam-diam**, sehingga satu entri bisa tersimpan tidak seimbang; (3) `journalType` disimpan apa adanya (`adjusting` huruf kecil tetap `adjusting`).
+- Selisih kecil yang diketahui: `customMappings` dengan kunci ganda memakai entri terakhir (sumber melempar 500).
 
 ### Fase 7 — Settings dan Guardian (hapus guardian)
 
 - [x] Guardian dan kelengkapannya tidak di duplikasi di /nest
 - [x] `POST avatar`: unggah ke bucket S3, validasi tipe dan ukuran (setara `AvatarFileValidator`).
 - [x] `profile`, `change-password`, `delete-account`: endpoint dibuat di `services/auth` (Go), Nginx merutekan `/api/settings/{profile,change-password,delete-account}` ke Go. Nest tidak menyentuh `auth.users`.
-- [ ] **Keluaran:** endpoint di Nest, di Go. **Selesai bila:** aman
+- [x] **Keluaran:** `POST /settings/avatar` di Nest; `profile`, `change-password`, `delete-account` di Go. **Selesai bila:** aman. Kriteria "aman" yang diuji:
+  - Autentikasi dicek sebelum validasi di Go (pemanggil anonim tidak melihat detail validasi). Token sah milik akun yang sudah dihapus ditolak (401).
+  - Avatar: batas 2 MB, hanya JPG/PNG/GIF/WEBP, ekstensi, Content-Type, dan tanda tangan berkas (magic bytes) harus cocok. `userId` untuk nama berkas dibatasi `[A-Za-z0-9-]`; nama berkas divalidasi ulang sebelum ke S3 dan saat membaca (anti path traversal). Detail galat S3 tidak dikirim ke klien.
+  - Profil: URL avatar harus `http(s)` absolut (skema `javascript:` ditolak); username dibatasi karakter Identity dan unik tanpa membedakan huruf.
+  - Kata sandi: sandi lama diverifikasi, akun tanpa sandi (login Google) ditolak, sandi baru 8-128 karakter dan berbeda dari yang lama.
+  - CORS Go kini mengizinkan `PUT` dan `DELETE` (sebelumnya hanya `GET, POST`).
+  - Tes: Nest 21 (avatar), Go 10 (handler) + 2 (store Postgres, berjalan bila `TEST_DATABASE_URL` diisi); CI menjalankan tes Go.
+
+Catatan Fase 7:
+- Draf sebelumnya tidak memenuhi checklist: endpoint `profile`, `change-password`, dan `delete-account` **tidak ada** di `services/auth`, dan `SettingsService` Nest memanggil `uploadAvatarAsync`/`buildFileName` yang tidak ada (unggah avatar tidak pernah berfungsi). Batasnya juga 5 MB tanpa GIF, dan respons memakai `data.avatarUrl` (sumber: `avatarUrl` datar).
+- **Perubahan kontrak klien:** sumber menyimpan `AvatarUrl` ke pengguna dalam satu panggilan. Nest tidak boleh menulis `auth.users` (milik Go), jadi alurnya dua langkah: `POST /settings/avatar` mengembalikan `avatarUrl`, lalu klien memanggil `PUT /settings/profile` dengan `avatarUrl` tersebut. Klien (`apps/next`) perlu menyesuaikan.
+- `auth.users` mendapat kolom `user_name`, `phone_number`, `bio`, `avatar_url` (migrasi `ALTER TABLE ... IF NOT EXISTS` otomatis saat layanan Go start) dan indeks unik `lower(user_name)`.
+- Pemetaan `FullName` ke kolom `name`: nama kosong tidak mengubah `name` (kolom wajib terisi); sumber menjadikannya null. Telepon dan bio kosong dihapus (NULL), URL avatar kosong tidak mengubah avatar, sama dengan sumber.
+- Kebijakan sandi baru 8 karakter (sama dengan `/auth/register`), bukan 6 seperti validator sumber, agar tidak ada jalur yang melemahkan sandi.
+- Seperti sumber, `delete-account` hanya menghapus baris `auth.users`; data akuntansi di tabel Nest tidak ikut dihapus. JWT stateless tetap sah secara kriptografis sampai kedaluwarsa, tetapi endpoint settings menolaknya setelah akun dihapus.
+- Env baru: `PUBLIC_API_URL` (Nest, mis. `https://domain/api`; bila kosong dibentuk dari header proxy) dan `TOOLS_BODY_LIMIT_BYTES` (opsional).
 
 ### Fase 8 — Kontrak dan Tes
 
@@ -206,6 +230,7 @@ Catatan Fase 5:
 - [x] `render.yaml`: tambah env untuk S3 (`AWS_ENDPOINT_URL_S3`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `S3_BUCKET`) sebagai `sync: false`.
 - [ ] Uji asap: login (Go) → dashboard → buat jurnal → impor Excel → notifikasi → unggah avatar → cabut sesi.
 - [ ] Bandingkan angka dan respons dengan backend aumo-finance pada data yang sama. Termasuk menjalankan fixture `journal-parity.ts` terhadap instance .NET hidup.
+- [ ] Isi `PUBLIC_API_URL` di Render (service Nest) dan pastikan layanan Go sudah start sekali agar kolom profil `auth.users` terbentuk.
 - [ ] Salin data tabel EF PascalCase ke tabel Drizzle (`chart_of_accounts`, `general_journal`, `periods`, `transaction_counters`, `notifications`), lalu set `general_journal_journal_entry_id_seq` ke `MAX(journal_entry_id)` dan pastikan `transaction_counters` mengikuti nomor terakhir.
 - [ ] Perbarui ADR 0010 menjadi *Accepted*, tambah changeset.
 - [ ] **Tidak ada** penghapusan di aumo-finance.

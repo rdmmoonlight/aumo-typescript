@@ -1,83 +1,88 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import * as path from 'path';
+import { Injectable, Logger } from '@nestjs/common';
+import * as path from 'node:path';
+import { AppError, ValidationMessagesError } from '../../lib/errors.js';
 import { AvatarsStorageService } from '../avatars/avatars-storage.service.js';
-import { ALLOWED_EXT, ALLOWED_MIME, MAX_AVATAR_SIZE } from './settings.schemas.js';
+import {
+    ALLOWED_EXT,
+    ALLOWED_MIME,
+    AVATAR_MISSING_MESSAGE,
+    AVATAR_SIZE_MESSAGE,
+    AVATAR_TYPE_MESSAGE,
+    matchesImageSignature,
+    MAX_AVATAR_SIZE,
+    SAFE_USER_ID,
+} from './settings.schemas.js';
+import { AvatarUploadResponse } from './settings.types.js';
+
+export interface UploadedAvatar {
+    size: number;
+    mimetype: string;
+    originalname: string;
+    buffer: Buffer;
+}
 
 @Injectable()
 export class SettingsService {
+    private readonly logger = new Logger(SettingsService.name);
+
     constructor(private readonly avatarStorage: AvatarsStorageService) { }
 
-    private validateAvatarFile(file: {
-        size: number;
-        mimetype: string;
-        originalname: string;
-        buffer: Buffer;
-    }) {
-        if (!file) {
-            throw new BadRequestException({
-                success: false,
-                message: "No file uploaded. Ensure the form-data key is named 'file' or 'avatar'.",
-            });
-        }
-        if (file.size > MAX_AVATAR_SIZE) {
-            throw new BadRequestException({
-                success: false,
-                message: `Ukuran file maksimal ${MAX_AVATAR_SIZE / 1024 / 1024}MB`,
-            });
-        }
-        if (!(ALLOWED_MIME as readonly string[]).includes(file.mimetype)) {
-            throw new BadRequestException({
-                success: false,
-                message: `Tipe file tidak didukung. Allowed: ${ALLOWED_MIME.join(', ')}`,
-            });
-        }
+    /** Setara AvatarFileValidator: pesan duplikat dibuang dan dikembalikan sebagai errors[]. */
+    private validate(file: UploadedAvatar): string {
+        const errors: string[] = [];
         const ext = path.extname(file.originalname).toLowerCase();
-        if (!(ALLOWED_EXT as readonly string[]).includes(ext)) {
-            throw new BadRequestException({
-                success: false,
-                message: `Ekstensi file tidak didukung. Allowed: ${ALLOWED_EXT.join(', ')}`,
-            });
+
+        if (file.size > MAX_AVATAR_SIZE) errors.push(AVATAR_SIZE_MESSAGE);
+        if (!(ALLOWED_EXT as readonly string[]).includes(ext)) errors.push(AVATAR_TYPE_MESSAGE);
+        if (!(ALLOWED_MIME as readonly string[]).includes(file.mimetype.toLowerCase())) {
+            errors.push(AVATAR_TYPE_MESSAGE);
+        } else if (
+            (ALLOWED_EXT as readonly string[]).includes(ext) &&
+            file.size <= MAX_AVATAR_SIZE &&
+            !matchesImageSignature(file.buffer, ext)
+        ) {
+            errors.push(AVATAR_TYPE_MESSAGE); // isi berkas tidak sesuai ekstensi yang diklaim
         }
+
+        if (errors.length > 0) throw new ValidationMessagesError([...new Set(errors)]);
+        return ext;
     }
 
-    async uploadAvatar(userId: string, file: {
-        size: number;
-        mimetype: string;
-        originalname: string;
-        buffer: Buffer;
-    }) {
-        this.validateAvatarFile(file);
+    /**
+     * Mengunggah avatar dan mengembalikan URL publiknya. Nest tidak menyentuh auth.users (milik Go):
+     * klien menyimpan URL ini lewat PUT /settings/profile { avatarUrl }.
+     */
+    async uploadAvatar(
+        userId: string,
+        file: UploadedAvatar | undefined,
+        publicBaseUrl: string,
+    ): Promise<AvatarUploadResponse> {
+        if (!SAFE_USER_ID.test(userId ?? '')) {
+            throw new AppError('Identitas pengguna tidak valid.', 401);
+        }
+        if (!file || file.size === 0) throw new AppError(AVATAR_MISSING_MESSAGE, 400);
 
-        // pakai getter yang sudah ada di service kamu
-        const storageConfig = this.avatarStorage as unknown as {
-            isConfigured?: boolean;
-            IsConfigured?: boolean;
-        };
-        const configured = storageConfig.isConfigured ?? storageConfig.IsConfigured;
-        if (!configured) {
-            throw new BadRequestException({
-                success: false,
-                message: 'Neon bucket belum dikonfigurasi di server.',
-            });
+        const ext = this.validate(file);
+
+        if (!this.avatarStorage.isConfigured) {
+            // 5xx disamarkan oleh filter global; penyebab sebenarnya hanya ada di log.
+            this.logger.error('Neon bucket belum dikonfigurasi di server.');
+            throw new AppError('Neon bucket belum dikonfigurasi di server.', 500);
         }
 
-        // pakai method buildFileName kalau ada di service existing, kalau tidak pakai logic ini
-        const storageWithBuilder = this.avatarStorage as AvatarsStorageService & {
-            buildFileName?: (userId: string, originalname: string) => string;
-        };
-        const fileName = storageWithBuilder.buildFileName
-            ? storageWithBuilder.buildFileName(userId, file.originalname)
-            : `avatar_${userId}_${Date.now()}${path.extname(file.originalname).toLowerCase()}`;
+        const fileName = this.avatarStorage.buildFileName(userId, ext);
+        try {
+            await this.avatarStorage.uploadAvatar(fileName, file.buffer, file.mimetype.toLowerCase());
+        } catch (error) {
+            this.logger.error({ err: error }, 'Avatar upload error');
+            throw new AppError('Avatar upload error', 500);
+        }
 
-        const storageWithUploader = this.avatarStorage as AvatarsStorageService & {
-            uploadAvatarAsync: (fileName: string, buffer: Buffer, mimetype: string) => Promise<string>;
+        const base = publicBaseUrl.replace(/\/+$/, '');
+        return {
+            success: true,
+            message: 'Avatar uploaded successfully.',
+            avatarUrl: `${base}/avatars/${fileName}`,
         };
-        const publicUrl = await storageWithUploader.uploadAvatarAsync(
-            fileName,
-            file.buffer,
-            file.mimetype,
-        );
-
-        return { avatarUrl: publicUrl, fileName };
     }
 }

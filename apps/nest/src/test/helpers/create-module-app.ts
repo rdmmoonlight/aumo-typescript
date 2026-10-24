@@ -37,7 +37,11 @@ export function createFakeDb(result: unknown[] = []) {
 }
 
 /** Membuat aplikasi Nest dari modul tertentu saja, lengkap dengan guard dan filter global. */
-export async function createModuleApp(modules: Type[], db: unknown = createFakeDb()) {
+export async function createModuleApp(
+    modules: Type[],
+    db: unknown = createFakeDb(),
+    options: { configure?: (app: NestExpressApplication) => void } = {},
+) {
     @Global()
     @Module({ providers: [{ provide: DRIZZLE_DEV, useValue: db }], exports: [DRIZZLE_DEV] })
     class FakeDrizzleModule { }
@@ -50,7 +54,9 @@ export async function createModuleApp(modules: Type[], db: unknown = createFakeD
         ],
     }).compile();
 
-    const app = moduleRef.createNestApplication<NestExpressApplication>();
+    // configureApp (parser body, CORS, helmet) mengharuskan parser bawaan Nest dimatikan, seperti di main.ts.
+    const app = moduleRef.createNestApplication<NestExpressApplication>({ bodyParser: !options.configure });
+    options.configure?.(app);
     await app.init();
     return app;
 }

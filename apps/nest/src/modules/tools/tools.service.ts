@@ -1,380 +1,274 @@
-import {
-    BadRequestException,
-    Injectable,
-    InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { and, eq } from 'drizzle-orm';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { sql } from 'drizzle-orm';
 import * as ExcelJS from 'exceljs';
+import { AppError, ValidationMessagesError } from '../../lib/errors.js';
+import { chartOfAccounts } from '../../db/schema/chart-of-accounts.js';
+import { generalJournal } from '../../db/schema/general-journal.js';
+import { periods } from '../../db/schema/periods.js';
+import { transactionCounters } from '../../db/schema/transaction-counters.js';
+import { InjectDrizzle } from '../drizzle/drizzle.decorator.js';
+import { buildJournalRows, nextJournalEntryId, WriterLine } from '../journal-entries/general-journal.writer.js';
+import { forceToTargetMonth, isoDate, parseTransactionDay, periodNameId } from './tools.dates.js';
+import { validateJournalImport } from './tools.schemas.js';
 import {
     AccountMappingDetailDto,
-    ChartOfAccount,
-    GeneralJournalRow,
+    ImportResponse,
     JournalImportRequestDto,
-    JournalTransactionDto,
-    Period,
-    PreviewJournalResponseDto,
-    TransactionCounter,
+    PreviewResponse,
+    PreviewTransaction,
 } from './tools.types.js';
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const TEMPLATE_HEADERS = ['Date', 'Account Name', 'Description', 'Ref', 'Debit', 'Credit'];
+const INSERT_BATCH_SIZE = 1000;
+
+/** Nomor transaksi impor memakai 5 digit urut (D5), berbeda dari jurnal manual (D4). */
+const numberOf = (counterKey: string, sequence: number): string =>
+    `${counterKey}${String(sequence).padStart(5, '0')}`;
+
+/** Setara txDto.JournalType.Equals("Adjusting", OrdinalIgnoreCase). */
+const counterKeyOf = (journalType: string, txDate: Date): string => {
+    const prefix = journalType.toLowerCase() === 'adjusting' ? 'AJ' : 'GJ';
+    const yy = String(txDate.getUTCFullYear() % 100).padStart(2, '0');
+    const mm = String(txDate.getUTCMonth() + 1).padStart(2, '0');
+    return `${prefix}${yy}${mm}`;
+};
 
 @Injectable()
 export class ToolsService {
-    // In-memory simulation — ganti dengan query Drizzle di produksi
-    private coaStore: Map<string, ChartOfAccount[]> = new Map();
-    private counterStore: Map<string, TransactionCounter> = new Map();
-    private periodStore: Map<string, Period[]> = new Map();
-    private journalStore: GeneralJournalRow[] = [];
+    constructor(@InjectDrizzle() private readonly db: NodePgDatabase) { }
 
-    private getDaysInMonth(year: number, month: number): number {
-        return new Date(year, month, 0).getDate();
-    }
-
-    private normalizeJournalType(journalType: string): 'GJ' | 'AJ' {
-        const t = journalType.trim().toLowerCase();
-        if (t === 'aj' || t === 'adjusting') return 'AJ';
-        return 'GJ';
-    }
-
-    private parseAndForceDate(
-        rawDateStr: string,
-        targetYear: number,
-        targetMonth: number,
-    ): Date {
-        const raw = new Date(rawDateStr);
-        if (isNaN(raw.getTime())) {
-            throw new BadRequestException({
-                success: false,
-                message: `Tanggal tidak valid: ${rawDateStr}`,
-            });
-        }
-        const day = Math.min(raw.getDate(), this.getDaysInMonth(targetYear, targetMonth));
-        return new Date(Date.UTC(targetYear, targetMonth - 1, day));
-    }
-
-    private async getActiveCoa(userId: string): Promise<ChartOfAccount[]> {
-        if (!this.coaStore.has(userId)) {
-            this.coaStore.set(userId, [
-                { id: 'coa-1', userId, referenceNumber: 101, accountName: 'Cash', isActive: true },
-                { id: 'coa-2', userId, referenceNumber: 102, accountName: 'Accounts Receivable', isActive: true },
-                { id: 'coa-3', userId, referenceNumber: 201, accountName: 'Accounts Payable', isActive: true },
-                { id: 'coa-4', userId, referenceNumber: 401, accountName: 'Sales Revenue', isActive: true },
-                { id: 'coa-5', userId, referenceNumber: 501, accountName: 'Cost of Goods Sold', isActive: true },
-            ]);
-        }
-        return this.coaStore.get(userId)!.filter((c) => c.isActive);
-    }
-
-    private async getCounter(userId: string, counterKey: string): Promise<TransactionCounter | undefined> {
-        return this.counterStore.get(`${userId}::${counterKey}`);
-    }
-
-    private async saveCounter(counter: TransactionCounter): Promise<void> {
-        this.counterStore.set(`${counter.userId}::${counter.counterKey}`, counter);
+    /** Validasi lebih dulu, lalu identitas (urutan sama dengan sumber). */
+    private prepare(userId: string, request: JournalImportRequestDto): void {
+        const errors = validateJournalImport(request);
+        if (errors.length > 0) throw new ValidationMessagesError(errors);
+        if (!UUID.test(userId ?? '')) throw new AppError('Unauthorized', 401);
     }
 
     async generateJournalTemplate(): Promise<Buffer> {
         const workbook = new ExcelJS.Workbook();
-        workbook.creator = 'Aumo';
-        workbook.created = new Date();
-        const headers = ['Date', 'Account Name', 'Description', 'Ref', 'Debit', 'Credit'];
-        const createSheet = (name: 'GJ' | 'AJ') => {
-            const ws = workbook.addWorksheet(name);
-            ws.addRow(headers);
-            const headerRow = ws.getRow(1);
-            headerRow.font = { bold: true };
-            headerRow.commit();
-            ws.columns = [
-                { header: 'Date', key: 'date', width: 14 },
-                { header: 'Account Name', key: 'accountName', width: 28 },
-                { header: 'Description', key: 'description', width: 35 },
-                { header: 'Ref', key: 'ref', width: 10 },
-                { header: 'Debit', key: 'debit', width: 18 },
-                { header: 'Credit', key: 'credit', width: 18 },
-            ];
-            return ws;
-        };
-        createSheet('GJ');
-        createSheet('AJ');
-        const buffer = await workbook.xlsx.writeBuffer();
-        return Buffer.from(buffer);
+        for (const name of ['GJ', 'AJ']) {
+            const sheet = workbook.addWorksheet(name);
+            sheet.addRow(TEMPLATE_HEADERS);
+            sheet.getRow(1).font = { bold: true };
+        }
+        return Buffer.from(await workbook.xlsx.writeBuffer());
     }
 
-    async previewImport(
-        userId: string,
-        dto: JournalImportRequestDto,
-    ): Promise<PreviewJournalResponseDto> {
-        const existingCoas = await this.getActiveCoa(userId);
-        const mappingDetails: AccountMappingDetailDto[] = [];
-        const processedTransactions: (JournalTransactionDto & { transactionNumber: string })[] = [];
-        const counterMemory = new Map<string, number>();
+    async previewImport(userId: string, request: JournalImportRequestDto): Promise<PreviewResponse> {
+        this.prepare(userId, request);
 
-        for (const txDto of dto.transactions) {
-            const txDate = this.parseAndForceDate(txDto.date, dto.targetYear, dto.targetMonth);
-            const normalizedType = this.normalizeJournalType(txDto.journalType);
-            const prefix = normalizedType === 'AJ' ? 'AJ' : 'GJ';
-            const yy = String(txDate.getUTCFullYear()).slice(-2);
-            const mm = String(txDate.getUTCMonth() + 1).padStart(2, '0');
-            const counterKey = `${prefix}${yy}${mm}`;
+        const coas = await this.db
+            .select()
+            .from(chartOfAccounts)
+            .where(and(eq(chartOfAccounts.userId, userId), eq(chartOfAccounts.isActive, true)));
+
+        const counterMemory = new Map<string, number>();
+        const mappingDetails: AccountMappingDetailDto[] = [];
+        const processed: PreviewTransaction[] = [];
+
+        for (const tx of request.transactions ?? []) {
+            const day = parseTransactionDay(tx.date);
+            if (day === null) continue;
+            const txDate = forceToTargetMonth(request.targetYear, request.targetMonth, day);
+            const counterKey = counterKeyOf(tx.journalType, txDate);
 
             if (!counterMemory.has(counterKey)) {
-                const existingCounter = await this.getCounter(userId, counterKey);
-                counterMemory.set(counterKey, existingCounter?.lastSequence ?? 0);
+                const [existing] = await this.db
+                    .select({ lastSequence: transactionCounters.lastSequence })
+                    .from(transactionCounters)
+                    .where(and(eq(transactionCounters.userId, userId), eq(transactionCounters.counterKey, counterKey)));
+                counterMemory.set(counterKey, existing?.lastSequence ?? 0);
             }
-            const nextSeq = (counterMemory.get(counterKey) ?? 0) + 1;
-            counterMemory.set(counterKey, nextSeq);
-            const generatedTxNumber = `${counterKey}${String(nextSeq).padStart(5, '0')}`;
+            const sequence = (counterMemory.get(counterKey) ?? 0) + 1;
+            counterMemory.set(counterKey, sequence);
 
-            const processedLines: typeof txDto.lines = [];
-            for (const lineDto of txDto.lines) {
-                const refInt = Number(lineDto.refNumber);
-                const excelAccountName = (lineDto.accountName ?? '').trim();
-                const coa = existingCoas.find(
-                    (c) =>
-                        c.referenceNumber === refInt &&
-                        c.accountName.toLowerCase() === excelAccountName.toLowerCase(),
+            const lines: PreviewTransaction['lines'] = [];
+            for (const line of tx.lines ?? []) {
+                const accountName = line.accountName?.trim() ?? '';
+                const coa = coas.find(
+                    (c) => c.referenceNumber === line.refNumber && c.accountName.toLowerCase() === accountName.toLowerCase(),
                 );
-                if (coa) {
-                    mappingDetails.push({
-                        excelRef: refInt,
-                        excelAccountName,
-                        mappedRef: coa.referenceNumber,
-                        mappedAccountName: coa.accountName,
-                        status: 'EXACT_MATCH',
-                        reason: 'Nomor Ref dan Nama Akun cocok 100% presisi dengan Master COA.',
-                    });
-                } else {
-                    const byRef = existingCoas.find((c) => c.referenceNumber === refInt);
-                    const byName = existingCoas.find(
-                        (c) => c.accountName.toLowerCase() === excelAccountName.toLowerCase(),
-                    );
-                    if (byRef && !byName) {
-                        mappingDetails.push({
-                            excelRef: refInt,
-                            excelAccountName,
-                            mappedRef: byRef.referenceNumber,
-                            mappedAccountName: byRef.accountName,
-                            status: 'REALLOCATED_NAME',
-                            reason: `Ref ${refInt} ditemukan tapi nama berbeda. Excel: "${excelAccountName}" vs COA: "${byRef.accountName}".`,
-                        });
-                    } else if (!byRef && byName) {
-                        mappingDetails.push({
-                            excelRef: refInt,
-                            excelAccountName,
-                            mappedRef: byName.referenceNumber,
-                            mappedAccountName: byName.accountName,
-                            status: 'REALLOCATED_REF',
-                            reason: `Nama "${excelAccountName}" ditemukan tapi Ref berbeda.`,
-                        });
-                    } else {
-                        mappingDetails.push({
-                            excelRef: refInt,
-                            excelAccountName,
+                mappingDetails.push(
+                    coa
+                        ? {
+                            excelRef: line.refNumber,
+                            excelAccountName: accountName,
+                            mappedRef: coa.referenceNumber,
+                            mappedAccountName: coa.accountName,
+                            status: 'EXACT_MATCH',
+                            reason: 'Nomor Ref dan Nama Akun cocok 100% presisi dengan Master COA.',
+                        }
+                        : {
+                            excelRef: line.refNumber,
+                            excelAccountName: accountName,
                             mappedRef: 0,
                             mappedAccountName: '',
                             status: 'UNMAPPED',
                             reason: 'Silakan pilih akun pelimpahan manual dari dropdown.',
-                        });
-                    }
-                }
-                processedLines.push({
-                    refNumber: refInt,
-                    accountName: excelAccountName,
-                    description: lineDto.description,
-                    debit: lineDto.debit,
-                    credit: lineDto.credit,
+                        },
+                );
+                lines.push({
+                    refNumber: line.refNumber,
+                    accountName,
+                    description: line.description,
+                    debit: line.debit,
+                    credit: line.credit,
                 });
             }
-            processedTransactions.push({
-                transactionNumber: generatedTxNumber,
-                date: txDate.toISOString().slice(0, 10),
-                journalType: normalizedType,
-                lines: processedLines,
+
+            processed.push({
+                transactionNumber: numberOf(counterKey, sequence),
+                date: isoDate(txDate),
+                journalType: tx.journalType,
+                lines,
             });
         }
 
-        const uniqueMap = new Map<string, AccountMappingDetailDto>();
+        // Satu entri per pasangan (ref, nama akun) dengan huruf besar-kecil diabaikan (GroupBy sumber).
+        const unique = new Map<string, AccountMappingDetailDto>();
         for (const m of mappingDetails) {
-            const key = `${m.excelRef}|||${m.excelAccountName.toLowerCase()}`;
-            if (!uniqueMap.has(key)) uniqueMap.set(key, m);
+            const key = `${m.excelRef}|||${m.excelAccountName ?? ''}`;
+            if (!unique.has(key)) unique.set(key, m);
         }
-        const uniqueMappings = Array.from(uniqueMap.values());
-        const exactMatchCount = uniqueMappings.filter((m) => m.status === 'EXACT_MATCH').length;
-        const reallocatedCount = uniqueMappings.filter(
-            (m) => m.status === 'REALLOCATED_NAME' || m.status === 'REALLOCATED_REF',
-        ).length;
-        const unmappedCount = uniqueMappings.filter(
-            (m) => m.status === 'UNMAPPED' || m.mappedRef === 0,
-        ).length;
+        const uniqueMappings = [...unique.values()];
+        const unmappedCount = uniqueMappings.filter((m) => m.status === 'UNMAPPED' || m.mappedRef === 0).length;
 
         return {
-            transactions: processedTransactions,
+            transactions: processed,
             accountMappings: uniqueMappings,
             summary: {
                 totalUniqueAccounts: uniqueMappings.length,
-                exactMatchCount,
-                reallocatedCount,
+                exactMatchCount: uniqueMappings.filter((m) => m.status === 'EXACT_MATCH').length,
+                reallocatedCount: uniqueMappings.filter(
+                    (m) => m.status === 'REALLOCATED_NAME' || m.status === 'REALLOCATED_REF',
+                ).length,
                 unmappedCount,
                 isPerfectMatch: unmappedCount === 0,
             },
         };
     }
 
-    async importEntries(
-        userId: string,
-        dto: JournalImportRequestDto,
-    ): Promise<{ message: string; importedEntriesCount: number; importedTransactionNumbers: string[] }> {
-        const snapshotCounters = new Map(this.counterStore);
-        const snapshotPeriods = new Map(this.periodStore);
-        const snapshotJournals = [...this.journalStore];
+    /** Semua perubahan (periode, counter, jurnal) dalam satu transaksi database: gagal berarti tidak ada yang tersimpan. */
+    async importEntries(userId: string, request: JournalImportRequestDto): Promise<ImportResponse> {
+        this.prepare(userId, request);
+        const { targetYear: year, targetMonth: month } = request;
 
-        try {
-            const periods = this.periodStore.get(userId) ?? [];
-            let period = periods.find(
-                (p) =>
-                    p.startDate.getUTCFullYear() === dto.targetYear &&
-                    p.startDate.getUTCMonth() + 1 === dto.targetMonth,
+        return this.db.transaction(async (tx) => {
+            // Periode akuntansi bulan target: dibuat bila belum ada (tanpa memeriksa status tutup, seperti sumber).
+            const monthStart = new Date(Date.UTC(year, month - 1, 1));
+            const existingPeriods = await tx
+                .select({ id: periods.id, startDate: periods.startDate })
+                .from(periods)
+                .where(eq(periods.userId, userId));
+            const hasPeriod = existingPeriods.some(
+                (p) => p.startDate.getUTCFullYear() === year && p.startDate.getUTCMonth() === month - 1,
             );
-            if (!period) {
-                const monthName = new Date(dto.targetYear, dto.targetMonth - 1, 1).toLocaleDateString(
-                    'id-ID',
-                    { month: 'long', year: 'numeric' },
-                );
-                period = {
-                    id: `period-${Date.now()}`,
+            if (!hasPeriod) {
+                await tx.insert(periods).values({
                     userId,
-                    periodName: monthName,
-                    startDate: new Date(Date.UTC(dto.targetYear, dto.targetMonth - 1, 1)),
-                    endDate: new Date(
-                        Date.UTC(dto.targetYear, dto.targetMonth - 1, this.getDaysInMonth(dto.targetYear, dto.targetMonth)),
-                    ),
+                    periodName: periodNameId(year, month),
+                    startDate: monthStart,
+                    endDate: forceToTargetMonth(year, month, 31),
                     isClosed: false,
                     isSelected: false,
-                };
-                periods.push(period);
-                this.periodStore.set(userId, periods);
-            }
-            if (period.isClosed) {
-                throw new BadRequestException({
-                    success: false,
-                    message: `Periode ${period.periodName} sudah tertutup, tidak bisa impor.`,
                 });
             }
 
-            const existingCoas = await this.getActiveCoa(userId);
-            const mappingDict = new Map<string, AccountMappingDetailDto>();
-            if (dto.customMappings) {
-                for (const m of dto.customMappings) {
-                    if (m.mappedRef > 0) {
-                        const key = `${m.excelRef}|||${m.excelAccountName.trim().toLowerCase()}`;
-                        mappingDict.set(key, m);
-                    }
+            const coas = await tx
+                .select()
+                .from(chartOfAccounts)
+                .where(and(eq(chartOfAccounts.userId, userId), eq(chartOfAccounts.isActive, true)));
+            const coaByRef = new Map<number, number>();
+            for (const c of coas) if (!coaByRef.has(c.referenceNumber)) coaByRef.set(c.referenceNumber, c.id);
+
+            // Pemetaan manual: kunci "ref|||nama" tanpa membedakan huruf besar-kecil; MappedRef > 0 saja.
+            const mappingDict = new Map<string, number>();
+            for (const m of request.customMappings ?? []) {
+                if (m.mappedRef > 0) mappingDict.set(`${m.excelRef}|||${(m.excelAccountName ?? '').trim()}`.toLowerCase(), m.mappedRef);
+            }
+
+            const existingNumbers = new Set(
+                (
+                    await tx
+                        .selectDistinct({ transactionNumber: generalJournal.transactionNumber })
+                        .from(generalJournal)
+                        .where(eq(generalJournal.userId, userId))
+                ).map((r) => r.transactionNumber),
+            );
+
+            const counters = new Map<string, number>();
+            const rows: (typeof generalJournal.$inferInsert)[] = [];
+            let importedEntriesCount = 0;
+
+            for (const transaction of request.transactions ?? []) {
+                const day = parseTransactionDay(transaction.date);
+                if (day === null) continue;
+                const txDate = forceToTargetMonth(year, month, day);
+                const counterKey = counterKeyOf(transaction.journalType, txDate);
+
+                if (!counters.has(counterKey)) {
+                    // Kunci baris counter agar dua impor bersamaan tidak memakai nomor yang sama.
+                    const [existing] = await tx
+                        .select({ lastSequence: transactionCounters.lastSequence })
+                        .from(transactionCounters)
+                        .where(and(eq(transactionCounters.userId, userId), eq(transactionCounters.counterKey, counterKey)))
+                        .for('update');
+                    counters.set(counterKey, existing?.lastSequence ?? 0);
+                }
+                let sequence = (counters.get(counterKey) ?? 0) + 1;
+                let transactionNumber = numberOf(counterKey, sequence);
+                while (existingNumbers.has(transactionNumber)) {
+                    sequence += 1;
+                    transactionNumber = numberOf(counterKey, sequence);
+                }
+                counters.set(counterKey, sequence);
+                existingNumbers.add(transactionNumber);
+
+                const lines: WriterLine[] = [];
+                for (const line of transaction.lines ?? []) {
+                    const excelName = line.accountName?.trim() ?? '';
+                    const targetRef =
+                        mappingDict.get(`${line.refNumber}|||${excelName}`.toLowerCase()) ?? line.refNumber;
+                    const accountId = coaByRef.get(targetRef);
+                    if (accountId === undefined) continue; // akun tidak ditemukan: baris dilewati (sumber)
+                    lines.push({
+                        accountId,
+                        lineDescription: line.description,
+                        debit: line.debit ?? 0,
+                        credit: line.credit ?? 0,
+                    });
+                }
+
+                if (lines.length > 0) {
+                    const journalEntryId = await nextJournalEntryId(tx);
+                    rows.push(
+                        ...buildJournalRows({
+                            journalEntryId, userId, transactionNumber,
+                            journalType: transaction.journalType,
+                            entryDate: txDate, createdAt: txDate, updatedAt: null, lines,
+                        }),
+                    );
+                    importedEntriesCount++;
                 }
             }
 
-            for (const tx of dto.transactions) {
-                const totalDebit = tx.lines.reduce((s, l) => s + (l.debit ?? 0), 0);
-                const totalCredit = tx.lines.reduce((s, l) => s + (l.credit ?? 0), 0);
-                if (Math.abs(totalDebit - totalCredit) > 0.01) {
-                    throw new BadRequestException({
-                        success: false,
-                        message: `Transaksi tanggal ${tx.date} tidak seimbang: Debit ${totalDebit} != Credit ${totalCredit}`,
+            for (let i = 0; i < rows.length; i += INSERT_BATCH_SIZE) {
+                await tx.insert(generalJournal).values(rows.slice(i, i + INSERT_BATCH_SIZE));
+            }
+            for (const [counterKey, lastSequence] of counters) {
+                await tx
+                    .insert(transactionCounters)
+                    .values({ userId, counterKey, lastSequence })
+                    .onConflictDoUpdate({
+                        target: [transactionCounters.userId, transactionCounters.counterKey],
+                        set: { lastSequence: sql`excluded.last_sequence` },
                     });
-                }
             }
 
-            const existingTxNumbers = new Set(this.journalStore.filter((j) => j.userId === userId).map((j) => j.transactionNumber));
-            const activeCounters = new Map<string, TransactionCounter>();
-            let journalEntryIdCounter = this.journalStore.length + 1;
-            const newRows: GeneralJournalRow[] = [];
-            const importedTxNumbers: string[] = [];
-
-            for (const txDto of dto.transactions) {
-                const txDate = this.parseAndForceDate(txDto.date, dto.targetYear, dto.targetMonth);
-                const normalizedType = this.normalizeJournalType(txDto.journalType);
-                const prefix = normalizedType === 'AJ' ? 'AJ' : 'GJ';
-                const yy = String(txDate.getUTCFullYear()).slice(-2);
-                const mm = String(txDate.getUTCMonth() + 1).padStart(2, '0');
-                const counterKey = `${prefix}${yy}${mm}`;
-
-                let counter = activeCounters.get(counterKey);
-                if (!counter) {
-                    counter = (await this.getCounter(userId, counterKey)) ?? {
-                        userId,
-                        counterKey,
-                        lastSequence: 0,
-                    };
-                    activeCounters.set(counterKey, counter);
-                }
-                counter.lastSequence += 1;
-                let transactionNumber = `${counterKey}${String(counter.lastSequence).padStart(5, '0')}`;
-                while (existingTxNumbers.has(transactionNumber)) {
-                    counter.lastSequence += 1;
-                    transactionNumber = `${counterKey}${String(counter.lastSequence).padStart(5, '0')}`;
-                }
-                existingTxNumbers.add(transactionNumber);
-                importedTxNumbers.push(transactionNumber);
-
-                const importLines: { coaId: string; description?: string; debit: number; credit: number }[] = [];
-                for (const lineDto of txDto.lines) {
-                    const excelRef = Number(lineDto.refNumber);
-                    const excelAccountName = (lineDto.accountName ?? '').trim();
-                    let targetRef = excelRef;
-                    const mapKey = `${excelRef}|||${excelAccountName.toLowerCase()}`;
-                    const customMap = mappingDict.get(mapKey);
-                    if (customMap) targetRef = customMap.mappedRef;
-                    const coa = existingCoas.find((c) => c.referenceNumber === targetRef);
-                    if (!coa) {
-                        throw new BadRequestException({
-                            success: false,
-                            message: `Akun tidak ditemukan: Ref ${targetRef} (Excel Ref ${excelRef} - "${excelAccountName}")`,
-                        });
-                    }
-                    importLines.push({
-                        coaId: coa.id,
-                        description: lineDto.description,
-                        debit: lineDto.debit ?? 0,
-                        credit: lineDto.credit ?? 0,
-                    });
-                }
-                if (importLines.length === 0) {
-                    throw new BadRequestException({
-                        success: false,
-                        message: `Transaksi ${transactionNumber} tidak memiliki baris valid`,
-                    });
-                }
-                const journalEntryId = journalEntryIdCounter++;
-                for (const l of importLines) {
-                    newRows.push({
-                        journalEntryId,
-                        userId,
-                        transactionNumber,
-                        journalType: normalizedType,
-                        transactionDate: txDate,
-                        accountId: l.coaId,
-                        description: l.description,
-                        debit: l.debit,
-                        credit: l.credit,
-                    });
-                }
-            }
-
-            for (const counter of activeCounters.values()) {
-                await this.saveCounter(counter);
-            }
-            this.journalStore.push(...newRows);
-
-            return {
-                message: 'Journal data successfully imported.',
-                importedEntriesCount: importedTxNumbers.length,
-                importedTransactionNumbers: importedTxNumbers,
-            };
-        } catch (err) {
-            this.counterStore = snapshotCounters;
-            this.periodStore = snapshotPeriods;
-            this.journalStore = snapshotJournals;
-            if (err instanceof BadRequestException) throw err;
-            throw new InternalServerErrorException({
-                success: false,
-                message: `Failed to save data: ${(err as Error).message}`,
-            });
-        }
+            return { message: 'Journal data successfully imported.', importedEntriesCount };
+        });
     }
 }
