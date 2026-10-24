@@ -1,0 +1,97 @@
+@import 'tailwindcss';
+
+/* ------------------------------------------------------------------
+   Token tema Aumo Finance (setara Theme.kt dan Dimens.kt di /mobile).
+   Satuan: dp Android = px CSS (1:1), sp = rem (1rem = 16px).
+   Rujukan: docs/typography-scale.md, docs/spacing-scale.md
+   ------------------------------------------------------------------ */
+
+@font-face {
+  font-family: 'Aptos';
+  src: url('./assets/fonts/aptos_regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Aptos';
+  src: url('./assets/fonts/aptos_bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans: 'Aptos', system-ui, sans-serif;
+
+  /* Warna: AumoColors (Theme.kt). Aplikasi satu tema saja (dark, matte). */
+  --color-primary: #523363;
+  --color-on-primary: #ffffff;
+  --color-background: #0a0a0a;
+  --color-surface: #141014;
+  --color-surface-elevated: #1e121f;
+  --color-good: #4fa36a;
+  --color-bad: #d7192f;
+  --color-content: #ffffff; /* TextPrimary */
+  --color-content-secondary: #d8d8d8; /* TextSecondary */
+  --color-content-muted: #9c8fa6; /* TextMuted */
+  --color-outline: #4a2e59; /* Border */
+
+  /* Tipografi: AumoTypography (Theme.kt), ukuran sp -> rem. */
+  --text-display: 2rem; /* displayLarge 32 */
+  --text-display--line-height: 2.5rem;
+  --text-h1: 1.75rem; /* headlineLarge 28 */
+  --text-h1--line-height: 2.25rem;
+  --text-h2: 1.5rem; /* headlineMedium 24 */
+  --text-h2--line-height: 2rem;
+  --text-h3: 1.25rem; /* headlineSmall 20 */
+  --text-h3--line-height: 1.75rem;
+  --text-h4: 1.125rem; /* titleLarge 18 */
+  --text-h4--line-height: 1.75rem;
+  --text-body: 1rem; /* titleMedium / bodyLarge 16 */
+  --text-body--line-height: 1.5rem;
+  --text-secondary: 0.875rem; /* bodyMedium 14 */
+  --text-secondary--line-height: 1.25rem;
+  --text-caption: 0.8125rem; /* bodySmall 13 */
+  --text-caption--line-height: 1rem;
+  --text-label: 0.75rem; /* labelMedium 12 */
+  --text-label--line-height: 1rem;
+  --text-label-sm: 0.6875rem; /* labelSmall 11 */
+  --text-label-sm--line-height: 1rem;
+
+  /* Dimens: AumoDimens (Dimens.kt). Dipakai lewat p-screen, h-button, dst. */
+  --spacing-screen: 16px; /* ScreenPadding */
+  --spacing-card: 16px; /* CardPadding */
+  --spacing-sm: 8px; /* SpacingSmall */
+  --spacing-lg: 16px; /* SpacingLarge */
+  --spacing-button: 48px; /* ButtonHeight */
+  --spacing-input-min: 48px; /* InputHeightMin */
+  --spacing-input-max: 56px; /* InputHeightMax */
+  --spacing-icon: 24px; /* IconStandard */
+  --spacing-icon-sm: 20px; /* IconSmall */
+  --spacing-topbar: 56px; /* TopAppBarHeight */
+  --spacing-bottomnav-min: 64px; /* BottomNavHeightMin */
+  --spacing-bottomnav-max: 80px; /* BottomNavHeightMax */
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-background);
+  color: var(--color-content);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
