@@ -5,18 +5,15 @@
   "sourceRoot": "apps/next",
   "targets": {
     "lint": {
-      "executor": "@nx/eslint:lint",
-      "outputs": ["{options.outputFile}"],
+      "executor": "nx:run-commands",
       "options": {
-        "lintFilePatterns": ["apps/next/**/*.{ts,tsx,js,jsx}"]
+        "command": "eslint . --max-warnings=0",
+        "cwd": "apps/next"
       }
     },
     "build": {
       "executor": "nx:run-commands",
-      "outputs": [
-        "{workspaceRoot}/apps/next/out",
-        "{workspaceRoot}/apps/next/.next"
-      ],
+      "outputs": ["{workspaceRoot}/apps/next/out", "{workspaceRoot}/apps/next/.next"],
       "options": {
         "command": "next build",
         "cwd": "apps/next"
