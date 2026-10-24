@@ -5,11 +5,10 @@
   "sourceRoot": "apps/next",
   "targets": {
     "lint": {
-      "executor": "nx:run-commands",
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
       "options": {
-        "command": "next lint",
-        "cwd": "apps/next",
-        "forwardAllArgs": false
+        "lintFilePatterns": ["apps/next/**/*.{ts,tsx,js,jsx}"]
       }
     },
     "build": {
@@ -38,8 +37,5 @@
       }
     }
   },
-  "tags": [
-    "type:app",
-    "scope:frontend"
-  ]
+  "tags": ["type:app", "scope:frontend"]
 }
