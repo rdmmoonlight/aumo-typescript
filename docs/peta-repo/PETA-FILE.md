@@ -123,13 +123,6 @@ Cakupan: 154 berkas terlacak, tidak termasuk `pnpm-lock.yaml` (dihasilkan otomat
 | `libs/logger/src/index.ts` | 2026-10-19 | 2026-10-19 | Logger Pino terstruktur |
 | `libs/logger/tsconfig.json` | 2026-10-18 | 2026-10-19 | TypeScript config logger |
 
-## native/core_engine
-
-| Berkas | Dibuat | Diperbarui | Fungsi |
-| --- | --- | --- | --- |
-| `native/core_engine/Cargo.toml` | 2026-10-19 | 2026-10-19 | Crate Rust core_engine |
-| `native/core_engine/src/lib.rs` | 2026-10-19 | 2026-10-18 | Pustaka Rust core_engine |
-
 ## native/cpp_calc
 
 | Berkas | Dibuat | Diperbarui | Fungsi |
@@ -204,6 +197,6 @@ Tidak dipetakan per berkas. Jangan diubah sampai statusnya dicabut.
 
 | Folder | Fungsi | Dibuat | Diperbarui | Jumlah berkas |
 | --- | --- | --- | --- | --- |
-| `dotnet/` | Backend akuntansi ASP.NET Core (Aumo.Accounting.Api, Tests) | 2026-10-19 | 2026-10-22 | 84 |
+| `dotnet/` | Backend akuntansi ASP.NET Core (Accounting.Api, Tests) | 2026-10-19 | 2026-10-22 | 84 |
 | `apps/nest/` | API NestJS 11 (Drizzle, Redis/BullMQ, Scalar) | 2026-10-19 | 2026-10-22 | 98 |
 | `apps/next/` | Frontend Next.js (pengganti Analog) | 2026-10-22 | 2026-10-22 | 1097 |

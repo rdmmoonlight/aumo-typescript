@@ -1,0 +1,42 @@
+# ==========================================
+# STAGE 1: Build Binary Rust
+# ==========================================
+FROM rust:1.80-alpine AS builder
+
+# Install dependency build untuk Alpine (musl target)
+RUN apk add --no-cache musl-dev gcc
+
+WORKDIR /app
+
+# Copy manifest terlebih dahulu untuk caching dependency layer
+COPY native/workers/Cargo.toml native/workers/Cargo.lock ./native/workers/
+
+# Copy seluruh source code worker Rust
+COPY native/workers ./native/workers
+
+WORKDIR /app/native/workers
+
+# Build binary dalam mode release
+RUN cargo build --release
+
+# ==========================================
+# STAGE 2: Minimal Runtime Image (~15-20MB)
+# ==========================================
+FROM alpine:3.20 AS runner
+
+# Install ca-certificates & tzdata untuk SSL/TLS connection ke Redis/Postgres
+RUN apk add --no-cache ca-certificates tzdata
+
+WORKDIR /app
+
+# Copy binary hasil kompilasi dari stage builder
+COPY --from=builder /app/native/workers/target/release/workers /app/worker-service
+
+# Set user non-root demi keamanan
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
+
+# Environment default (bisa di-override saat running kontainer)
+ENV RUST_LOG=info
+
+CMD ["/app/worker-service"]

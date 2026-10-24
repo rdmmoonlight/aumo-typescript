@@ -135,7 +135,7 @@ dotnet_diagnostic.RCS1246.severity = suggestion
 dotnet_diagnostic.SA1028.severity = none
 
 # Proyek tes: nama method memakai garis bawah (Method_Kondisi_Hasil)
-[Aumo.Accounting.Tests/**.cs]
+[Accounting.Tests/**.cs]
 dotnet_diagnostic.CA1707.severity = none
 
 # ==============================================================================

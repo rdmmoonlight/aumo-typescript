@@ -23,7 +23,7 @@ Peta fase lengkap: [`docs/MIGRASI-ASPNET-ACCOUNTING.md`](../MIGRASI-ASPNET-ACCOU
 ## Keputusan
 
 1. **Satu penangan.** ASP.NET Core menjadi satu-satunya penangan rute akuntansi: `/api/reports/*`, `/api/periods/*`, `/api/chart-of-accounts/*`.
-2. **Lokasi.** Kode disalin ke `dotnet/Aumo.Accounting.Api` dan `dotnet/Aumo.Accounting.Tests`, masuk `dotnet/App.sln`.
+2. **Lokasi.** Kode disalin ke `dotnet/Accounting.Api` dan `dotnet/Accounting.Tests`, masuk `dotnet/App.sln`.
 3. **Duplikasi, bukan pemindahan.** Tidak ada kode yang dihapus di `aumo-finance` maupun `apps/nest`. Modul Nest `periods` dan `chart-of-accounts` dibekukan dan tidak dirutekan Nginx.
 4. **Auth tetap Go.** `services/auth` tetap otoritas tunggal. .NET tidak memakai Identity, cookie, atau JWT sendiri. Identitas dibaca dari header `X-User-Id` yang diisi Nginx lewat `auth_request`. Kestrel hanya mendengarkan `127.0.0.1:5100`.
 5. **Skema tetap Drizzle.** Skema dimiliki `apps/nest/drizzle/`. EF Core hanya membaca dan memetakan. Tanpa `MigrateAsync`, tanpa folder `Migrations/`. Perubahan skema dijalankan manual ke Neon, bukan dari CI.
@@ -58,11 +58,13 @@ Blok akuntansi wajib berada di atas `location /api/` pada `nginx.conf`. Prefix `
 ## Akibat
 
 **Positif**
+
 - Seluruh logika akuntansi berada di satu bahasa dan satu layanan.
 - Auth tunggal. Tidak ada secret baru untuk .NET.
 - Tanpa biaya tambahan (GitHub Actions, Render free tier, Neon).
 
 **Negatif dan risiko**
+
 - Satu container menjalankan empat proses (Nginx, Go, Nest, .NET). Batas memori Render free tier (512 MB) diukur sebelum cutover. Bila tidak cukup, .NET dipisah menjadi service sendiri.
 - `TreatWarningsAsErrors` dan StyleCop menolak kode sumber apa adanya. Perapian dilakukan bertahap di Fase 3.
 - Penamaan tabel dan kolom EF (PascalCase) belum tentu sama dengan Drizzle (`snake_case`). Pemetaan mengacu pada skema Neon yang nyata (Fase 5).
@@ -75,7 +77,7 @@ Blok akuntansi wajib berada di atas `location /api/` pada `nginx.conf`. Prefix `
 - [ ] 23 endpoint lolos tes integrasi dengan PostgreSQL nyata di CI.
 - [ ] Angka laporan sama dengan backend `aumo-finance` pada data yang sama.
 - [ ] `/api/accounting/health` membalas 200 di Render.
-- [ ] Tidak ada paket preview dan tidak ada `Identity`, `Hangfire`, `Redis`, atau FFI Rust di `Aumo.Accounting.Api`.
+- [ ] Tidak ada paket preview dan tidak ada `Identity`, `Hangfire`, `Redis`, atau FFI Rust di `Accounting.Api`.
 - [ ] Changeset ditambahkan.
 
 ## Rujukan

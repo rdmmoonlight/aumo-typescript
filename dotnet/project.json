@@ -2,7 +2,7 @@
     "name": "aumo-accounting-api",
     "$schema": "../node_modules/nx/schemas/project-schema.json",
     "projectType": "application",
-    "sourceRoot": "dotnet/Aumo.Accounting.Api",
+    "sourceRoot": "dotnet/Accounting.Api",
     "targets": {
         "build": {
             "executor": "nx:run-commands",
@@ -10,21 +10,21 @@
                 "{workspaceRoot}/out"
             ],
             "options": {
-                "command": "dotnet publish Aumo.Accounting.Api/Aumo.Accounting.Api.csproj -c Release -o /out",
+                "command": "dotnet publish Accounting.Api/Accounting.Api.csproj -c Release -o /out",
                 "cwd": "dotnet"
             }
         },
         "dev": {
             "executor": "nx:run-commands",
             "options": {
-                "command": "dotnet run --project Aumo.Accounting.Api/Aumo.Accounting.Api.csproj",
+                "command": "dotnet run --project Accounting.Api/Accounting.Api.csproj",
                 "cwd": "dotnet"
             }
         },
         "restore": {
             "executor": "nx:run-commands",
             "options": {
-                "command": "dotnet restore Aumo.Accounting.Api/Aumo.Accounting.Api.csproj",
+                "command": "dotnet restore Accounting.Api/Accounting.Api.csproj",
                 "cwd": "dotnet"
             }
         }

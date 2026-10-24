@@ -13,7 +13,7 @@
 | Pos | Keputusan |
 | --- | --- |
 | Peran ASP.NET Core | Satu-satunya penangan rute akuntansi: `/api/reports/*`, `/api/periods/*`, `/api/chart-of-accounts/*` |
-| Proyek tujuan | `dotnet/Aumo.Accounting.Api` (web) dan `dotnet/Aumo.Accounting.Tests` (tes). Keduanya masuk `dotnet/App.sln` |
+| Proyek tujuan | `dotnet/Accounting.Api` (web) dan `dotnet/Accounting.Tests` (tes). Keduanya masuk `dotnet/App.sln` |
 | Penghapusan | **Tidak ada.** Sumber di aumo-finance tetap. Modul `periods` dan `chart-of-accounts` di `apps/nest` tetap ada di kode, hanya tidak dirutekan oleh Nginx |
 | `apps/nest` | Tetap menangani `/api/*` yang bukan akuntansi (mis. health). Tidak diubah |
 | `services/auth` (Go) | Tetap satu-satunya otoritas auth (ADR 0006, 0007). ASP.NET **tidak** memakai Identity, cookie, atau JWT sendiri |
@@ -148,7 +148,7 @@ Dua implementasi periode hidup berdampingan selama pola duplikasi. Penanganannya
 
 - [x] `Directory.Build.props`: `TargetFramework` → `net10.0`.
 - [x] `.editorconfig` di `dotnet/`: matikan aturan StyleCop yang bertabrakan dengan gaya sumber (header file, urutan `using`), satu per satu dengan alasan tertulis.
-- [x] Buat `Aumo.Accounting.Api` (kosong, `Microsoft.NET.Sdk.Web`) dan `Aumo.Accounting.Tests` (xUnit), tambahkan ke `dotnet/App.sln`.
+- [x] Buat `Accounting.Api` (kosong, `Microsoft.NET.Sdk.Web`) dan `Accounting.Tests` (xUnit), tambahkan ke `dotnet/App.sln`.
 - [x] `polyglot-ci.yml`: build `dotnet/App.sln` tetap hijau.
 - [x] **Keluaran:** solusi kosong terbangun di CI. **Selesai bila:** `dotnet build` dengan `TreatWarningsAsErrors=true` lolos.
 
@@ -162,12 +162,12 @@ Urutan salin mengikuti arah ketergantungan: model → helper → validator → s
 - [x] **Service:** `Services/Reports`, `PeriodsService`, `ChartOfAccountsService`, beserta interface.
 - [x] **DTO dan ViewModel:** Reports, Periods, ChartOfAccounts, `SummaryDto`, `QueryParametersDto`.
 - [x] **Controller:** 6 controller Reports, `PeriodsController`, `ChartOfAccountsController`.
-- [x] Ganti namespace `AumoBackend.*` → `Aumo.Accounting.Api.*`.
+- [x] Ganti namespace `AumoBackend.*` → `Accounting.Api.*`.
 - [x] Terapkan temuan 1–5, 8–10, dan 13 (bagian 2.3).
 - [x] Daftarkan service di satu `AddAccountingServices()` (pengganti `AddApplicationServices`).
-- [x] **Keluaran:** `Aumo.Accounting.Api` terbangun. **Selesai bila:** `dotnet build` lolos tanpa kode `Identity`, `Hangfire`, `Redis`, atau `Rust`.
+- [x] **Keluaran:** `Accounting.Api` terbangun. **Selesai bila:** `dotnet build` lolos tanpa kode `Identity`, `Hangfire`, `Redis`, atau `Rust`.
 
-> Verifikasi Fase 3 (CI, `dotnet build dotnet/App.sln -c Release /p:TreatWarningsAsErrors=true`): **0 warning, 0 error**. Pencarian `Identity`, `UserManager`, `Hangfire`, `Redis`, `Rust`, dan token JWT pada `Aumo.Accounting.Api` tidak menemukan apa pun. `dotnet test`: 19 dari 22 tes lolos. Tiga tes `GatewayHeaderAuthTests` gagal karena `AppDbContext` belum didaftarkan di DI. Itu pekerjaan Fase 5, bukan cacat Fase 3.
+> Verifikasi Fase 3 (CI, `dotnet build dotnet/App.sln -c Release /p:TreatWarningsAsErrors=true`): **0 warning, 0 error**. Pencarian `Identity`, `UserManager`, `Hangfire`, `Redis`, `Rust`, dan token JWT pada `Accounting.Api` tidak menemukan apa pun. `dotnet test`: 19 dari 22 tes lolos. Tiga tes `GatewayHeaderAuthTests` gagal karena `AppDbContext` belum didaftarkan di DI. Itu pekerjaan Fase 5, bukan cacat Fase 3.
 
 ### Fase 4 — Autentikasi via Gateway
 

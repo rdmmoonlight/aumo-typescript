@@ -12,7 +12,7 @@
 
 | Isi `/backend` | Tujuan | Dokumen |
 | --- | --- | --- |
-| `asp-net-core`: `Reports`, `Periods`, `ChartOfAccounts` + kelengkapannya | `dotnet/src/Aumo.Accounting.Api` | `MIGRASI-ASPNET-ACCOUNTING.md` |
+| `asp-net-core`: `Reports`, `Periods`, `ChartOfAccounts` + kelengkapannya | `dotnet/src/Accounting.Api` | `MIGRASI-ASPNET-ACCOUNTING.md` |
 | `asp-net-core`: `Health`, `Home`, `Dashboard`, `Notifications`, `Avatars`, `JournalEntry`, `Tools`, `Settings` (tanpa `guardian/*`) + kelengkapannya | `apps/nest/src/modules/*` | **dokumen ini** |
 | `asp-net-core`: `CoreController` + `RustCoreService` | **Tidak disalin.** Dead code di sumber (lihat catatan di bawah tabel) | dokumen ini |
 | `asp-net-core`: `guardian/*` di `SettingsController` + tabel Guardian | **Tidak disalin.** Fitur guardian tidak diduplikasi ke Nest | dokumen ini, Fase 7 |
@@ -172,6 +172,7 @@ apps/nest/src/test/<nama>.test.ts
 - [x] **Keluaran:** 7 endpoint aktif (`dashboard` 1, `journal-entries` 6). **Selesai bila:** tes paritas hijau. (74 tes Fase 5 lulus: 17 unit, 45 paritas jurnal, 12 dashboard.)
 
 Catatan Fase 5:
+
 - Draf sebelumnya (`dashboard`, `journal-entries`) tidak sesuai sumber: skema tidak ada, nomor transaksi memakai format `JE-yyyymm-0001` (aslinya `GJ`/`AJ` + `yyMM` + 4 digit dari `transaction_counters`), dan 28 galat typecheck. Keduanya ditulis ulang dari `JournalEntryController`, `TransactionNumberService`, `PeriodLock`, `JournalEntryValidatorBase`, dan `DashboardController`.
 - Skema Drizzle ditambahkan: `chart_of_accounts`, `general_journal` (+ sequence `general_journal_journal_entry_id_seq`), `periods`, `transaction_counters`. Migrasi `apps/nest/src/db/schema/0000_*.sql` (folder keluaran `drizzle.config.ts` saat ini) juga memuat `notifications` (menutup celah Fase 3).
 - Tes integrasi butuh `TEST_DATABASE_URL`; tanpa itu dilewati. CI menyediakan PostgreSQL 16.

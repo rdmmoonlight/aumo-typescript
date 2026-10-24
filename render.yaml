@@ -18,6 +18,7 @@ services:
         - services/auth/**
         - dotnet/**
         - libs/**
+        - native/workers/**
         - package.json
         - tsconfig.json
         - .dockerignore

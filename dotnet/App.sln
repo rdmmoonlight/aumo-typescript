@@ -7,9 +7,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{F806D75B-564
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "App.Contracts", "src\App.Contracts\App.Contracts.csproj", "{17C9306A-8475-41E0-A647-6E13BD59EA5E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aumo.Accounting.Api", "Aumo.Accounting.Api\Aumo.Accounting.Api.csproj", "{7238D5B6-EF74-4FAE-88C9-C45D81E32387}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Accounting.Api", "Accounting.Api\Accounting.Api.csproj", "{7238D5B6-EF74-4FAE-88C9-C45D81E32387}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aumo.Accounting.Tests", "Aumo.Accounting.Tests\Aumo.Accounting.Tests.csproj", "{88802406-3E5B-496A-97F5-63AB047CCF15}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Accounting.Tests", "Accounting.Tests\Accounting.Tests.csproj", "{88802406-3E5B-496A-97F5-63AB047CCF15}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -31,7 +31,7 @@ Seluruh proses dijalankan `supervisord.conf` dalam satu kontainer (program: ngin
 | Kontrak | `libs/contracts` | TypeScript (Zod) | Sumber tunggal skema data | Aktif |
 | Logger | `libs/logger` | TypeScript (Pino) | Log terstruktur | Aktif |
 | Android | `android/` | Kotlin | Klien mobile, kontrak User | Aktif |
-| Native | `native/` | Rust, C++ | `core_engine`, `workers`, `cpp_calc` | Aktif |
+| Native | `native/` | Rust, C++ | `workers`, `cpp_calc` | Aktif |
 | CLI | `tools/cli` | JavaScript | Alat internal | Aktif |
 | Generator | `plopfile.mjs`, `templates/lib` | JS/Handlebars | Scaffolding pustaka baru | Aktif |
 
