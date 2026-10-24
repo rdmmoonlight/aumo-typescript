@@ -107,11 +107,13 @@ type LoginRequest struct {
 	Client   string `json:"client"` // "web" (cookie) atau "mobile" (token di body)
 }
 
+// UpdateProfileRequest: pointer nil berarti kolom tidak dikirim dan nilai lama dipertahankan.
+// Kontrak JSON tidak berubah; klien yang selalu mengirim string tetap bekerja.
 type UpdateProfileRequest struct {
 	Name        *string `json:"name,omitempty"`
 	UserName    *string `json:"userName,omitempty"`
-	PhoneNumber string  `json:"phoneNumber"`
-	Bio         string  `json:"bio"`
+	PhoneNumber *string `json:"phoneNumber,omitempty"`
+	Bio         *string `json:"bio,omitempty"`
 	AvatarURL   *string `json:"avatarUrl,omitempty"`
 }
 
@@ -242,7 +244,7 @@ func (h *Handler) cors(next http.Handler) http.Handler {
 			if h.originAllowed(origin) {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
 				w.Header().Set("Access-Control-Allow-Credentials", "true")
-				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 				w.Header().Set("Access-Control-Max-Age", "86400")
 			}
@@ -567,26 +569,48 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Name != nil {
-		trimmedName := strings.TrimSpace(*req.Name)
-		if len([]rune(trimmedName)) < 2 {
-			writeError(w, http.StatusBadRequest, "Nama minimal 2 karakter")
-			return
-		}
-		req.Name = &trimmedName
+	req.Name, req.UserName, req.PhoneNumber, req.Bio, req.AvatarURL =
+		trimPtr(req.Name), trimPtr(req.UserName), trimPtr(req.PhoneNumber), trimPtr(req.Bio), trimPtr(req.AvatarURL)
+
+	if req.Name != nil && len([]rune(*req.Name)) < 2 {
+		writeError(w, http.StatusBadRequest, "Nama minimal 2 karakter")
+		return
+	}
+	if msg := validateProfileFields(req.Name, req.UserName, req.PhoneNumber, req.Bio, req.AvatarURL); msg != "" {
+		writeError(w, http.StatusBadRequest, msg)
+		return
+	}
+	// Username kosong berarti tidak diubah (string kosong akan menabrak indeks unik pengguna lain).
+	if req.UserName != nil && *req.UserName == "" {
+		req.UserName = nil
 	}
 
-	if req.UserName != nil {
-		trimmedUsername := strings.TrimSpace(*req.UserName)
-		req.UserName = &trimmedUsername
+	current, err := h.users.FindByID(r.Context(), claims.UserID)
+	if errors.Is(err, store.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "Pengguna tidak ditemukan")
+		return
+	}
+	if err != nil {
+		log.Printf("update profile: gagal membaca database: %v", err)
+		writeError(w, http.StatusServiceUnavailable, "Layanan database tidak tersedia")
+		return
 	}
 
+	// Telepon dan bio selalu ditulis oleh store; bila tidak dikirim, pakai nilai yang sekarang
+	// agar memperbarui satu kolom tidak menghapus kolom lain.
+	phone, bio := current.PhoneNumber, current.Bio
+	if req.PhoneNumber != nil {
+		phone = *req.PhoneNumber
+	}
+	if req.Bio != nil {
+		bio = *req.Bio
+	}
 	upd := store.ProfileUpdate{
 		Name:        req.Name,
 		UserName:    req.UserName,
 		AvatarURL:   req.AvatarURL,
-		PhoneNumber: strings.TrimSpace(req.PhoneNumber),
-		Bio:         strings.TrimSpace(req.Bio),
+		PhoneNumber: phone,
+		Bio:         bio,
 	}
 
 	user, err := h.users.UpdateProfile(r.Context(), claims.UserID, upd)
@@ -632,6 +656,10 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "Kata sandi baru harus 8 sampai 128 karakter")
 		return
 	}
+	if req.NewPassword == req.OldPassword {
+		writeError(w, http.StatusBadRequest, "Kata sandi baru harus berbeda dari kata sandi lama")
+		return
+	}
 
 	user, err := h.users.FindByID(r.Context(), claims.UserID)
 	if errors.Is(err, store.ErrNotFound) {
@@ -649,8 +677,9 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Input terlalu panjang tidak pernah cocok; ditolak sebelum hashing yang mahal.
 	ok, err := password.Verify(req.OldPassword, user.PasswordHash)
-	if err != nil || !ok {
+	if len(req.OldPassword) > maxPasswordInput || err != nil || !ok {
 		writeError(w, http.StatusUnauthorized, "Kata sandi lama tidak sesuai")
 		return
 	}
@@ -701,7 +730,7 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 		}
 
 		ok, err := password.Verify(req.Password, user.PasswordHash)
-		if err != nil || !ok {
+		if len(req.Password) > maxPasswordInput || err != nil || !ok {
 			writeError(w, http.StatusUnauthorized, "Kata sandi salah")
 			return
 		}

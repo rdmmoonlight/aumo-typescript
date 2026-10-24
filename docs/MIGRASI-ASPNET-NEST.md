@@ -201,18 +201,27 @@ Catatan Fase 6:
 - [x] `POST avatar`: unggah ke bucket S3, validasi tipe dan ukuran (setara `AvatarFileValidator`).
 - [x] `profile`, `change-password`, `delete-account`: endpoint dibuat di `services/auth` (Go), Nginx merutekan `/api/settings/{profile,change-password,delete-account}` ke Go. Nest tidak menyentuh `auth.users`.
 - [x] **Keluaran:** `POST /settings/avatar` di Nest; `profile`, `change-password`, `delete-account` di Go. **Selesai bila:** aman. Kriteria "aman" yang diuji:
-  - Autentikasi dicek sebelum validasi di Go (pemanggil anonim tidak melihat detail validasi). Token sah milik akun yang sudah dihapus ditolak (401).
+  - Autentikasi dicek sebelum validasi di Go (pemanggil anonim tidak melihat detail validasi). Token sah milik akun yang sudah dihapus ditolak (404 `Pengguna tidak ditemukan`).
   - Avatar: batas 2 MB, hanya JPG/PNG/GIF/WEBP, ekstensi, Content-Type, dan tanda tangan berkas (magic bytes) harus cocok. `userId` untuk nama berkas dibatasi `[A-Za-z0-9-]`; nama berkas divalidasi ulang sebelum ke S3 dan saat membaca (anti path traversal). Detail galat S3 tidak dikirim ke klien.
-  - Profil: URL avatar harus `http(s)` absolut (skema `javascript:` ditolak); username dibatasi karakter Identity dan unik tanpa membedakan huruf.
-  - Kata sandi: sandi lama diverifikasi, akun tanpa sandi (login Google) ditolak, sandi baru 8-128 karakter dan berbeda dari yang lama.
-  - CORS Go kini mengizinkan `PUT` dan `DELETE` (sebelumnya hanya `GET, POST`).
-  - Tes: Nest 21 (avatar), Go 10 (handler) + 2 (store Postgres, berjalan bila `TEST_DATABASE_URL` diisi); CI menjalankan tes Go.
+  - Profil: URL avatar harus `http(s)` absolut (skema `javascript:` dan `data:` ditolak, maks 2048); username dibatasi karakter Identity (maks 256), unik tanpa membedakan huruf (409 bila bentrok); nama 2-100, telepon berformat, bio maks 500. Username kosong dianggap tidak diubah (string kosong akan menabrak indeks unik).
+  - Kata sandi: sandi lama diverifikasi (maks 128 karakter, ditolak sebelum hashing bila lebih panjang), akun tanpa sandi (login Google) ditolak, sandi baru 8-128 karakter dan berbeda dari yang lama. `delete-account` meminta konfirmasi kata sandi (akun Google tanpa sandi cukup dengan token).
+  - CORS Go mengizinkan `PUT`, `PATCH`, dan `DELETE` (sebelumnya hanya `GET, POST`).
+  - Tes: Nest 21 (avatar), Go 14 (handler, termasuk 1 terhadap PostgreSQL nyata) + 2 (store Postgres, berjalan bila `TEST_DATABASE_URL` diisi); CI menjalankan tes Go. Ketiga perbaikan keamanan di handler diuji dengan mutasi.
 
 Catatan Fase 7:
 - Draf sebelumnya tidak memenuhi checklist: endpoint `profile`, `change-password`, dan `delete-account` **tidak ada** di `services/auth`, dan `SettingsService` Nest memanggil `uploadAvatarAsync`/`buildFileName` yang tidak ada (unggah avatar tidak pernah berfungsi). Batasnya juga 5 MB tanpa GIF, dan respons memakai `data.avatarUrl` (sumber: `avatarUrl` datar).
 - **Perubahan kontrak klien:** sumber menyimpan `AvatarUrl` ke pengguna dalam satu panggilan. Nest tidak boleh menulis `auth.users` (milik Go), jadi alurnya dua langkah: `POST /settings/avatar` mengembalikan `avatarUrl`, lalu klien memanggil `PUT /settings/profile` dengan `avatarUrl` tersebut. Klien (`apps/next`) perlu menyesuaikan.
 - `auth.users` mendapat kolom `user_name`, `phone_number`, `bio`, `avatar_url` (migrasi `ALTER TABLE ... IF NOT EXISTS` otomatis saat layanan Go start) dan indeks unik `lower(user_name)`.
-- Pemetaan `FullName` ke kolom `name`: nama kosong tidak mengubah `name` (kolom wajib terisi); sumber menjadikannya null. Telepon dan bio kosong dihapus (NULL), URL avatar kosong tidak mengubah avatar, sama dengan sumber.
+- **Kontrak Go yang berlaku (keputusan pemilik repo, menggantikan kontrak awal yang meniru sumber .NET):**
+
+  | Endpoint | Metode | Body | Respons |
+  | --- | --- | --- | --- |
+  | `/settings/profile` | `PUT`, `PATCH` | `name`, `userName`, `phoneNumber`, `bio`, `avatarUrl` (semua opsional) | 200 `{message, data: user}`; galat `{message}` |
+  | `/settings/change-password` | `POST`, `PUT` | `old_password`, `new_password` | 200 `{message}` |
+  | `/settings/delete-account` | `DELETE`, `POST` | `password` (akun berkata sandi) | 200 `{message}`, cookie sesi dihapus |
+
+  Galat memakai bentuk `AuthResponse` (`{message}`, tanpa `success`), kode: 400 validasi, 401 tidak terautentikasi / sandi salah, 404 pengguna tidak ada, 409 username dipakai.
+- Penyelarasan terhadap sumber: kolom yang tidak dikirim dipertahankan (memperbarui `name` saja tidak menghapus telepon, bio, atau avatar). String kosong eksplisit pada `phoneNumber`/`bio` menghapusnya. `name` tidak boleh kosong (kolom wajib; sumber menjadikannya null).
 - Kebijakan sandi baru 8 karakter (sama dengan `/auth/register`), bukan 6 seperti validator sumber, agar tidak ada jalur yang melemahkan sandi.
 - Seperti sumber, `delete-account` hanya menghapus baris `auth.users`; data akuntansi di tabel Nest tidak ikut dihapus. JWT stateless tetap sah secara kriptografis sampai kedaluwarsa, tetapi endpoint settings menolaknya setelah akun dihapus.
 - Env baru: `PUBLIC_API_URL` (Nest, mis. `https://domain/api`; bila kosong dibentuk dari header proxy) dan `TOOLS_BODY_LIMIT_BYTES` (opsional).
