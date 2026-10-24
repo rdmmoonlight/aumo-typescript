@@ -17,10 +17,6 @@ README.md
 .env*
 **/.env*
 
-# Folder Mobile/Native (jika memang tidak dipakai di Docker)
-android
-native
-
 .git
 .gitignore
 node_modules
