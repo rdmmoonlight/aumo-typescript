@@ -20,3 +20,12 @@ README.md
 # Folder Mobile/Native (jika memang tidak dipakai di Docker)
 android
 native
+
+.git
+.gitignore
+node_modules
+dist
+.next
+target/
+bin/
+obj/
