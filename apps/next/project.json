@@ -7,7 +7,7 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "next lint",
+        "command": "next lint --",
         "cwd": "apps/next"
       }
     },
