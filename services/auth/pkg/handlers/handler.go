@@ -107,6 +107,23 @@ type LoginRequest struct {
 	Client   string `json:"client"` // "web" (cookie) atau "mobile" (token di body)
 }
 
+type UpdateProfileRequest struct {
+	Name        *string `json:"name,omitempty"`
+	UserName    *string `json:"userName,omitempty"`
+	PhoneNumber string  `json:"phoneNumber"`
+	Bio         string  `json:"bio"`
+	AvatarURL   *string `json:"avatarUrl,omitempty"`
+}
+
+type ChangePasswordRequest struct {
+	OldPassword string `json:"old_password"`
+	NewPassword string `json:"new_password"`
+}
+
+type DeleteAccountRequest struct {
+	Password string `json:"password"`
+}
+
 type AuthResponse struct {
 	Message string      `json:"message"`
 	Token   string      `json:"token,omitempty"`
@@ -468,7 +485,6 @@ func (h *Handler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 1. Validasi state CSRF: harus sama dengan nilai di cookie milik peramban ini.
 	sc, err := r.Cookie(stateCookie)
 	state := r.URL.Query().Get("state")
 	if err != nil || state == "" || subtle.ConstantTimeCompare([]byte(sc.Value), []byte(state)) != 1 {
@@ -488,7 +504,6 @@ func (h *Handler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2. Tukar kode, ambil profil.
 	accessToken, err := h.exchangeCode(code)
 	if err != nil {
 		log.Printf("google exchange: %v", err)
@@ -506,7 +521,6 @@ func (h *Handler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 3. Buat/ambil pengguna lokal, terbitkan JWT internal.
 	user, err := h.users.UpsertExternal(r.Context(), gu.Name, gu.Email)
 	if err != nil {
 		log.Printf("google upsert: %v", err)
@@ -529,4 +543,177 @@ func (h *Handler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, AuthResponse{Message: "Google login successful", Token: tokenStr, Data: user})
+}
+
+// ---------------------------------------------------------------------------
+// Settings Endpoints
+// ---------------------------------------------------------------------------
+
+// UpdateProfile memperbarui profil pengguna menggunakan store.ProfileUpdate.
+func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut && r.Method != http.MethodPatch {
+		writeError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	claims, err := h.authenticate(r)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var req UpdateProfileRequest
+	if !decodeBody(w, r, &req) {
+		return
+	}
+
+	if req.Name != nil {
+		trimmedName := strings.TrimSpace(*req.Name)
+		if len([]rune(trimmedName)) < 2 {
+			writeError(w, http.StatusBadRequest, "Nama minimal 2 karakter")
+			return
+		}
+		req.Name = &trimmedName
+	}
+
+	if req.UserName != nil {
+		trimmedUsername := strings.TrimSpace(*req.UserName)
+		req.UserName = &trimmedUsername
+	}
+
+	upd := store.ProfileUpdate{
+		Name:        req.Name,
+		UserName:    req.UserName,
+		AvatarURL:   req.AvatarURL,
+		PhoneNumber: strings.TrimSpace(req.PhoneNumber),
+		Bio:         strings.TrimSpace(req.Bio),
+	}
+
+	user, err := h.users.UpdateProfile(r.Context(), claims.UserID, upd)
+	if errors.Is(err, store.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "Pengguna tidak ditemukan")
+		return
+	}
+	if errors.Is(err, store.ErrUserNameTaken) {
+		writeError(w, http.StatusConflict, "Username sudah dipakai")
+		return
+	}
+	if err != nil {
+		log.Printf("update profile: gagal mengubah database: %v", err)
+		writeError(w, http.StatusServiceUnavailable, "Layanan database tidak tersedia")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, AuthResponse{
+		Message: "Profil berhasil diperbarui",
+		Data:    user,
+	})
+}
+
+// ChangePassword memperbarui kata sandi akun pengguna.
+func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost && r.Method != http.MethodPut {
+		writeError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	claims, err := h.authenticate(r)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	var req ChangePasswordRequest
+	if !decodeBody(w, r, &req) {
+		return
+	}
+
+	if len(req.NewPassword) < 8 || len(req.NewPassword) > 128 {
+		writeError(w, http.StatusBadRequest, "Kata sandi baru harus 8 sampai 128 karakter")
+		return
+	}
+
+	user, err := h.users.FindByID(r.Context(), claims.UserID)
+	if errors.Is(err, store.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "Pengguna tidak ditemukan")
+		return
+	}
+	if err != nil {
+		log.Printf("change password: gagal membaca database: %v", err)
+		writeError(w, http.StatusServiceUnavailable, "Layanan database tidak tersedia")
+		return
+	}
+
+	if user.PasswordHash == "" {
+		writeError(w, http.StatusBadRequest, "Akun ini didaftarkan melalui Google, tidak memiliki kata sandi lama")
+		return
+	}
+
+	ok, err := password.Verify(req.OldPassword, user.PasswordHash)
+	if err != nil || !ok {
+		writeError(w, http.StatusUnauthorized, "Kata sandi lama tidak sesuai")
+		return
+	}
+
+	newHash, err := password.Hash(req.NewPassword)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Gagal memproses kata sandi baru")
+		return
+	}
+
+	if err := h.users.UpdatePasswordHash(r.Context(), claims.UserID, newHash); err != nil {
+		log.Printf("change password: gagal memperbarui database: %v", err)
+		writeError(w, http.StatusServiceUnavailable, "Layanan database tidak tersedia")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, AuthResponse{Message: "Kata sandi berhasil diubah"})
+}
+
+// DeleteAccount menghapus akun pengguna beserta sesi loginnya.
+func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete && r.Method != http.MethodPost {
+		writeError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	claims, err := h.authenticate(r)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	user, err := h.users.FindByID(r.Context(), claims.UserID)
+	if errors.Is(err, store.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "Pengguna tidak ditemukan")
+		return
+	}
+	if err != nil {
+		log.Printf("delete account: gagal membaca database: %v", err)
+		writeError(w, http.StatusServiceUnavailable, "Layanan database tidak tersedia")
+		return
+	}
+
+	if user.PasswordHash != "" {
+		var req DeleteAccountRequest
+		if !decodeBody(w, r, &req) {
+			return
+		}
+
+		ok, err := password.Verify(req.Password, user.PasswordHash)
+		if err != nil || !ok {
+			writeError(w, http.StatusUnauthorized, "Kata sandi salah")
+			return
+		}
+	}
+
+	if err := h.users.Delete(r.Context(), claims.UserID); err != nil {
+		log.Printf("delete account: gagal menghapus dari database: %v", err)
+		writeError(w, http.StatusServiceUnavailable, "Layanan database tidak tersedia")
+		return
+	}
+
+	h.clearCookie(w, SessionCookie)
+
+	writeJSON(w, http.StatusOK, AuthResponse{Message: "Akun berhasil dihapus"})
 }
