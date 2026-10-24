@@ -176,14 +176,6 @@ Cakupan: 154 berkas terlacak, tidak termasuk `pnpm-lock.yaml` (dihasilkan otomat
 | --- | --- | --- | --- |
 | `system/cpp/Tes.txt` | 2026-10-20 | 2026-10-20 | Berkas percobaan (placeholder) |
 
-## templates
-
-| Berkas | Dibuat | Diperbarui | Fungsi |
-| --- | --- | --- | --- |
-| `templates/lib/index.ts.hbs` | 2026-10-19 | 2026-10-19 | Templat Plop: index.ts pustaka baru |
-| `templates/lib/package.json.hbs` | 2026-10-19 | 2026-10-19 | Templat Plop: package.json pustaka baru |
-| `templates/lib/tsconfig.json.hbs` | 2026-10-19 | 2026-10-19 | Templat Plop: tsconfig pustaka baru |
-
 ## tools/cli
 
 | Berkas | Dibuat | Diperbarui | Fungsi |

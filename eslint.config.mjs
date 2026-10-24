@@ -11,7 +11,6 @@ export default [
       '**/dist/**',
       '**/target/**',
       '**/build/**',
-      'templates/**',
       'android/**',
       'dotnet/**',
       'native/**',

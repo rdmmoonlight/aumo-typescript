@@ -33,7 +33,6 @@ Seluruh proses dijalankan `supervisord.conf` dalam satu kontainer (program: ngin
 | Android | `android/` | Kotlin | Klien mobile, kontrak User | Aktif |
 | Native | `native/` | Rust, C++ | `workers`, `cpp_calc` | Aktif |
 | CLI | `tools/cli` | JavaScript | Alat internal | Aktif |
-| Generator | `plopfile.mjs`, `templates/lib` | JS/Handlebars | Scaffolding pustaka baru | Aktif |
 
 ## Alur Data Utama
 

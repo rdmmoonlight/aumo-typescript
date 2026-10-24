@@ -30,7 +30,6 @@
     "nx": "^23.3.0",
     "pino": "^10.4.0",
     "pino-pretty": "^11.0.0",
-    "plop": "^4.0.0",
     "supertest": "^7.0.0",
     "typescript": "~5.6.3",
     "typescript-eslint": "^8.71.2",
@@ -44,13 +43,5 @@
   "packageManager": "pnpm@12.15.0",
   "dependencies": {
     "@app/cli": "link:tools/cli"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "unrs-resolver",
-      "@swc/core",
-      "esbuild",
-      "bcrypt"
-    ]
   }
 }
