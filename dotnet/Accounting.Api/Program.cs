@@ -24,6 +24,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 builder.Services.AddAccountingServices();
+builder.Services.AddAnalyticsQueueServices(builder.Configuration);
 
 var app = builder.Build();
 

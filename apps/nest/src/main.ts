@@ -6,8 +6,6 @@ import { AppModule } from './app.module.js';
 import { configureApp } from './app.setup.js';
 import { withAuthRoutes } from './lib/auth-openapi.js';
 import { env } from './lib/env.js';
-import { closeQueue, initQueueWorkers } from './lib/queue.js';
-import { redis } from './lib/redis.js';
 
 const loggerModulePath: string = '@app/logger';
 const { logger } = await import(loggerModulePath);
@@ -27,8 +25,6 @@ process.on('unhandledRejection', (reason: unknown) => {
 
 async function bootstrap() {
   try {
-    initQueueWorkers();
-
     const app = await NestFactory.create<NestExpressApplication>(AppModule, {
       logger: false,
       bodyParser: false,
@@ -66,12 +62,9 @@ async function bootstrap() {
       try {
         await app.close();
         logger.info('Server HTTP berhasil ditutup.');
-        await closeQueue();
-        await redis.quit();
-        logger.info('Koneksi Redis berhasil ditutup.');
         process.exit(0);
       } catch (err) {
-        logger.error({ err }, 'Gagal menutup koneksi server/Redis/Queue');
+        logger.error({ err }, 'Gagal menutup koneksi server');
         process.exit(1);
       }
     };

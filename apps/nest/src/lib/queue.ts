@@ -1,45 +1,14 @@
-import { Queue, Worker } from 'bullmq';
+import { Queue } from 'bullmq';
 import { redis } from './redis.js';
 
-const loggerModulePath: string = '@app/logger';
-const { logger } = await import(loggerModulePath);
+export const defaultQueue = new Queue('default', {
+  connection: redis,
+  defaultJobOptions: {
+    removeOnComplete: true,
+    removeOnFail: 100,
+  },
+});
 
-let reportQueue: Queue | null = null;
-let reportWorker: Worker | null = null;
-
-export function initQueueWorkers() {
-  try {
-    reportQueue = new Queue('reports', { connection: redis });
-
-    reportWorker = new Worker(
-      'reports',
-      async (job) => {
-        logger.info({ jobId: job.id }, 'Processing report job');
-      },
-      { connection: redis }
-    );
-
-    reportWorker.on('ready', () => {
-      logger.info('BullMQ Worker berhasil dijalankan');
-    });
-
-    reportWorker.on('failed', (job, err) => {
-      logger.error({ jobId: job?.id, err }, 'Worker failed processing job');
-    });
-  } catch (e: unknown) {
-    logger.error({ err: e }, 'Queue initialization failed');
-  }
+export async function addTransactionAnalyticsJob(data: { date: string; amount: number }) {
+  await defaultQueue.add('transaction-analytics', data);
 }
-
-export async function closeQueue() {
-  try {
-    if (reportWorker) await reportWorker.close();
-    if (reportQueue) await reportQueue.close();
-    logger.info('Queue connections closed');
-  } catch (e: unknown) {
-    logger.error({ err: e }, 'Failed to close queue connections');
-  }
-}
-
-export { reportQueue };
-

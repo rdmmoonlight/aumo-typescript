@@ -1,11 +1,4 @@
-// <copyright file="PeriodsService.cs" company="PlaceholderCompany">
-// Copyright (c) PlaceholderCompany. All rights reserved.
-// </copyright>
-
 using System.Globalization;
-
-namespace Accounting.Api.Services.Periods;
-
 using Accounting.Api.Data;
 using Accounting.Api.DTOs;
 using Accounting.Api.Helpers;
@@ -14,18 +7,14 @@ using Accounting.Api.Services.Reports.GeneralLedgers;
 using Accounting.Api.Services.Reports.Journals;
 using Microsoft.EntityFrameworkCore;
 
-/// <summary>
-/// Layanan logika bisnis untuk Periods Service.
-/// </summary>
+namespace Accounting.Api.Services.Periods;
+
 public class PeriodsService : IPeriodsService
 {
     private readonly AppDbContext db;
     private readonly ITransactionNumberService txNumberService;
     private readonly IGeneralLedgersService glService;
 
-    /// <summary>
-    /// Inisialisasi dependensi PeriodsService.
-    /// </summary>
     public PeriodsService(AppDbContext db, ITransactionNumberService txNumberService, IGeneralLedgersService glService)
     {
         this.db = db;
@@ -33,9 +22,6 @@ public class PeriodsService : IPeriodsService
         this.glService = glService;
     }
 
-    /// <summary>
-    /// Mengambil data Periods Async.
-    /// </summary>
     public async Task<GetPeriodsResponse> GetPeriodsAsync(Guid userId)
     {
         var periodsData = await this.db.Periods
@@ -79,9 +65,6 @@ public class PeriodsService : IPeriodsService
         };
     }
 
-    /// <summary>
-    /// Mengambil data Open Period Info Async.
-    /// </summary>
     public async Task<OpenPeriodInfoResponse> GetOpenPeriodInfoAsync(Guid userId)
     {
         var accounts = await this.db.ChartOfAccounts
