@@ -9,6 +9,9 @@ on:
 permissions:
   contents: write # Diperlukan untuk commit & push otomatis kembali ke repositori
 
+env:
+  NX_NO_CLOUD: true # Mematikan eksekusi dan integrasi Nx Cloud
+
 jobs:
   validate:
     runs-on: ubuntu-latest
